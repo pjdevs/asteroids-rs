@@ -89,7 +89,11 @@ fn aabb_from_transform_sprite(transform: &Transform, sprite: &Sprite) -> Aabb2d 
     )
 }
 
-fn player_ennemy_destruction_system(mut commands: Commands, player_query: Query<Entity, With<Player>>, mut collision_event: EventReader<CollisionEvent>) {
+fn player_ennemy_destruction_system(
+    mut commands: Commands,
+    player_query: Query<Entity, With<Player>>,
+    mut collision_event: EventReader<CollisionEvent>,
+) {
     let Ok(player) = player_query.get_single() else {
         return;
     };
