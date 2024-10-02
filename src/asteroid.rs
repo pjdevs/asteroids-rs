@@ -1,4 +1,6 @@
 use bevy::app::Plugin;
+use bevy::color::palettes::css::{GREEN, RED};
+use bevy::ecs::schedule::NodeConfigs;
 use bevy::math::bounding::{Aabb2d, IntersectsVolume};
 use bevy::prelude::*;
 
@@ -13,6 +15,9 @@ pub struct AsteroidPlugin;
 impl Plugin for AsteroidPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.insert_resource(SpawnTimer(Timer::from_seconds(1.0, TimerMode::Repeating)))
+            .insert_resource(GameConfig {
+                is_debug_mode: false,
+            })
             .add_event::<CollisionEvent>()
             .add_systems(Startup, startup)
             .add_systems(
@@ -25,6 +30,8 @@ impl Plugin for AsteroidPlugin {
                     ennemies_despawn_system,
                     player_ennemy_collision_system,
                     player_ennemy_destruction_system,
+                    debug_input_system,
+                    debug(degug_gizmos_system),
                 ),
             );
     }
@@ -85,7 +92,7 @@ pub fn player_ennemy_collision_system(
 fn aabb_from_transform_sprite(transform: &Transform, sprite: &Sprite) -> Aabb2d {
     Aabb2d::new(
         transform.translation.truncate(),
-        sprite.custom_size.unwrap_or(Vec2::ZERO),
+        sprite.custom_size.unwrap_or(Vec2::ZERO) / 2.0,
     )
 }
 
@@ -104,5 +111,35 @@ fn player_ennemy_destruction_system(
 
     for event in collision_event.read() {
         commands.entity(event.ennemy).despawn();
+    }
+}
+
+#[derive(Resource)]
+struct GameConfig {
+    is_debug_mode: bool,
+}
+
+fn debug<M>(
+    system: impl IntoSystemConfigs<M>,
+) -> NodeConfigs<Box<(dyn bevy::prelude::System<In = (), Out = ()> + 'static)>> {
+    system.run_if(|config: Res<GameConfig>| config.is_debug_mode)
+}
+
+fn debug_input_system(mut config: ResMut<GameConfig>, keys: Res<ButtonInput<KeyCode>>) {
+    if keys.just_pressed(KeyCode::KeyD) {
+        config.is_debug_mode = !config.is_debug_mode;
+    }
+}
+
+fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Transform, &Sprite)>) {
+    for (transform, sprite) in &query {
+        let aabb = aabb_from_transform_sprite(transform, sprite);
+        gizmos.line_2d(aabb.min, aabb.max, RED);
+        gizmos.rect_2d(
+            transform.translation.truncate(),
+            0.0,
+            sprite.custom_size.unwrap_or(Vec2::ZERO),
+            GREEN,
+        );
     }
 }
