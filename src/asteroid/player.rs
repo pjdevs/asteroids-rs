@@ -35,5 +35,5 @@ pub fn player_movement_system(
     input_direction = input_direction.normalize_or_zero();
 
     player_transform.translation +=
-        (input_direction * time.delta_seconds() * player.speed).extend(0.0);
+        (input_direction * 5.).extend(0.0);
 }

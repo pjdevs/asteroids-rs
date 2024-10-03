@@ -32,7 +32,7 @@ pub fn spawn_ennemies_system(
 ) {
     let camera = camera_query.single();
     let random_angle = rand::random::<f32>() * std::f32::consts::PI * 2.0;
-    let random_speed = rand::random::<f32>() * 100.0 + 50.0;
+    let random_speed = rand::random::<f32>() * 0.2 + 1.0;
     let velocity = Vec2::new(random_angle.cos(), random_angle.sin()) * random_speed;
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
@@ -70,7 +70,7 @@ pub fn ennemies_movement_system(
     mut ennemy_query: Query<(&Ennemy, &mut Transform)>,
 ) {
     for (ennemy, mut ennemy_transform) in &mut ennemy_query {
-        ennemy_transform.translation += (ennemy.velocity * time.delta_seconds()).extend(0.0);
+        ennemy_transform.translation += ennemy.velocity.extend(0.0);
     }
 }
 
