@@ -1,19 +1,17 @@
 use bevy::prelude::*;
 
+use super::Movement;
+
 #[derive(Component)]
 pub struct Player {
     pub speed: f32,
 }
 
 pub fn player_movement_system(
-    time: Res<Time>,
     keys: Res<ButtonInput<KeyCode>>,
-    mut player_query: Query<(&Player, &mut Transform)>,
+    mut player_query: Query<(&Player, &mut Movement)>,
 ) {
-    let Ok((player, mut player_transform)) = player_query.get_single_mut() else {
-        return;
-    };
-
+    let (player, mut player_movement) = player_query.single_mut();
     let mut input_direction = Vec2::ZERO;
 
     if keys.pressed(KeyCode::ArrowUp) {
@@ -33,7 +31,5 @@ pub fn player_movement_system(
     }
 
     input_direction = input_direction.normalize_or_zero();
-
-    player_transform.translation +=
-        (input_direction * 5.).extend(0.0);
+    player_movement.velocity = input_direction * player.speed;
 }

@@ -1,5 +1,8 @@
 use asteroid::AsteroidPlugin;
-use bevy::{prelude::*, window::{PresentMode, WindowTheme}};
+use bevy::{
+    prelude::*,
+    window::{PresentMode, WindowTheme},
+};
 
 mod asteroid;
 

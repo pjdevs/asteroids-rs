@@ -1,7 +1,6 @@
 use bevy::prelude::*;
 
-#[derive(Resource)]
-pub struct SpawnTimer(pub Timer);
+use super::Movement;
 
 #[derive(Resource)]
 pub struct EnnemyAssets {
@@ -12,17 +11,7 @@ pub struct EnnemyAssets {
 // pub struct EnnemySpawnedEvent(Vec2);
 
 #[derive(Component)]
-pub struct Ennemy {
-    velocity: Vec2,
-}
-
-pub fn update_timers_system(time: Res<Time>, mut timer: ResMut<SpawnTimer>) {
-    timer.0.tick(time.delta());
-}
-
-pub fn should_spawn_ennemies(timer: Res<SpawnTimer>) -> bool {
-    timer.0.just_finished()
-}
+pub struct Ennemy;
 
 pub fn spawn_ennemies_system(
     mut commands: Commands,
@@ -31,14 +20,15 @@ pub fn spawn_ennemies_system(
     // mut spawn_event: EventWriter<EnnemySpawnedEvent>,
 ) {
     let camera = camera_query.single();
-    let random_angle = rand::random::<f32>() * std::f32::consts::PI * 2.0;
-    let random_speed = rand::random::<f32>() * 0.2 + 1.0;
-    let velocity = Vec2::new(random_angle.cos(), random_angle.sin()) * random_speed;
+    let random_angle = rand::random::<f32>() * std::f32::consts::PI * 1.99 + 0.1;
+    let random_speed = rand::random::<f32>() * 100.0 + 50.0;
+    let random_velocity = Vec2::new(random_angle.cos(), random_angle.sin()) * random_speed;
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
-    let random_position: Vec2 =
-        2.0 * half_screen_size * Vec2::new(rand::random::<f32>(), rand::random::<f32>())
-            - half_screen_size;
+    let random_position: Vec2 = 2.0
+        * half_screen_size
+        * Vec2::new(rand::random::<f32>().round(), rand::random::<f32>().round())
+        - half_screen_size;
 
     commands.spawn((
         SpriteBundle {
@@ -47,13 +37,14 @@ pub fn spawn_ennemies_system(
                 custom_size: Some(Vec2::new(64.0, 64.0)),
                 ..default()
             },
-            transform: Transform {
-                translation: random_position.extend(0.0),
-                ..default()
-            },
             ..default()
         },
-        Ennemy { velocity },
+        Ennemy {},
+        Movement {
+            position: random_position,
+            velocity: random_velocity,
+            ..default()
+        },
     ));
 
     // spawn_event.send(EnnemySpawnedEvent(random_position));
@@ -65,31 +56,21 @@ pub fn spawn_ennemies_system(
 //     }
 // }
 
-pub fn ennemies_movement_system(
-    time: Res<Time>,
-    mut ennemy_query: Query<(&Ennemy, &mut Transform)>,
-) {
-    for (ennemy, mut ennemy_transform) in &mut ennemy_query {
-        ennemy_transform.translation += ennemy.velocity.extend(0.0);
-    }
-}
-
-pub fn ennemies_despawn_system(
-    mut commands: Commands,
-    ennemy_query: Query<(Entity, &Transform), With<Ennemy>>,
+pub fn ennemies_border_system(
+    mut ennemy_query: Query<&mut Movement, With<Ennemy>>,
     camera_query: Query<&Camera>,
 ) {
     let camera = camera_query.single();
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
 
-    ennemy_query
-        .iter()
-        .for_each(|(ennemy_entity, ennemy_transform)| {
-            if ennemy_transform.translation.x.abs() > half_screen_size.x
-                || ennemy_transform.translation.y.abs() > half_screen_size.y
-            {
-                commands.entity(ennemy_entity).despawn();
-            }
-        });
+    ennemy_query.iter_mut().for_each(|mut ennemy_movement| {
+        if ennemy_movement.position.x.abs() > half_screen_size.x + 32.0 {
+            ennemy_movement.position.x *= -1.0;
+        }
+
+        if ennemy_movement.position.y.abs() > half_screen_size.y + 32.0 {
+            ennemy_movement.position.y *= -1.0;
+        }
+    });
 }
