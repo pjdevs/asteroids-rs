@@ -30,7 +30,7 @@ impl PlayerBundle {
                 ..default()
             },
             movement: Movement {
-                friction: 0.05,
+                friction: 0.03,
                 ..default()
             },
             collider: BoxCollider {

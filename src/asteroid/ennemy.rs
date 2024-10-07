@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 use super::{BoxCollider, Movement};
 
-const ENNEMY_SIZE: f32 = 48.0;
+const ENNEMY_SIZE: f32 = 32.0;
 
 #[derive(Resource)]
 pub struct EnnemyAssets {
