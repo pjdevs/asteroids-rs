@@ -1,5 +1,18 @@
-use bevy::prelude::*;
+use bevy::{math::bounding::Aabb2d, prelude::*};
 use core::f32;
+
+pub struct AsteroidPhysicsPlugin;
+
+impl Plugin for AsteroidPhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_systems(FixedUpdate, physics_fixed_movement_system)
+            .add_systems(Update, (physics_border_system))
+            .add_systems(
+                PostUpdate,
+                physics_transform_extrapolate_system.before(TransformSystem::TransformPropagate),
+            );
+    }
+}
 
 #[derive(Component)]
 pub struct Movement {
@@ -31,7 +44,7 @@ impl Default for Movement {
     }
 }
 
-pub fn physics_fixed_system(time: Res<Time>, mut query: Query<&mut Movement>) {
+pub fn physics_fixed_movement_system(time: Res<Time>, mut query: Query<&mut Movement>) {
     for mut movement in &mut query {
         let movement = &mut *movement;
 
@@ -68,18 +81,22 @@ pub fn physics_transform_extrapolate_system(
     }
 }
 
-pub fn border_system(mut ennemy_query: Query<&mut Movement>, camera_query: Query<&Camera>) {
+pub fn physics_border_system(mut query: Query<&mut Movement>, camera_query: Query<&Camera>) {
     let camera = camera_query.single();
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
 
-    ennemy_query.iter_mut().for_each(|mut ennemy_movement| {
-        if ennemy_movement.position.x.abs() > half_screen_size.x + 32.0 {
-            ennemy_movement.position.x *= -1.0;
+    query.iter_mut().for_each(|mut movement| {
+        if movement.position.x.abs() > half_screen_size.x + 32.0 {
+            movement.position.x *= -1.0;
         }
 
-        if ennemy_movement.position.y.abs() > half_screen_size.y + 32.0 {
-            ennemy_movement.position.y *= -1.0;
+        if movement.position.y.abs() > half_screen_size.y + 32.0 {
+            movement.position.y *= -1.0;
         }
     });
+}
+
+pub fn aabb_from(movement: &Movement, collider: &BoxCollider) -> Aabb2d {
+    Aabb2d::new(movement.position, collider.size / 2.0)
 }

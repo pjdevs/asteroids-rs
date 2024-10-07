@@ -1,40 +1,69 @@
-use bevy::prelude::*;
+use std::time::Duration;
+
+use bevy::{prelude::*, time::common_conditions::on_timer};
 
 use super::{BoxCollider, Movement};
 
-const ENNEMY_SIZE: f32 = 32.0;
-
-#[derive(Resource)]
-pub struct EnnemyAssets {
-    pub texture: Handle<Image>,
+pub struct AsteroidEnnemyPlugin {
+    pub ennemy_size: Vec2,
+    pub ennemy_spawn_delay_seconds: u64,
 }
 
-impl EnnemyAssets {
-    pub fn default(asset_server: &AssetServer) -> Self {
-        EnnemyAssets {
-            texture: asset_server.load("sprites/ball.png"),
+impl Default for AsteroidEnnemyPlugin {
+    fn default() -> Self {
+        Self {
+            ennemy_size: Vec2::splat(32.0),
+            ennemy_spawn_delay_seconds: 5,
         }
     }
 }
 
-// #[derive(Event, Default)]
-// pub struct EnnemySpawnedEvent(Vec2);
+impl Plugin for AsteroidEnnemyPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_event::<EnnemySpawnedEvent>()
+            .add_systems(Startup, load_ennemy_assets_system(self.ennemy_size))
+            .add_systems(
+                Update,
+                spawn_ennemies_system.run_if(on_timer(Duration::from_secs(
+                    self.ennemy_spawn_delay_seconds,
+                ))),
+            );
+    }
+}
+
+fn load_ennemy_assets_system(ennemy_size: Vec2) -> impl Fn(Commands, Res<AssetServer>) {
+    move |mut commands: Commands, asset_server: Res<AssetServer>| {
+        commands.insert_resource(AsteroidEnnemyAssets {
+            ennemy_size,
+            texture: asset_server.load("sprites/ball.png"),
+        });
+    }
+}
+
+#[derive(Resource)]
+pub struct AsteroidEnnemyAssets {
+    pub ennemy_size: Vec2,
+    pub texture: Handle<Image>,
+}
+
+#[derive(Event, Default)]
+pub struct EnnemySpawnedEvent(Vec2);
 
 #[derive(Component)]
-pub struct Ennemy;
+pub struct AsteroidEnnemy;
 
 #[derive(Bundle)]
-pub struct EnnemyBundle {
-    ennemy: Ennemy,
+pub struct AsteroidEnnemyBundle {
+    ennemy: AsteroidEnnemy,
     sprite: SpriteBundle,
     movement: Movement,
     collider: BoxCollider,
 }
 
-impl EnnemyBundle {
-    pub fn from(ennemy_assets: &EnnemyAssets, position: &Vec2, velocity: &Vec2) -> Self {
+impl AsteroidEnnemyBundle {
+    pub fn from(ennemy_assets: &AsteroidEnnemyAssets, position: &Vec2, velocity: &Vec2) -> Self {
         Self {
-            ennemy: Ennemy {},
+            ennemy: AsteroidEnnemy {},
             sprite: SpriteBundle {
                 texture: ennemy_assets.texture.clone(),
                 ..default()
@@ -45,7 +74,7 @@ impl EnnemyBundle {
                 ..default()
             },
             collider: BoxCollider {
-                size: Vec2::splat(ENNEMY_SIZE),
+                size: ennemy_assets.ennemy_size,
             },
         }
     }
@@ -53,9 +82,9 @@ impl EnnemyBundle {
 
 pub fn spawn_ennemies_system(
     mut commands: Commands,
-    ennemy_assets: Res<EnnemyAssets>,
+    ennemy_assets: Res<AsteroidEnnemyAssets>,
     camera_query: Query<&Camera>,
-    // mut spawn_event: EventWriter<EnnemySpawnedEvent>,
+    mut spawn_event: EventWriter<EnnemySpawnedEvent>,
 ) {
     let camera = camera_query.single();
     let random_angle = rand::random::<f32>() * std::f32::consts::PI * 1.99 + 0.1;
@@ -68,17 +97,11 @@ pub fn spawn_ennemies_system(
         * Vec2::new(rand::random::<f32>().round(), rand::random::<f32>().round())
         - half_screen_size;
 
-    commands.spawn(EnnemyBundle::from(
+    commands.spawn(AsteroidEnnemyBundle::from(
         &ennemy_assets,
         &random_position,
         &random_velocity,
     ));
 
-    // spawn_event.send(EnnemySpawnedEvent(random_position));
+    spawn_event.send(EnnemySpawnedEvent(random_position));
 }
-
-// pub fn ennemy_spawn_event_handler_system(mut spawn_event: EventReader<EnnemySpawnedEvent>) {
-//     for event in spawn_event.read() {
-//         println!("Ennemy spawned at {:?}", event.0);
-//     }
-// }
