@@ -16,6 +16,9 @@ mod ennemy;
 mod physics;
 mod player;
 
+const COLLISION_SEARCH_LIMIT_SQUARED: f32 = 128.0 * 128.0;
+const ENNEMY_SPAWN_DELAY: u64 = 5;
+
 pub struct AsteroidPlugin;
 
 impl Plugin for AsteroidPlugin {
@@ -24,18 +27,23 @@ impl Plugin for AsteroidPlugin {
             is_debug_mode: false,
         })
         .add_event::<CollisionEvent>()
-        .add_systems(Startup, startup)
+        .add_systems(Startup, (startup_system, spawn_player_system))
         .add_systems(FixedUpdate, physics_fixed_system)
         .add_systems(
             Update,
             (
                 (
                     player_movement_system.run_if(any_with_component::<Player>),
-                    spawn_ennemies_system.run_if(on_timer(Duration::from_secs(5))),
-                    ennemies_border_system,
+                    spawn_ennemies_system.run_if(on_timer(Duration::from_secs(ENNEMY_SPAWN_DELAY))),
                     player_ennemy_collision_system.run_if(any_with_component::<Player>),
                     player_ennemy_destruction_system,
+                    border_system,
                     switch_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
+                    debug(
+                        spawn_player_system
+                            .run_if(not(any_with_component::<Player>))
+                            .run_if(input_just_pressed(KeyCode::KeyR)),
+                    ),
                     debug(degug_gizmos_system),
                 ),
                 physics_transform_extrapolate_system,
@@ -45,24 +53,13 @@ impl Plugin for AsteroidPlugin {
     }
 }
 
-fn startup(mut commands: Commands, asset_server: Res<AssetServer>) {
+fn startup_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(Camera2dBundle::default());
-    commands.spawn((
-        SpriteBundle {
-            texture: asset_server.load("sprites/ship.png"),
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(64.0, 64.0)),
-                ..default()
-            },
-            ..default()
-        },
-        Movement::default(),
-        Player { speed: 275.0 },
-    ));
+    commands.insert_resource(EnnemyAssets::default(&asset_server));
+}
 
-    commands.insert_resource(EnnemyAssets {
-        texture: asset_server.load("sprites/ball.png"),
-    });
+fn spawn_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(PlayerBundle::from(&asset_server));
 }
 
 #[derive(Event)]
@@ -73,22 +70,22 @@ pub struct CollisionEvent {
 
 pub fn player_ennemy_collision_system(
     mut collision_event: EventWriter<CollisionEvent>,
-    player_query: Query<(Entity, &Transform, &Sprite), With<Player>>,
-    ennemies_query: Query<(Entity, &Transform, &Sprite), With<Ennemy>>,
+    player_query: Query<(Entity, &Movement, &BoxCollider), With<Player>>,
+    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<Ennemy>>,
 ) {
-    let (player, player_transform, player_sprite) = player_query.single();
-    let player_aabb = aabb_from_transform_sprite(player_transform, player_sprite);
+    let (player, player_movement, player_collider) = player_query.single();
+    let player_aabb = aabb_from(player_movement, player_collider);
 
     ennemies_query
         .iter()
         .filter(|(_, ennemy_transform, _)| {
-            player_transform
-                .translation
-                .distance_squared(ennemy_transform.translation)
-                < 128.0 * 128.0
+            player_movement
+                .position
+                .distance_squared(ennemy_transform.position)
+                < COLLISION_SEARCH_LIMIT_SQUARED
         })
-        .for_each(|(ennemy, ennemy_transform, ennemy_sprite)| {
-            let ennemy_aabb = aabb_from_transform_sprite(ennemy_transform, ennemy_sprite);
+        .for_each(|(ennemy, ennemy_movement, ennemy_collider)| {
+            let ennemy_aabb = aabb_from(ennemy_movement, ennemy_collider);
 
             if player_aabb.intersects(&ennemy_aabb) {
                 collision_event.send(CollisionEvent {
@@ -99,11 +96,8 @@ pub fn player_ennemy_collision_system(
         });
 }
 
-fn aabb_from_transform_sprite(transform: &Transform, sprite: &Sprite) -> Aabb2d {
-    Aabb2d::new(
-        transform.translation.truncate(),
-        sprite.custom_size.unwrap_or(Vec2::ZERO) / 2.0,
-    )
+fn aabb_from(movement: &Movement, collider: &BoxCollider) -> Aabb2d {
+    Aabb2d::new(movement.position, collider.size / 2.0)
 }
 
 fn player_ennemy_destruction_system(
@@ -136,15 +130,10 @@ fn switch_debug_system(mut config: ResMut<GameConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
 }
 
-fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Transform, &Sprite)>) {
-    for (transform, sprite) in &query {
-        let aabb = aabb_from_transform_sprite(transform, sprite);
+fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &BoxCollider)>) {
+    for (movement, collider) in &query {
+        let aabb = aabb_from(movement, collider);
         gizmos.line_2d(aabb.min, aabb.max, RED);
-        gizmos.rect_2d(
-            transform.translation.truncate(),
-            0.0,
-            sprite.custom_size.unwrap_or(Vec2::ZERO),
-            GREEN,
-        );
+        gizmos.rect_2d(movement.position, 0.0, collider.size, GREEN);
     }
 }

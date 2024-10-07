@@ -1,10 +1,20 @@
 use bevy::prelude::*;
 
-use super::Movement;
+use super::{BoxCollider, Movement};
+
+const ENNEMY_SIZE: f32 = 48.0;
 
 #[derive(Resource)]
 pub struct EnnemyAssets {
     pub texture: Handle<Image>,
+}
+
+impl EnnemyAssets {
+    pub fn default(asset_server: &AssetServer) -> Self {
+        EnnemyAssets {
+            texture: asset_server.load("sprites/ball.png"),
+        }
+    }
 }
 
 // #[derive(Event, Default)]
@@ -12,6 +22,34 @@ pub struct EnnemyAssets {
 
 #[derive(Component)]
 pub struct Ennemy;
+
+#[derive(Bundle)]
+pub struct EnnemyBundle {
+    ennemy: Ennemy,
+    sprite: SpriteBundle,
+    movement: Movement,
+    collider: BoxCollider,
+}
+
+impl EnnemyBundle {
+    pub fn from(ennemy_assets: &EnnemyAssets, position: &Vec2, velocity: &Vec2) -> Self {
+        Self {
+            ennemy: Ennemy {},
+            sprite: SpriteBundle {
+                texture: ennemy_assets.texture.clone(),
+                ..default()
+            },
+            movement: Movement {
+                position: *position,
+                velocity: *velocity,
+                ..default()
+            },
+            collider: BoxCollider {
+                size: Vec2::splat(ENNEMY_SIZE),
+            },
+        }
+    }
+}
 
 pub fn spawn_ennemies_system(
     mut commands: Commands,
@@ -30,21 +68,10 @@ pub fn spawn_ennemies_system(
         * Vec2::new(rand::random::<f32>().round(), rand::random::<f32>().round())
         - half_screen_size;
 
-    commands.spawn((
-        SpriteBundle {
-            texture: ennemy_assets.texture.clone(),
-            sprite: Sprite {
-                custom_size: Some(Vec2::new(64.0, 64.0)),
-                ..default()
-            },
-            ..default()
-        },
-        Ennemy {},
-        Movement {
-            position: random_position,
-            velocity: random_velocity,
-            ..default()
-        },
+    commands.spawn(EnnemyBundle::from(
+        &ennemy_assets,
+        &random_position,
+        &random_velocity,
     ));
 
     // spawn_event.send(EnnemySpawnedEvent(random_position));
@@ -55,22 +82,3 @@ pub fn spawn_ennemies_system(
 //         println!("Ennemy spawned at {:?}", event.0);
 //     }
 // }
-
-pub fn ennemies_border_system(
-    mut ennemy_query: Query<&mut Movement, With<Ennemy>>,
-    camera_query: Query<&Camera>,
-) {
-    let camera = camera_query.single();
-    let screen_size = camera.physical_target_size().unwrap();
-    let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
-
-    ennemy_query.iter_mut().for_each(|mut ennemy_movement| {
-        if ennemy_movement.position.x.abs() > half_screen_size.x + 32.0 {
-            ennemy_movement.position.x *= -1.0;
-        }
-
-        if ennemy_movement.position.y.abs() > half_screen_size.y + 32.0 {
-            ennemy_movement.position.y *= -1.0;
-        }
-    });
-}

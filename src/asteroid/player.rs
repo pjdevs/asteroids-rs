@@ -1,10 +1,43 @@
 use bevy::prelude::*;
 
-use super::Movement;
+use super::{BoxCollider, Movement};
+
+const PLAYER_SIZE: f32 = 48.0;
 
 #[derive(Component)]
 pub struct Player {
-    pub speed: f32,
+    pub movement_speed: f32,
+    pub rotation_speed: f32,
+}
+
+#[derive(Bundle)]
+pub struct PlayerBundle {
+    player: Player,
+    sprite: SpriteBundle,
+    movement: Movement,
+    collider: BoxCollider,
+}
+
+impl PlayerBundle {
+    pub fn from(asset_server: &AssetServer) -> Self {
+        Self {
+            player: Player {
+                movement_speed: 750.0,
+                rotation_speed: 4.0,
+            },
+            sprite: SpriteBundle {
+                texture: asset_server.load("sprites/ship.png"),
+                ..default()
+            },
+            movement: Movement {
+                friction: 0.05,
+                ..default()
+            },
+            collider: BoxCollider {
+                size: Vec2::splat(PLAYER_SIZE),
+            },
+        }
+    }
 }
 
 pub fn player_movement_system(
@@ -31,5 +64,12 @@ pub fn player_movement_system(
     }
 
     input_direction = input_direction.normalize_or_zero();
-    player_movement.velocity = input_direction * player.speed;
+
+    // Rotation
+    player_movement.angular_velocity = -input_direction.x * player.rotation_speed;
+
+    // Translation
+    let movement_direction =
+        Quat::from_rotation_z(player_movement.rotation) * Vec3::new(0.0, input_direction.y, 0.0);
+    player_movement.acceleration = movement_direction.truncate() * player.movement_speed;
 }
