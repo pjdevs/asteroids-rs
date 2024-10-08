@@ -6,10 +6,10 @@ pub struct AsteroidPhysicsPlugin;
 impl Plugin for AsteroidPhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(FixedUpdate, physics_fixed_movement_system)
-            .add_systems(Update, (physics_border_system))
+            .add_systems(Update, physics_border_system)
             .add_systems(
                 PostUpdate,
-                physics_transform_extrapolate_system.before(TransformSystem::TransformPropagate),
+                physics_transform_extrapolate_system.before(TransformSystem::TransformPropagate)
             );
     }
 }
