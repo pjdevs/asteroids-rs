@@ -1,8 +1,8 @@
 mod asteroid;
 mod window;
 
-use bevy::prelude::*;
 use asteroid::AsteroidPlugin;
+use bevy::prelude::*;
 use window::asteroid_window_plugin;
 
 fn main() {

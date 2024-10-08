@@ -15,8 +15,7 @@ pub struct AsteroidPlugin;
 
 impl Plugin for AsteroidPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app      
-            .add_plugins(AsteroidPhysicsPlugin)
+        app.add_plugins(AsteroidPhysicsPlugin)
             .add_plugins(AsteroidPlayerPlugin)
             .add_plugins(AsteroidEnnemyPlugin::default())
             .add_plugins(AsteroidDebugPlugin)

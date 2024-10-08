@@ -9,7 +9,7 @@ impl Plugin for AsteroidPhysicsPlugin {
             .add_systems(Update, physics_border_system)
             .add_systems(
                 PostUpdate,
-                physics_transform_extrapolate_system.before(TransformSystem::TransformPropagate)
+                physics_transform_extrapolate_system.before(TransformSystem::TransformPropagate),
             );
     }
 }
