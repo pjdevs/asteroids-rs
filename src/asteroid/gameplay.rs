@@ -1,6 +1,10 @@
 use bevy::{math::bounding::IntersectsVolume, prelude::*};
 
-use super::{aabb_from, AsteroidEnnemy, AsteroidPlayer, BoxCollider, Movement};
+use super::{
+    ennemy::AsteroidEnnemy,
+    physics::{aabb_from, BoxCollider, Movement},
+    player::AsteroidPlayer,
+};
 
 const COLLISION_SEARCH_LIMIT_SQUARED: f32 = 128.0 * 128.0;
 
@@ -13,8 +17,10 @@ impl Plugin for AsteroidGameplayPlugin {
             .add_systems(
                 Update,
                 (
-                    player_ennemy_collision_system.run_if(any_with_component::<AsteroidPlayer>),
-                    player_ennemy_destruction_system,
+                    gameplayer_player_ennemy_collision_system
+                        .run_if(any_with_component::<AsteroidPlayer>),
+                    gameplay_player_ennemy_destruction_system,
+                    gameplay_border_system,
                 ),
             );
     }
@@ -30,7 +36,7 @@ pub struct CollisionEvent {
     seconds_entity: Entity,
 }
 
-pub fn player_ennemy_collision_system(
+pub fn gameplayer_player_ennemy_collision_system(
     mut collision_event: EventWriter<CollisionEvent>,
     player_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidPlayer>>,
     ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnnemy>>,
@@ -58,7 +64,7 @@ pub fn player_ennemy_collision_system(
         });
 }
 
-fn player_ennemy_destruction_system(
+fn gameplay_player_ennemy_destruction_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
 ) {
@@ -71,4 +77,20 @@ fn player_ennemy_destruction_system(
             second.despawn();
         }
     }
+}
+
+pub fn gameplay_border_system(mut query: Query<&mut Movement>, camera_query: Query<&Camera>) {
+    let camera = camera_query.single();
+    let screen_size = camera.physical_target_size().unwrap();
+    let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
+
+    query.iter_mut().for_each(|mut movement| {
+        if movement.position.x.abs() > half_screen_size.x + 32.0 {
+            movement.position.x *= -1.0;
+        }
+
+        if movement.position.y.abs() > half_screen_size.y + 32.0 {
+            movement.position.y *= -1.0;
+        }
+    });
 }

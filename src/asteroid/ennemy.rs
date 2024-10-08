@@ -2,7 +2,9 @@ use std::time::Duration;
 
 use bevy::{prelude::*, time::common_conditions::on_timer};
 
-use super::{BoxCollider, Movement};
+use crate::asteroid::physics::BoxCollider;
+
+use super::physics::Movement;
 
 pub struct AsteroidEnnemyPlugin {
     pub ennemy_size: Vec2,

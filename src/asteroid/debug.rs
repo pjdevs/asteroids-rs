@@ -4,7 +4,10 @@ use bevy::{
     prelude::*,
 };
 
-use super::{aabb_from, spawn_player_system, AsteroidPlayer, BoxCollider, Movement};
+use super::{
+    physics::{aabb_from, BoxCollider, Movement},
+    player::{spawn_player_system, AsteroidPlayer},
+};
 
 pub struct AsteroidDebugPlugin;
 

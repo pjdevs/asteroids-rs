@@ -1,6 +1,9 @@
 use bevy::prelude::*;
 
-use super::{BoxCollider, Movement};
+use super::{
+    input::{InputAction, InputMap},
+    physics::{BoxCollider, Movement},
+};
 
 const PLAYER_SIZE: f32 = 48.0;
 
@@ -57,28 +60,27 @@ pub fn spawn_player_system(mut commands: Commands, asset_server: Res<AssetServer
 
 pub fn player_movement_system(
     keys: Res<ButtonInput<KeyCode>>,
+    map: Res<InputMap<KeyCode>>,
     mut player_query: Query<(&AsteroidPlayer, &mut Movement)>,
 ) {
     let (player, mut player_movement) = player_query.single_mut();
     let mut input_direction = Vec2::ZERO;
 
-    if keys.pressed(KeyCode::ArrowUp) {
+    if map.input_action(InputAction::Forward, &keys) {
         input_direction.y += 1.0;
     }
 
-    if keys.pressed(KeyCode::ArrowDown) {
+    if map.input_action(InputAction::Backward, &keys) {
         input_direction.y -= 1.0;
     }
 
-    if keys.pressed(KeyCode::ArrowLeft) {
+    if map.input_action(InputAction::TurnLeft, &keys) {
         input_direction.x -= 1.0;
     }
 
-    if keys.pressed(KeyCode::ArrowRight) {
+    if map.input_action(InputAction::TurnRight, &keys) {
         input_direction.x += 1.0;
     }
-
-    input_direction = input_direction.normalize_or_zero();
 
     // Rotation
     player_movement.angular_velocity = -input_direction.x * player.rotation_speed;
