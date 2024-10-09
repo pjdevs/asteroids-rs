@@ -4,6 +4,7 @@ use super::{
     ennemy::AsteroidEnnemy,
     physics::{aabb_from, BoxCollider, Movement},
     player::AsteroidPlayer,
+    projectile::AsteroidProjectile,
 };
 
 const COLLISION_SEARCH_LIMIT_SQUARED: f32 = 128.0 * 128.0;
@@ -19,8 +20,8 @@ impl Plugin for AsteroidGameplayPlugin {
                 (
                     gameplayer_player_ennemy_collision_system
                         .run_if(any_with_component::<AsteroidPlayer>),
+                    gameplaye_projectile_ennemy_collision_system,
                     gameplay_player_ennemy_destruction_system,
-                    gameplay_border_system,
                 ),
             );
     }
@@ -44,6 +45,8 @@ pub fn gameplayer_player_ennemy_collision_system(
     let (player, player_movement, player_collider) = player_query.single();
     let player_aabb = aabb_from(player_movement, player_collider);
 
+    // TODO Implement this with quadtrees directly in physcis plugin
+    // TODO Investigate parallel iteration to trigger event
     ennemies_query
         .iter()
         .filter(|(_, ennemy_movement, _)| {
@@ -64,11 +67,41 @@ pub fn gameplayer_player_ennemy_collision_system(
         });
 }
 
+// TODO Maybe another component for player projectile to be able to use them for ennemies
+
+pub fn gameplaye_projectile_ennemy_collision_system(
+    mut collision_event: EventWriter<CollisionEvent>,
+    projectile_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidProjectile>>,
+    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnnemy>>,
+) {
+    // TODO Implement this with quadtrees directly in physcis plugin
+    // TODO Investigate parallel iteration to trigger event
+    for (ennemy, ennemy_movement, ennemy_collider) in &ennemies_query {
+        for (projectile, projectile_movement, projectile_collider) in &projectile_query {
+            if projectile_movement
+                .position
+                .distance_squared(ennemy_movement.position)
+                < COLLISION_SEARCH_LIMIT_SQUARED
+            {
+                let projectile_aabb = aabb_from(projectile_movement, projectile_collider);
+                let ennemy_aabb = aabb_from(ennemy_movement, ennemy_collider);
+
+                if projectile_aabb.intersects(&ennemy_aabb) {
+                    collision_event.send(CollisionEvent {
+                        first_entity: projectile,
+                        seconds_entity: ennemy,
+                    });
+                }
+            }
+        }
+    }
+}
+
 fn gameplay_player_ennemy_destruction_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
 ) {
-    for event in collision_event.read() {
+    for (event, _) in collision_event.par_read() {
         if let Some(mut first) = commands.get_entity(event.first_entity) {
             first.despawn();
         }
@@ -77,20 +110,4 @@ fn gameplay_player_ennemy_destruction_system(
             second.despawn();
         }
     }
-}
-
-pub fn gameplay_border_system(mut query: Query<&mut Movement>, camera_query: Query<&Camera>) {
-    let camera = camera_query.single();
-    let screen_size = camera.physical_target_size().unwrap();
-    let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
-
-    query.iter_mut().for_each(|mut movement| {
-        if movement.position.x.abs() > half_screen_size.x + 32.0 {
-            movement.position.x *= -1.0;
-        }
-
-        if movement.position.y.abs() > half_screen_size.y + 32.0 {
-            movement.position.y *= -1.0;
-        }
-    });
 }

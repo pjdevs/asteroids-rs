@@ -7,7 +7,7 @@ pub enum InputActionMode {
     JustPressed,
 }
 
-#[derive(PartialEq, Eq, Hash)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy)]
 pub enum InputAction {
     TurnLeft,
     TurnRight,
@@ -106,4 +106,10 @@ impl Plugin for AsteroidInputPlugin {
 
         app.insert_resource(default_map);
     }
+}
+
+pub fn when_action<T: Copy + Eq + Hash + Send + Sync + 'static>(
+    action: InputAction,
+) -> impl Fn(Res<InputMap<T>>, Res<ButtonInput<T>>) -> bool + Copy {
+    move |map: Res<InputMap<T>>, buttons: Res<ButtonInput<T>>| map.input_action(action, &buttons)
 }

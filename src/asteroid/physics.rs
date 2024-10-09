@@ -24,7 +24,13 @@ pub struct Movement {
     pub max_speed: f32,
 }
 
-#[derive(Component)]
+impl Movement {
+    pub fn get_direction(&self) -> Vec2 {
+        (Quat::from_rotation_z(self.rotation) * Vec3::Y).truncate()
+    }
+}
+
+#[derive(Component, Default)]
 pub struct BoxCollider {
     pub size: Vec2,
 }
@@ -44,7 +50,7 @@ impl Default for Movement {
 }
 
 pub fn physics_fixed_movement_system(time: Res<Time>, mut query: Query<&mut Movement>) {
-    for mut movement in &mut query {
+    query.par_iter_mut().for_each(|mut movement| {
         let movement = &mut *movement;
 
         // Translation
@@ -55,14 +61,14 @@ pub fn physics_fixed_movement_system(time: Res<Time>, mut query: Query<&mut Move
 
         // Rotation
         movement.rotation += movement.angular_velocity * time.delta_seconds();
-    }
+    });
 }
 
 pub fn physics_transform_extrapolate_system(
     fixed_time: Res<Time<Fixed>>,
     mut query: Query<(&mut Transform, &Movement)>,
 ) {
-    for (mut transform, movement) in &mut query {
+    query.par_iter_mut().for_each(|(mut transform, movement)| {
         // Rotation
         let future_rotation =
             movement.rotation + movement.angular_velocity * fixed_time.delta_seconds();
@@ -77,7 +83,7 @@ pub fn physics_transform_extrapolate_system(
             .position
             .lerp(future_position, fixed_time.overstep_fraction())
             .extend(0.0);
-    }
+    });
 }
 
 pub fn aabb_from(movement: &Movement, collider: &BoxCollider) -> Aabb2d {

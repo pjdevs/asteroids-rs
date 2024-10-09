@@ -4,20 +4,11 @@ use bevy::{prelude::*, time::common_conditions::on_timer};
 
 use crate::asteroid::physics::BoxCollider;
 
-use super::physics::Movement;
+use super::{border::TunnelBorder, physics::Movement};
 
 pub struct AsteroidEnnemyPlugin {
     pub ennemy_size: Vec2,
     pub ennemy_spawn_delay_seconds: u64,
-}
-
-impl Default for AsteroidEnnemyPlugin {
-    fn default() -> Self {
-        Self {
-            ennemy_size: Vec2::splat(32.0),
-            ennemy_spawn_delay_seconds: 5,
-        }
-    }
 }
 
 impl Plugin for AsteroidEnnemyPlugin {
@@ -51,15 +42,16 @@ pub struct AsteroidEnnemyAssets {
 #[derive(Event, Default)]
 pub struct EnnemySpawnedEvent(Vec2);
 
-#[derive(Component)]
+#[derive(Component, Default)]
 pub struct AsteroidEnnemy;
 
-#[derive(Bundle)]
+#[derive(Bundle, Default)]
 pub struct AsteroidEnnemyBundle {
     ennemy: AsteroidEnnemy,
     sprite: SpriteBundle,
     movement: Movement,
     collider: BoxCollider,
+    border: TunnelBorder,
 }
 
 impl AsteroidEnnemyBundle {
@@ -78,9 +70,12 @@ impl AsteroidEnnemyBundle {
             collider: BoxCollider {
                 size: ennemy_assets.ennemy_size,
             },
+            ..default()
         }
     }
 }
+
+// TODO Expose min max speed angle etc
 
 pub fn spawn_ennemies_system(
     mut commands: Commands,
