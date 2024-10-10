@@ -1,5 +1,9 @@
-use bevy::{math::bounding::Aabb2d, prelude::*};
+use bevy::{
+    math::bounding::{Aabb2d, Bounded2d, BoundingVolume},
+    prelude::*,
+};
 use core::f32;
+use std::f32::consts::PI;
 
 pub struct AsteroidPhysicsPlugin;
 
@@ -87,5 +91,6 @@ pub fn physics_transform_extrapolate_system(
 }
 
 pub fn aabb_from(movement: &Movement, collider: &BoxCollider) -> Aabb2d {
-    Aabb2d::new(movement.position, collider.size / 2.0)
+    Rectangle::from_size(collider.size)
+        .aabb_2d(movement.position, movement.rotation)    
 }

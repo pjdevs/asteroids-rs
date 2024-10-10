@@ -1,7 +1,5 @@
 use bevy::{
-    color::palettes::css::{GREEN, RED},
-    input::common_conditions::input_just_pressed,
-    prelude::*,
+    color::palettes::css::{GREEN, RED}, input::common_conditions::input_just_pressed, math::bounding::BoundingVolume, prelude::*
 };
 
 use super::{
@@ -44,6 +42,6 @@ fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &BoxCollider
     for (movement, collider) in &query {
         let aabb = aabb_from(movement, collider);
         gizmos.line_2d(aabb.min, aabb.max, RED);
-        gizmos.rect_2d(movement.position, 0.0, collider.size, GREEN);
+        gizmos.rect_2d(aabb.center(), 0.0, aabb.half_size() * 2.0, GREEN);
     }
 }
