@@ -1,9 +1,8 @@
 use bevy::{
-    math::bounding::{Aabb2d, Bounded2d, BoundingVolume},
+    math::bounding::{Aabb2d, Bounded2d},
     prelude::*,
 };
 use core::f32;
-use std::f32::consts::PI;
 
 pub struct AsteroidPhysicsPlugin;
 

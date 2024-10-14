@@ -1,5 +1,4 @@
 use bevy::{
-    utils::default,
     window::{PresentMode, Window, WindowPlugin, WindowResolution, WindowTheme},
 };
 
@@ -13,11 +12,11 @@ pub fn asteroid_window_plugin() -> WindowPlugin {
             window_theme: Some(WindowTheme::Dark),
             enabled_buttons: bevy::window::EnabledButtons {
                 maximize: false,
-                ..default()
+                ..Default::default()
             },
             resizable: false,
-            ..default()
+            ..Default::default()
         }),
-        ..default()
+        ..Default::default()
     }
 }

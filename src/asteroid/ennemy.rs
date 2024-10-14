@@ -60,17 +60,17 @@ impl AsteroidEnnemyBundle {
             ennemy: AsteroidEnnemy {},
             sprite: SpriteBundle {
                 texture: ennemy_assets.texture.clone(),
-                ..default()
+                ..Default::default()
             },
             movement: Movement {
                 position: *position,
                 velocity: *velocity,
-                ..default()
+                ..Default::default()
             },
             collider: BoxCollider {
                 size: ennemy_assets.ennemy_size,
             },
-            ..default()
+            ..Default::default()
         }
     }
 }

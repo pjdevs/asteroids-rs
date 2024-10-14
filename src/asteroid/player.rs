@@ -41,11 +41,11 @@ impl AsteroidPlayerBundle {
             player: AsteroidPlayer,
             sprite: SpriteBundle {
                 texture: asset_server.load("sprites/ship.png"),
-                ..default()
+                ..Default::default()
             },
             movement: Movement {
                 friction: 0.03,
-                ..default()
+                ..Default::default()
             },
             collider: BoxCollider {
                 size: Vec2::splat(PLAYER_SIZE),
@@ -54,7 +54,7 @@ impl AsteroidPlayerBundle {
                 movement_speed: 750.0,
                 rotation_speed: 4.0,
             },
-            ..default()
+            ..Default::default()
         }
     }
 }
@@ -75,18 +75,18 @@ fn player_shoot_system(
             commands.spawn(AsteroidProjectileBundle {
                 sprite: SpriteBundle {
                     texture: projectile_assets.texture.clone(),
-                    ..default()
+                    ..Default::default()
                 },
                 movement: Movement {
                     position: player_movement.position,
                     velocity: player_movement.get_direction() * PROJECTILE_SPEED,
                     rotation: player_movement.rotation,
-                    ..default()
+                    ..Default::default()
                 },
                 collider: BoxCollider {
                     size: projectile_assets.projectile_size,
                 },
-                ..default()
+                ..Default::default()
             });
         }
     }

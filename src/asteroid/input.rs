@@ -151,6 +151,8 @@ pub struct InputMap {
 impl Default for InputMap {
     fn default() -> Self {
         Self {
+            keyboard_map: KeyboardInputMap::default(),
+            gamepad_map: GamepadInputMap::default(),
             actions: HashMap::from([
                 (InputAction::TurnLeft, false),
                 (InputAction::TurnRight, false),
@@ -158,7 +160,6 @@ impl Default for InputMap {
                 (InputAction::Backward, false),
                 (InputAction::Shoot, false),
             ]),
-            ..default()
         }
     }
 }
