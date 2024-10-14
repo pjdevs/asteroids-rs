@@ -1,5 +1,8 @@
 use bevy::{
-    color::palettes::css::{GREEN, RED}, input::common_conditions::input_just_pressed, math::bounding::BoundingVolume, prelude::*
+    color::palettes::css::{GREEN, RED},
+    input::common_conditions::input_just_pressed,
+    math::bounding::BoundingVolume,
+    prelude::*,
 };
 
 use super::{

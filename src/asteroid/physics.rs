@@ -91,6 +91,5 @@ pub fn physics_transform_extrapolate_system(
 }
 
 pub fn aabb_from(movement: &Movement, collider: &BoxCollider) -> Aabb2d {
-    Rectangle::from_size(collider.size)
-        .aabb_2d(movement.position, movement.rotation)    
+    Rectangle::from_size(collider.size).aabb_2d(movement.position, movement.rotation)
 }

@@ -1,4 +1,5 @@
 mod border;
+mod controller;
 mod debug;
 mod ennemy;
 mod gameplay;
@@ -9,6 +10,7 @@ mod projectile;
 
 use bevy::{app::Plugin, math::Vec2};
 use border::AsteroidBorderPlugin;
+use controller::AsteroidControllerPlugin;
 use debug::AsteroidDebugPlugin;
 use ennemy::AsteroidEnnemyPlugin;
 use gameplay::AsteroidGameplayPlugin;
@@ -24,6 +26,7 @@ impl Plugin for AsteroidPlugin {
         app.add_plugins(AsteroidInputPlugin)
             .add_plugins(AsteroidPhysicsPlugin)
             .add_plugins(AsteroidBorderPlugin)
+            .add_plugins(AsteroidControllerPlugin)
             .add_plugins(AsteroidPlayerPlugin)
             .add_plugins(AsteroidEnnemyPlugin {
                 ennemy_size: Vec2::splat(48.0),
