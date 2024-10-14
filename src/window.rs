@@ -1,6 +1,4 @@
-use bevy::{
-    window::{PresentMode, Window, WindowPlugin, WindowResolution, WindowTheme},
-};
+use bevy::window::{PresentMode, Window, WindowPlugin, WindowResolution, WindowTheme};
 
 pub fn asteroid_window_plugin() -> WindowPlugin {
     WindowPlugin {
