@@ -2,14 +2,21 @@ use bevy::input::gamepad::{GamepadConnection, GamepadEvent};
 use bevy::prelude::*;
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::marker::PhantomData;
 
-pub struct AsteroidInputPlugin;
+// TODO Make this generic to any custon enum of input action
+// TODO Make this support mouse if needed
+// TODO Make this support multiple mappings for one action if needed
 
-impl Plugin for AsteroidInputPlugin {
+pub struct AsteroidInputPlugin<A: ActionLike> {
+    a: PhantomData<A>
+}
+
+impl<A: ActionLike> Plugin for AsteroidInputPlugin<A> {
     fn build(&self, app: &mut App) {
         app.insert_resource(ConnectedGamepads::default())
             .add_systems(Update, gamepad_connections)
-            .add_systems(Update, input_update_maps.in_set(AsteroidInputSystemSet));
+            .add_systems(Update, input_update_maps::<A>.in_set(AsteroidInputSystemSet));
     }
 }
 
@@ -49,164 +56,60 @@ pub struct InputAxisMapping<T: Copy + Eq + Hash + Send + Sync + 'static> {
     side: AxisSide,
 }
 
-pub struct KeyboardInputMap {
-    map: HashMap<InputAction, InputButtonMapping<KeyCode>>,
-}
+pub trait ActionLike : Eq + Hash + Send + Sync + 'static {}
 
-impl Default for KeyboardInputMap {
-    fn default() -> Self {
-        Self {
-            map: HashMap::from([
-                (
-                    InputAction::TurnLeft,
-                    InputButtonMapping {
-                        button: KeyCode::ArrowLeft,
-                        mode: InputActionMode::Pressed,
-                    },
-                ),
-                (
-                    InputAction::TurnRight,
-                    InputButtonMapping {
-                        button: KeyCode::ArrowRight,
-                        mode: InputActionMode::Pressed,
-                    },
-                ),
-                (
-                    InputAction::Forward,
-                    InputButtonMapping {
-                        button: KeyCode::ArrowUp,
-                        mode: InputActionMode::Pressed,
-                    },
-                ),
-                (
-                    InputAction::Backward,
-                    InputButtonMapping {
-                        button: KeyCode::ArrowDown,
-                        mode: InputActionMode::Pressed,
-                    },
-                ),
-                (
-                    InputAction::Shoot,
-                    InputButtonMapping {
-                        button: KeyCode::Space,
-                        mode: InputActionMode::JustPressed,
-                    },
-                ),
-            ]),
-        }
-    }
-}
-
-pub struct GamepadInputMap {
-    button_map: HashMap<InputAction, InputButtonMapping<GamepadButtonType>>,
-    axis_map: HashMap<InputAction, InputAxisMapping<GamepadAxisType>>,
-}
-
-impl Default for GamepadInputMap {
-    fn default() -> Self {
-        Self {
-            button_map: HashMap::from([
-                (
-                    InputAction::Shoot,
-                    InputButtonMapping {
-                        button: GamepadButtonType::South,
-                        mode: InputActionMode::JustPressed,
-                    },
-                ),
-                (
-                    InputAction::Forward,
-                    InputButtonMapping {
-                        button: GamepadButtonType::RightTrigger2,
-                        mode: InputActionMode::Pressed,
-                    },
-                ),
-                (
-                    InputAction::Backward,
-                    InputButtonMapping {
-                        button: GamepadButtonType::LeftTrigger2,
-                        mode: InputActionMode::Pressed,
-                    },
-                )
-            ]),
-            axis_map: HashMap::from([
-                (
-                    InputAction::TurnLeft,
-                    InputAxisMapping {
-                        axis: GamepadAxisType::LeftStickX,
-                        side: AxisSide::Negative,
-                    },
-                ),
-                (
-                    InputAction::TurnRight,
-                    InputAxisMapping {
-                        axis: GamepadAxisType::LeftStickX,
-                        side: AxisSide::Positive,
-                    },
-                ),
-            ]),
-        }
-    }
-}
-
-pub struct InputMap {
-    keyboard_map: KeyboardInputMap,
-    gamepad_map: GamepadInputMap,
-    actions: HashMap<InputAction, bool>,
-}
-
-impl Default for InputMap {
-    fn default() -> Self {
-        Self {
-            keyboard_map: KeyboardInputMap::default(),
-            gamepad_map: GamepadInputMap::default(),
-            actions: HashMap::from([
-                (InputAction::TurnLeft, false),
-                (InputAction::TurnRight, false),
-                (InputAction::Forward, false),
-                (InputAction::Backward, false),
-                (InputAction::Shoot, false),
-            ]),
-        }
-    }
+#[derive(Default)]
+pub struct InputMap<A: ActionLike> {
+    keyboard_map: HashMap<InputAction, InputButtonMapping<KeyCode>>,
+    gamepad_button_map: HashMap<InputAction, InputButtonMapping<GamepadButtonType>>,
+    gamepad_axis_map: HashMap<InputAction, InputAxisMapping<GamepadAxisType>>,
+    actions: HashMap<A, bool>,
+    associated_gamepad: Option<Gamepad>,
 }
 
 #[derive(Component, Default)]
-pub struct InputController {
-    map: InputMap,
+pub struct InputController<A: ActionLike> {
+    input_map: InputMap<A>,
 }
 
-impl InputController {
-    pub fn input_action(&self, action: InputAction) -> bool {
-        match self.map.actions.get(&action) {
+impl<A: ActionLike> InputController<A> {
+    pub fn with_map(input_map: InputMap<A>) -> Self {
+        Self {
+            input_map
+        }
+    }
+
+    pub fn input_action(&self, action: A) -> bool {
+        match self.input_map.actions.get(&action) {
             Some(value) => *value,
             None => false,
         }
     }
 }
 
-fn input_update_maps(
+fn input_update_maps<A: ActionLike>(
     keys: Res<ButtonInput<KeyCode>>,
     buttons: Res<ButtonInput<GamepadButton>>,
     axis: Res<Axis<GamepadAxis>>,
     connected_gamepads: Res<ConnectedGamepads>,
-    mut query: Query<&mut InputController>,
+    mut query: Query<&mut InputController<A>>,
 ) {
     for mut controller in &mut query {
         // Reset everything
-        for action_value in controller.map.actions.values_mut() {
+        for action_value in controller.input_map.actions.values_mut() {
             *action_value = false;
         }
 
         let controller = &mut *controller;
 
         // Check keyboard
-        for (action, mapping) in &controller.map.keyboard_map.map {
+        for (action, mapping) in &controller.input_map.keyboard_map.map {
             let action_triggered = match mapping.mode {
                 InputActionMode::Pressed => keys.pressed(mapping.button),
                 InputActionMode::JustPressed => keys.just_pressed(mapping.button),
             };
 
-            let action_value = controller.map.actions.get_mut(action).unwrap();
+            let action_value = controller.input_map.actions.get_mut(action).unwrap();
             *action_value = *action_value || action_triggered;
         }
 
@@ -218,7 +121,7 @@ fn input_update_maps(
         // TODO Handle multiple gamepads for multiple players (by associating a gamepad/keyboard id to each controller)
         let controller_gamepad = connected_gamepads.gamepads[0];
 
-        for (action, mapping) in &controller.map.gamepad_map.button_map {
+        for (action, mapping) in &controller.input_map.gamepad_map.button_map {
             let gamepad_button = GamepadButton {
                 gamepad: controller_gamepad,
                 button_type: mapping.button,
@@ -229,11 +132,11 @@ fn input_update_maps(
                 InputActionMode::JustPressed => buttons.just_pressed(gamepad_button),
             };
 
-            let action_value = controller.map.actions.get_mut(action).unwrap();
+            let action_value = controller.input_map.actions.get_mut(action).unwrap();
             *action_value = *action_value || action_triggered;
         }
 
-        for (action, mapping) in &controller.map.gamepad_map.axis_map {
+        for (action, mapping) in &controller.input_map.gamepad_map.axis_map {
             let gamepad_axis = GamepadAxis {
                 gamepad: controller_gamepad,
                 axis_type: mapping.axis,
@@ -245,7 +148,7 @@ fn input_update_maps(
                     AxisSide::Negative => axis_value < -0.5,
                 };
 
-                let action_value = controller.map.actions.get_mut(action).unwrap();
+                let action_value = controller.input_map.actions.get_mut(action).unwrap();
                 *action_value = *action_value || action_triggered;
             }
         }
