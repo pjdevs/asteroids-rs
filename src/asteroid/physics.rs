@@ -33,9 +33,19 @@ impl Movement {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component)]
 pub struct BoxCollider {
+    pub enabled: bool,
     pub size: Vec2,
+}
+
+impl Default for BoxCollider {
+    fn default() -> Self {
+        Self {
+            enabled: true,
+            size: Vec2::ONE,
+        }
+    }
 }
 
 impl Default for Movement {

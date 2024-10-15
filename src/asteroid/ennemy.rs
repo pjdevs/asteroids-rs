@@ -69,6 +69,7 @@ impl AsteroidEnnemyBundle {
             },
             collider: BoxCollider {
                 size: ennemy_assets.ennemy_size,
+                ..Default::default()
             },
             ..Default::default()
         }

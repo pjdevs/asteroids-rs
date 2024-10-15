@@ -22,6 +22,9 @@ impl Plugin for AsteroidDebugPlugin {
                     .run_if(debug_is_active)
                     .run_if(not(any_with_component::<AsteroidPlayer>))
                     .run_if(input_just_pressed(KeyCode::KeyR)),
+                debug_toggle_invincible_system
+                    .run_if(any_with_component::<AsteroidPlayer>)
+                    .run_if(input_just_pressed(KeyCode::KeyI)),
                 degug_gizmos_system.run_if(debug_is_active),
             ),
         );
@@ -39,6 +42,11 @@ fn debug_is_active(config: Res<GameConfig>) -> bool {
 
 fn switch_debug_system(mut config: ResMut<GameConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
+}
+
+fn debug_toggle_invincible_system(mut query: Query<&mut BoxCollider, With<AsteroidPlayer>>) {
+    let mut collider = query.single_mut();
+    collider.enabled = !collider.enabled;
 }
 
 fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &BoxCollider)>) {

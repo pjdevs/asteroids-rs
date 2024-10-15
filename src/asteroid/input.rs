@@ -16,17 +16,19 @@ impl Plugin for AsteroidInputPlugin {
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub struct AsteroidInputSystemSet;
 
+#[derive(Debug)]
 pub enum InputActionMode {
     Pressed,
     JustPressed,
 }
 
+#[derive(PartialEq, Debug)]
 pub enum AxisSide {
     Positive,
     Negative,
 }
 
-#[derive(PartialEq, Eq, Hash, Clone, Copy)]
+#[derive(PartialEq, Eq, Hash, Clone, Copy, Debug)]
 pub enum InputAction {
     TurnLeft,
     TurnRight,
@@ -35,11 +37,13 @@ pub enum InputAction {
     Shoot,
 }
 
+#[derive(Debug)]
 pub struct InputButtonMapping<T: Copy + Eq + Hash + Send + Sync + 'static> {
     button: T,
     mode: InputActionMode,
 }
 
+#[derive(Debug)]
 pub struct InputAxisMapping<T: Copy + Eq + Hash + Send + Sync + 'static> {
     axis: T,
     side: AxisSide,
@@ -101,13 +105,29 @@ pub struct GamepadInputMap {
 impl Default for GamepadInputMap {
     fn default() -> Self {
         Self {
-            button_map: HashMap::from([(
-                InputAction::Shoot,
-                InputButtonMapping {
-                    button: GamepadButtonType::South,
-                    mode: InputActionMode::JustPressed,
-                },
-            )]),
+            button_map: HashMap::from([
+                (
+                    InputAction::Shoot,
+                    InputButtonMapping {
+                        button: GamepadButtonType::South,
+                        mode: InputActionMode::JustPressed,
+                    },
+                ),
+                (
+                    InputAction::Forward,
+                    InputButtonMapping {
+                        button: GamepadButtonType::RightTrigger2,
+                        mode: InputActionMode::Pressed,
+                    },
+                ),
+                (
+                    InputAction::Backward,
+                    InputButtonMapping {
+                        button: GamepadButtonType::LeftTrigger2,
+                        mode: InputActionMode::Pressed,
+                    },
+                )
+            ]),
             axis_map: HashMap::from([
                 (
                     InputAction::TurnLeft,
@@ -121,20 +141,6 @@ impl Default for GamepadInputMap {
                     InputAxisMapping {
                         axis: GamepadAxisType::LeftStickX,
                         side: AxisSide::Positive,
-                    },
-                ),
-                (
-                    InputAction::Forward,
-                    InputAxisMapping {
-                        axis: GamepadAxisType::LeftStickY,
-                        side: AxisSide::Positive,
-                    },
-                ),
-                (
-                    InputAction::Backward,
-                    InputAxisMapping {
-                        axis: GamepadAxisType::LeftStickY,
-                        side: AxisSide::Negative,
                     },
                 ),
             ]),
@@ -209,10 +215,12 @@ fn input_update_maps(
             return;
         }
 
-        // TODO Handle multiple gamepads for multiple players
+        // TODO Handle multiple gamepads for multiple players (by associating a gamepad/keyboard id to each controller)
+        let controller_gamepad = connected_gamepads.gamepads[0];
+
         for (action, mapping) in &controller.map.gamepad_map.button_map {
             let gamepad_button = GamepadButton {
-                gamepad: connected_gamepads.gamepads[0],
+                gamepad: controller_gamepad,
                 button_type: mapping.button,
             };
 
@@ -227,14 +235,14 @@ fn input_update_maps(
 
         for (action, mapping) in &controller.map.gamepad_map.axis_map {
             let gamepad_axis = GamepadAxis {
-                gamepad: connected_gamepads.gamepads[0],
+                gamepad: controller_gamepad,
                 axis_type: mapping.axis,
             };
 
             if let Some(axis_value) = axis.get(gamepad_axis) {
                 let action_triggered = match mapping.side {
-                    AxisSide::Positive => axis_value > 0.01,
-                    AxisSide::Negative => axis_value < 0.01,
+                    AxisSide::Positive => axis_value > 0.5,
+                    AxisSide::Negative => axis_value < -0.5,
                 };
 
                 let action_value = controller.map.actions.get_mut(action).unwrap();

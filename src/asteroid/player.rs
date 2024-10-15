@@ -49,6 +49,7 @@ impl AsteroidPlayerBundle {
             },
             collider: BoxCollider {
                 size: Vec2::splat(PLAYER_SIZE),
+                ..Default::default()
             },
             speed: Speed {
                 movement_speed: 750.0,
@@ -85,6 +86,7 @@ fn player_shoot_system(
                 },
                 collider: BoxCollider {
                     size: projectile_assets.projectile_size,
+                    ..Default::default()
                 },
                 ..Default::default()
             });

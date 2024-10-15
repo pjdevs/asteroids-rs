@@ -43,6 +43,11 @@ pub fn gameplayer_player_ennemy_collision_system(
     ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnnemy>>,
 ) {
     let (player, player_movement, player_collider) = player_query.single();
+
+    if !player_collider.enabled {
+        return;
+    }
+
     let player_aabb = aabb_from(player_movement, player_collider);
 
     // TODO Implement this with quadtrees directly in physcis plugin
