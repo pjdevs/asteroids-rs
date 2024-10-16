@@ -1,3 +1,4 @@
+mod actions;
 mod border;
 mod controller;
 mod debug;
@@ -8,6 +9,7 @@ mod physics;
 mod player;
 mod projectile;
 
+use actions::AsteroidAction;
 use bevy::{app::Plugin, math::Vec2};
 use border::AsteroidBorderPlugin;
 use controller::AsteroidControllerPlugin;
@@ -23,7 +25,7 @@ pub struct AsteroidPlugin;
 
 impl Plugin for AsteroidPlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins(AsteroidInputPlugin)
+        app.add_plugins(AsteroidInputPlugin::<AsteroidAction>::default())
             .add_plugins(AsteroidPhysicsPlugin)
             .add_plugins(AsteroidBorderPlugin)
             .add_plugins(AsteroidControllerPlugin)

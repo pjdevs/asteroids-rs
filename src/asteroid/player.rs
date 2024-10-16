@@ -1,11 +1,10 @@
 use bevy::prelude::*;
 
-use crate::asteroid::input::InputAction;
-
 use super::{
+    actions::AsteroidAction,
     border::TunnelBorder,
     controller::Speed,
-    input::InputController,
+    input::{AxisSide, ButtonMode, InputController, InputMap, InputMapping},
     physics::{BoxCollider, Movement},
     projectile::{AsteroidProjectileAssets, AsteroidProjectileBundle},
 };
@@ -32,7 +31,7 @@ pub struct AsteroidPlayerBundle {
     collider: BoxCollider,
     border: TunnelBorder,
     speed: Speed,
-    controller: InputController,
+    controller: InputController<AsteroidAction>,
 }
 
 impl AsteroidPlayerBundle {
@@ -55,6 +54,7 @@ impl AsteroidPlayerBundle {
                 movement_speed: 750.0,
                 rotation_speed: 4.0,
             },
+            controller: InputController::with_map(player_input_map(0)),
             ..Default::default()
         }
     }
@@ -67,12 +67,12 @@ pub fn spawn_player_system(mut commands: Commands, asset_server: Res<AssetServer
 fn player_shoot_system(
     mut commands: Commands,
     projectile_assets: Res<AsteroidProjectileAssets>,
-    player_query: Query<(&InputController, &Movement), With<AsteroidPlayer>>,
+    player_query: Query<(&InputController<AsteroidAction>, &Movement), With<AsteroidPlayer>>,
 ) {
     const PROJECTILE_SPEED: f32 = 600.0;
 
     for (controller, player_movement) in &player_query {
-        if controller.input_action(InputAction::Shoot) {
+        if controller.input_action(AsteroidAction::Shoot) {
             commands.spawn(AsteroidProjectileBundle {
                 sprite: SpriteBundle {
                     texture: projectile_assets.texture.clone(),
@@ -92,4 +92,57 @@ fn player_shoot_system(
             });
         }
     }
+}
+
+fn player_input_map(player_id: usize) -> InputMap<AsteroidAction> {
+    InputMap::default()
+        .with_mapping(
+            AsteroidAction::Forward,
+            InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::Forward,
+            InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::Backward,
+            InputMapping::key(KeyCode::ArrowDown, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::TurnLeft,
+            InputMapping::key(KeyCode::ArrowLeft, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::TurnRight,
+            InputMapping::key(KeyCode::ArrowRight, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::Shoot,
+            InputMapping::key(KeyCode::Space, ButtonMode::JustPressed),
+        )
+        .with_mapping(
+            AsteroidAction::Forward,
+            InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::Forward,
+            InputMapping::button(GamepadButtonType::RightTrigger2, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::Backward,
+            InputMapping::button(GamepadButtonType::LeftTrigger2, ButtonMode::Pressed),
+        )
+        .with_mapping(
+            AsteroidAction::TurnLeft,
+            InputMapping::axis(GamepadAxisType::LeftStickX, AxisSide::Negative),
+        )
+        .with_mapping(
+            AsteroidAction::TurnRight,
+            InputMapping::axis(GamepadAxisType::LeftStickX, AxisSide::Positive),
+        )
+        .with_mapping(
+            AsteroidAction::Shoot,
+            InputMapping::button(GamepadButtonType::South, ButtonMode::JustPressed),
+        )
+        .with_gamepad(Gamepad { id: player_id })
 }
