@@ -74,16 +74,15 @@ impl InputMapping {
         connected_gamepads: &Gamepads,
         associated_gamepad: Option<Gamepad>,
     ) -> bool {
-        let use_gamepad = associated_gamepad.is_some();
+        let use_gamepad =
+            associated_gamepad.is_some_and(|gamepad| connected_gamepads.contains(gamepad));
 
         match self {
             InputMapping::KeyboardButton(keyboard_mapping) => match keyboard_mapping.mode {
                 ButtonMode::Pressed => keys.pressed(keyboard_mapping.button),
                 ButtonMode::JustPressed => keys.just_pressed(keyboard_mapping.button),
             },
-            InputMapping::GamepadButton(gamepad_mapping)
-                if use_gamepad && connected_gamepads.contains(associated_gamepad.unwrap()) =>
-            {
+            InputMapping::GamepadButton(gamepad_mapping) if use_gamepad => {
                 let gamepad_button = GamepadButton {
                     gamepad: associated_gamepad.unwrap(),
                     button_type: gamepad_mapping.button,
@@ -94,9 +93,7 @@ impl InputMapping {
                     ButtonMode::JustPressed => buttons.just_pressed(gamepad_button),
                 }
             }
-            InputMapping::GamepadAxis(gamepad_mapping)
-                if use_gamepad && connected_gamepads.contains(associated_gamepad.unwrap()) =>
-            {
+            InputMapping::GamepadAxis(gamepad_mapping) if use_gamepad => {
                 let gamepad_axis = GamepadAxis {
                     gamepad: associated_gamepad.unwrap(),
                     axis_type: gamepad_mapping.axis,
