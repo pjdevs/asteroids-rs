@@ -18,14 +18,17 @@ impl Plugin for AsteroidPlayerPlugin {
         app.add_systems(Startup, spawn_first_player_system)
             .add_systems(
                 Update,
-                spawn_second_player_system.run_if(on_gamepad_connection(0)),
+                spawn_second_player_system
+                    .run_if(on_gamepad_connection(0).and_then(not(player_exists(2)))),
             )
             .add_systems(Update, player_shoot_system);
     }
 }
 
 #[derive(Component, Default)]
-pub struct AsteroidPlayer;
+pub struct AsteroidPlayer {
+    player_id: u64,
+}
 
 #[derive(Bundle, Default)]
 pub struct AsteroidPlayerBundle {
@@ -69,6 +72,11 @@ impl AsteroidPlayerBundle {
         self
     }
 
+    pub fn with_id(mut self, player_id: u64) -> Self {
+        self.player.player_id = player_id;
+        self
+    }
+
     pub fn preset_ship_fast() -> Self {
         AsteroidPlayerBundle::default()
             .with_size(Vec2::splat(PLAYER_SIZE))
@@ -86,9 +94,14 @@ impl AsteroidPlayerBundle {
     }
 }
 
+pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
+    move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
+}
+
 pub fn spawn_first_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_fast()
+            .with_id(1)
             .with_texture(asset_server.load("sprites/ship_blue.png"))
             .with_input_map(InputMap::default().with_keyboard_mappings()),
     );
@@ -97,6 +110,7 @@ pub fn spawn_first_player_system(mut commands: Commands, asset_server: Res<Asset
 pub fn spawn_second_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_slow()
+            .with_id(2)
             .with_texture(asset_server.load("sprites/ship_red.png"))
             .with_input_map(InputMap::default().with_gamepad_mappings(0)),
     );

@@ -7,7 +7,7 @@ use bevy::{
 
 use super::{
     physics::{aabb_from, BoxCollider, Movement},
-    player::{spawn_first_player_system, AsteroidPlayer},
+    player::{player_exists, spawn_first_player_system, spawn_second_player_system, AsteroidPlayer},
 };
 
 pub struct AsteroidDebugPlugin;
@@ -18,13 +18,21 @@ impl Plugin for AsteroidDebugPlugin {
             Update,
             (
                 switch_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
-                spawn_first_player_system
-                    .run_if(debug_is_active)
-                    .run_if(not(any_with_component::<AsteroidPlayer>))
-                    .run_if(input_just_pressed(KeyCode::KeyR)),
-                debug_toggle_invincible_system
-                    .run_if(any_with_component::<AsteroidPlayer>)
-                    .run_if(input_just_pressed(KeyCode::KeyI)),
+                spawn_first_player_system.run_if(
+                    debug_is_active
+                        .and_then(not(player_exists(1)))
+                        .and_then(input_just_pressed(KeyCode::Digit1)),
+                ),
+                spawn_second_player_system.run_if(
+                    debug_is_active
+                        .and_then(not(player_exists(2)))
+                        .and_then(input_just_pressed(KeyCode::Digit2)),
+                ),
+                debug_toggle_invincible_system.run_if(
+                    debug_is_active
+                        .and_then(any_with_component::<AsteroidPlayer>)
+                        .and_then(input_just_pressed(KeyCode::KeyI)),
+                ),
                 degug_gizmos_system.run_if(debug_is_active),
             ),
         );
@@ -45,8 +53,9 @@ fn switch_debug_system(mut config: ResMut<GameConfig>) {
 }
 
 fn debug_toggle_invincible_system(mut query: Query<&mut BoxCollider, With<AsteroidPlayer>>) {
-    let mut collider = query.single_mut();
-    collider.enabled = !collider.enabled;
+    for mut collider in &mut query {
+        collider.enabled = !collider.enabled;
+    }
 }
 
 fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &BoxCollider)>) {

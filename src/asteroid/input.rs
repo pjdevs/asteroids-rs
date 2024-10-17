@@ -224,12 +224,12 @@ pub fn on_gamepad_connection(
     }
 }
 
-pub fn on_gamepad_disconnection(
-    gamepad_id: usize,
-) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
-    move |mut reader: EventReader<GamepadConnectionEvent>| {
-        reader
-            .read()
-            .any(|e| e.gamepad.id == gamepad_id && e.disconnected())
-    }
-}
+// pub fn on_gamepad_disconnection(
+//     gamepad_id: usize,
+// ) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
+//     move |mut reader: EventReader<GamepadConnectionEvent>| {
+//         reader
+//             .read()
+//             .any(|e| e.gamepad.id == gamepad_id && e.disconnected())
+//     }
+// }
