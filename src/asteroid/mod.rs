@@ -34,7 +34,7 @@ impl Plugin for AsteroidPlugin {
             .add_plugins(AsteroidPlayerPlugin)
             .add_plugins(AsteroidEnnemyPlugin {
                 ennemy_size: Vec2::splat(48.0),
-                ennemy_spawn_delay_seconds: 3,
+                ennemy_spawn_delay_seconds: 1,
             })
             .add_plugins(AsteroidProjectilePlugin {
                 projectile_size: Vec2::new(16.0, 24.0),

@@ -29,7 +29,7 @@ fn load_ennemy_assets_system(ennemy_size: Vec2) -> impl Fn(Commands, Res<AssetSe
     move |mut commands: Commands, asset_server: Res<AssetServer>| {
         commands.insert_resource(AsteroidEnnemyAssets {
             ennemy_size,
-            texture: asset_server.load("sprites/ball.png"),
+            texture: asset_server.load("sprites/asteroid.png"),
         });
     }
 }
