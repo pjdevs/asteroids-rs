@@ -8,6 +8,7 @@ mod input;
 mod physics;
 mod player;
 mod projectile;
+mod ui;
 
 use actions::AsteroidAction;
 use bevy::{app::Plugin, math::Vec2};
@@ -20,6 +21,7 @@ use input::AsteroidInputPlugin;
 use physics::AsteroidPhysicsPlugin;
 use player::AsteroidPlayerPlugin;
 use projectile::AsteroidProjectilePlugin;
+use ui::AsteroidUiPlugin;
 
 pub struct AsteroidPlugin;
 
@@ -38,6 +40,7 @@ impl Plugin for AsteroidPlugin {
                 projectile_size: Vec2::new(16.0, 24.0),
             })
             .add_plugins(AsteroidDebugPlugin)
-            .add_plugins(AsteroidGameplayPlugin);
+            .add_plugins(AsteroidGameplayPlugin)
+            .add_plugins(AsteroidUiPlugin);
     }
 }

@@ -13,7 +13,9 @@ pub struct AsteroidGameplayPlugin;
 
 impl Plugin for AsteroidGameplayPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<CollisionEvent>()
+        app
+            .init_resource::<Score>()
+            .add_event::<CollisionEvent>()
             .add_systems(Startup, startup_system)
             .add_systems(
                 Update,
@@ -29,6 +31,16 @@ impl Plugin for AsteroidGameplayPlugin {
 
 fn startup_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+}
+
+#[derive(Resource, Default)]
+pub struct Score {
+    score: u64,
+}
+
+impl Score {
+    #[inline]
+    pub fn get_score(&self) -> u64 { self.score }
 }
 
 #[derive(Event)]
@@ -105,6 +117,7 @@ pub fn gameplaye_projectile_ennemy_collision_system(
 fn gameplay_player_ennemy_destruction_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
+    mut score: ResMut<Score>,
 ) {
     for (event, _) in collision_event.par_read() {
         if let Some(mut first) = commands.get_entity(event.first_entity) {
@@ -113,6 +126,7 @@ fn gameplay_player_ennemy_destruction_system(
 
         if let Some(mut second) = commands.get_entity(event.seconds_entity) {
             second.despawn();
+            score.score += 10;
         }
     }
 }

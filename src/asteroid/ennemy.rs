@@ -13,7 +13,8 @@ pub struct AsteroidEnnemyPlugin {
 
 impl Plugin for AsteroidEnnemyPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<EnnemySpawnedEvent>()
+        app
+            // .add_event::<EnnemySpawnedEvent>()
             .add_systems(Startup, load_ennemy_assets_system(self.ennemy_size))
             .add_systems(
                 Update,
@@ -39,8 +40,8 @@ pub struct AsteroidEnnemyAssets {
     pub texture: Handle<Image>,
 }
 
-#[derive(Event, Default)]
-pub struct EnnemySpawnedEvent(Vec2);
+// #[derive(Event, Default)]
+// pub struct EnnemySpawnedEvent(Vec2);
 
 #[derive(Component, Default)]
 pub struct AsteroidEnnemy;
@@ -82,7 +83,7 @@ pub fn spawn_ennemies_system(
     mut commands: Commands,
     ennemy_assets: Res<AsteroidEnnemyAssets>,
     camera_query: Query<&Camera>,
-    mut spawn_event: EventWriter<EnnemySpawnedEvent>,
+    // mut spawn_event: EventWriter<EnnemySpawnedEvent>,
 ) {
     let camera = camera_query.single();
     let random_angle = rand::random::<f32>() * std::f32::consts::PI * 1.99 + 0.1;
@@ -101,5 +102,5 @@ pub fn spawn_ennemies_system(
         &random_velocity,
     ));
 
-    spawn_event.send(EnnemySpawnedEvent(random_position));
+    // spawn_event.send(EnnemySpawnedEvent(random_position));
 }
