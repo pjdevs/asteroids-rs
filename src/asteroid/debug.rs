@@ -7,7 +7,7 @@ use bevy::{
 
 use super::{
     physics::{aabb_from, BoxCollider, Movement},
-    player::{spawn_player_system, AsteroidPlayer},
+    player::{spawn_first_player_system, AsteroidPlayer},
 };
 
 pub struct AsteroidDebugPlugin;
@@ -18,7 +18,7 @@ impl Plugin for AsteroidDebugPlugin {
             Update,
             (
                 switch_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
-                spawn_player_system
+                spawn_first_player_system
                     .run_if(debug_is_active)
                     .run_if(not(any_with_component::<AsteroidPlayer>))
                     .run_if(input_just_pressed(KeyCode::KeyR)),

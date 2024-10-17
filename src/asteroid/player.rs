@@ -4,7 +4,7 @@ use super::{
     actions::AsteroidAction,
     border::TunnelBorder,
     controller::Speed,
-    input::{AxisSide, ButtonMode, InputController, InputMap, InputMapping},
+    input::{on_gamepad_connection, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
     physics::{BoxCollider, Movement},
     projectile::{AsteroidProjectileAssets, AsteroidProjectileBundle},
 };
@@ -15,7 +15,11 @@ pub struct AsteroidPlayerPlugin;
 
 impl Plugin for AsteroidPlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_player_system)
+        app.add_systems(Startup, spawn_first_player_system)
+            .add_systems(
+                Update,
+                spawn_second_player_system.run_if(on_gamepad_connection(0)),
+            )
             .add_systems(Update, player_shoot_system);
     }
 }
@@ -35,33 +39,67 @@ pub struct AsteroidPlayerBundle {
 }
 
 impl AsteroidPlayerBundle {
-    pub fn from(asset_server: &AssetServer) -> Self {
-        Self {
-            player: AsteroidPlayer,
-            sprite: SpriteBundle {
-                texture: asset_server.load("sprites/ship.png"),
-                ..Default::default()
-            },
-            movement: Movement {
-                friction: 0.03,
-                ..Default::default()
-            },
-            collider: BoxCollider {
-                size: Vec2::splat(PLAYER_SIZE),
-                ..Default::default()
-            },
-            speed: Speed {
-                movement_speed: 750.0,
-                rotation_speed: 4.0,
-            },
-            controller: InputController::with_map(player_input_map(0)),
-            ..Default::default()
-        }
+    pub fn with_texture(mut self, texture: Handle<Image>) -> Self {
+        self.sprite.texture = texture;
+        self
+    }
+
+    pub fn with_size(mut self, size: Vec2) -> Self {
+        self.collider.size = size;
+        self
+    }
+
+    pub fn with_friction(mut self, friction: f32) -> Self {
+        self.movement.friction = friction;
+        self
+    }
+
+    pub fn with_movement_speed(mut self, movement_speed: f32) -> Self {
+        self.speed.movement_speed = movement_speed;
+        self
+    }
+
+    pub fn with_rotation_speed(mut self, rotation_speed: f32) -> Self {
+        self.speed.rotation_speed = rotation_speed;
+        self
+    }
+
+    pub fn with_input_map(mut self, input_map: InputMap<AsteroidAction>) -> Self {
+        self.controller = InputController::from_map(input_map);
+        self
+    }
+
+    pub fn preset_ship_fast() -> Self {
+        AsteroidPlayerBundle::default()
+            .with_size(Vec2::splat(PLAYER_SIZE))
+            .with_friction(0.03)
+            .with_movement_speed(750.0)
+            .with_rotation_speed(5.0)
+    }
+
+    pub fn preset_ship_slow() -> Self {
+        AsteroidPlayerBundle::default()
+            .with_size(Vec2::splat(PLAYER_SIZE))
+            .with_friction(0.05)
+            .with_movement_speed(500.0)
+            .with_rotation_speed(4.0)
     }
 }
 
-pub fn spawn_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
-    commands.spawn(AsteroidPlayerBundle::from(&asset_server));
+pub fn spawn_first_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(
+        AsteroidPlayerBundle::preset_ship_fast()
+            .with_texture(asset_server.load("sprites/ship_blue.png"))
+            .with_input_map(InputMap::default().with_keyboard_mappings()),
+    );
+}
+
+pub fn spawn_second_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+    commands.spawn(
+        AsteroidPlayerBundle::preset_ship_slow()
+            .with_texture(asset_server.load("sprites/ship_red.png"))
+            .with_input_map(InputMap::default().with_gamepad_mappings(0)),
+    );
 }
 
 fn player_shoot_system(
@@ -94,9 +132,9 @@ fn player_shoot_system(
     }
 }
 
-fn player_input_map(player_id: usize) -> InputMap<AsteroidAction> {
-    InputMap::default()
-        .with_mapping(
+impl InputMap<AsteroidAction> {
+    fn with_keyboard_mappings(self) -> Self {
+        self.with_mapping(
             AsteroidAction::Forward,
             InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
         )
@@ -124,7 +162,10 @@ fn player_input_map(player_id: usize) -> InputMap<AsteroidAction> {
             AsteroidAction::Forward,
             InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
         )
-        .with_mapping(
+    }
+
+    fn with_gamepad_mappings(self, gamepad_id: usize) -> Self {
+        self.with_mapping(
             AsteroidAction::Forward,
             InputMapping::button(GamepadButtonType::RightTrigger2, ButtonMode::Pressed),
         )
@@ -144,5 +185,6 @@ fn player_input_map(player_id: usize) -> InputMap<AsteroidAction> {
             AsteroidAction::Shoot,
             InputMapping::button(GamepadButtonType::South, ButtonMode::JustPressed),
         )
-        .with_gamepad(Gamepad { id: player_id })
+        .with_gamepad(Gamepad { id: gamepad_id })
+    }
 }

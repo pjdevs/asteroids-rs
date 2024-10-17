@@ -13,8 +13,7 @@ pub struct AsteroidGameplayPlugin;
 
 impl Plugin for AsteroidGameplayPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .init_resource::<Score>()
+        app.init_resource::<Score>()
             .add_event::<CollisionEvent>()
             .add_systems(Startup, startup_system)
             .add_systems(
@@ -40,7 +39,9 @@ pub struct Score {
 
 impl Score {
     #[inline]
-    pub fn get_score(&self) -> u64 { self.score }
+    pub fn get_score(&self) -> u64 {
+        self.score
+    }
 }
 
 #[derive(Event)]

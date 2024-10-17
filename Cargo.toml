@@ -12,6 +12,6 @@ opt-level = 1
 opt-level = 3
 
 [dependencies]
-bevy = {version = "0.14.2", default-features = false, features = ["bevy_asset", "bevy_audio", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_render", "bevy_sprite", "bevy_state", "bevy_text", "bevy_ui", "bevy_winit", "default_font", "multi_threaded", "png", "sysinfo_plugin"]} #, features = ["dynamic_linking"] }
+bevy = {version = "0.14.2", default-features = false, features = ["bevy_asset", "bevy_audio", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_render", "bevy_sprite", "bevy_state", "bevy_text", "bevy_ui", "bevy_winit", "default_font", "multi_threaded", "png", "sysinfo_plugin"]} #, "dynamic_linking"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 rand = "0.8"

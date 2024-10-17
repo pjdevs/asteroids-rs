@@ -1,3 +1,4 @@
+use bevy::input::gamepad::GamepadConnectionEvent;
 use bevy::prelude::*;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -181,7 +182,7 @@ pub struct InputController<A: ActionLike> {
 }
 
 impl<A: ActionLike> InputController<A> {
-    pub fn with_map(input_map: InputMap<A>) -> Self {
+    pub fn from_map(input_map: InputMap<A>) -> Self {
         Self { input_map }
     }
 
@@ -210,5 +211,25 @@ fn input_update_maps<A: ActionLike>(
 ) {
     for mut controller in &mut query {
         controller.update(&keys, &buttons, &axis, &connected_gamepads);
+    }
+}
+
+pub fn on_gamepad_connection(
+    gamepad_id: usize,
+) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
+    move |mut reader: EventReader<GamepadConnectionEvent>| {
+        reader
+            .read()
+            .any(|e| e.gamepad.id == gamepad_id && e.connected())
+    }
+}
+
+pub fn on_gamepad_disconnection(
+    gamepad_id: usize,
+) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
+    move |mut reader: EventReader<GamepadConnectionEvent>| {
+        reader
+            .read()
+            .any(|e| e.gamepad.id == gamepad_id && e.disconnected())
     }
 }

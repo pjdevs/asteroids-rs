@@ -6,8 +6,7 @@ pub struct AsteroidUiPlugin;
 
 impl Plugin for AsteroidUiPlugin {
     fn build(&self, app: &mut App) {
-        app
-            .add_systems(Startup, ui_setup_system)
+        app.add_systems(Startup, ui_setup_system)
             .add_systems(Update, ui_score_system);
     }
 }
@@ -28,16 +27,15 @@ fn ui_setup_system(mut commands: Commands) {
         TextStyle {
             font_size: 24.0,
             color: Color::WHITE,
-            ..default()
+            ..Default::default()
         },
-    ) // Set the alignment of the Text
+    )
     .with_text_justify(JustifyText::Center)
-    // Set the style of the TextBundle itself.
     .with_style(Style {
         position_type: PositionType::Absolute,
         bottom: Val::Px(5.0),
         right: Val::Px(5.0),
-        ..default()
+        ..Default::default()
     });
 
     commands.spawn((text, score_text));
