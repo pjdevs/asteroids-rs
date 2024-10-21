@@ -5,7 +5,6 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 // TODO Make this support mouse if needed
-// TODO Make this support multiple mappings for one action if needed
 
 #[derive(Default)]
 pub struct AsteroidInputPlugin<A: ActionLike> {
@@ -16,13 +15,15 @@ impl<A: ActionLike> Plugin for AsteroidInputPlugin<A> {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            input_update_maps::<A>.in_set(AsteroidInputSystemSet),
+            input_update_maps::<A>.in_set(AsteroidInputSystem::UpdateInput),
         );
     }
 }
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub struct AsteroidInputSystemSet;
+pub enum AsteroidInputSystem {
+    UpdateInput,
+}
 
 #[derive(Debug)]
 pub enum ButtonMode {

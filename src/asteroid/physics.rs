@@ -8,12 +8,23 @@ pub struct AsteroidPhysicsPlugin;
 
 impl Plugin for AsteroidPhysicsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(FixedUpdate, physics_fixed_movement_system)
-            .add_systems(
-                PostUpdate,
-                physics_transform_extrapolate_system.before(TransformSystem::TransformPropagate),
-            );
+        app.add_systems(
+            FixedUpdate,
+            physics_fixed_movement_system.in_set(AsteroidPhysicsSystem::FixedUpdateMovement),
+        )
+        .add_systems(
+            PostUpdate,
+            physics_transform_extrapolate_system
+                .before(TransformSystem::TransformPropagate)
+                .in_set(AsteroidPhysicsSystem::PostUpdateExtrapolateTransform),
+        );
     }
+}
+
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum AsteroidPhysicsSystem {
+    FixedUpdateMovement,
+    PostUpdateExtrapolateTransform,
 }
 
 #[derive(Component)]

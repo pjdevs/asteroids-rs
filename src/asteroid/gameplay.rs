@@ -1,7 +1,7 @@
 use bevy::{math::bounding::IntersectsVolume, prelude::*};
 
 use super::{
-    ennemy::AsteroidEnnemy,
+    enemy::AsteroidEnemy,
     physics::{aabb_from, BoxCollider, Movement},
     player::AsteroidPlayer,
     projectile::AsteroidProjectile,
@@ -15,7 +15,6 @@ impl Plugin for AsteroidGameplayPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Score>()
             .add_event::<CollisionEvent>()
-            .add_systems(Startup, startup_system)
             .add_systems(
                 Update,
                 (
@@ -27,10 +26,6 @@ impl Plugin for AsteroidGameplayPlugin {
                 ),
             );
     }
-}
-
-fn startup_system(mut commands: Commands) {
-    commands.spawn(Camera2dBundle::default());
 }
 
 #[derive(Resource, Default)]
@@ -54,7 +49,7 @@ pub struct CollisionEvent {
 pub fn gameplay_player_ennemy_collision_system(
     mut collision_event: EventWriter<CollisionEvent>,
     player_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidPlayer>>,
-    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnnemy>>,
+    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnemy>>,
 ) {
     for (player, player_movement, player_collider) in &player_query {
         if !player_collider.enabled {
@@ -91,7 +86,7 @@ pub fn gameplay_player_ennemy_collision_system(
 pub fn gameplay_projectile_ennemy_collision_system(
     mut collision_event: EventWriter<CollisionEvent>,
     projectile_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidProjectile>>,
-    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnnemy>>,
+    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnemy>>,
 ) {
     // TODO Implement this with quadtrees directly in physcis plugin
     // TODO Investigate parallel iteration to trigger event

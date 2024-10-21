@@ -1,0 +1,14 @@
+﻿({
+    "enemy.texture": File (
+        path: "sprites/asteroid.png",
+    ),
+    "player.one_texture": File (
+        path: "sprites/ship_blue.png",
+    ),
+    "player.two_texture": File (
+        path: "sprites/ship_red.png",
+    ),
+    "player.projectile.texture": File (
+        path: "sprites/laser.png",
+    ),
+})

@@ -1,33 +1,56 @@
-use bevy::prelude::*;
-
 use super::{
     actions::AsteroidAction,
     border::TunnelBorder,
-    controller::Speed,
-    input::{on_gamepad_connection, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
+    input::{AxisSide, ButtonMode, InputController, InputMap, InputMapping},
     physics::{BoxCollider, Movement},
-    projectile::{AsteroidProjectileAssets, AsteroidProjectileBundle},
+    projectile::AsteroidProjectileBundle,
 };
+use crate::asteroid::assets::SizeAsset;
+use bevy::prelude::*;
+use bevy_asset_loader::prelude::AssetCollection;
+// TODO Make player assets
+// TODO Refactor all behaviors in components (Ship, Shoot, ..)
 
 const PLAYER_SIZE: f32 = 48.0;
+
+// Plugin
 
 pub struct AsteroidPlayerPlugin;
 
 impl Plugin for AsteroidPlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Startup, spawn_first_player_system)
-            .add_systems(
-                Update,
-                spawn_second_player_system
-                    .run_if(on_gamepad_connection(0).and_then(not(player_exists(2)))),
-            )
-            .add_systems(Update, player_shoot_system);
+        app.add_systems(
+            Update,
+            (player_move_system, player_shoot_system)
+                .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
+        );
     }
 }
+
+// Assets
+
+#[derive(Resource, AssetCollection)]
+pub struct AsteroidPlayerAssets {
+    #[asset(key = "player.one_texture")]
+    pub player_one_texture: Handle<Image>,
+
+    #[asset(key = "player.two_texture")]
+    pub player_two_texture: Handle<Image>,
+
+    #[asset(key = "player.projectile.texture")]
+    pub projectile_texture: Handle<Image>,
+
+    #[asset(key = "player.size")]
+    pub player_size: Handle<SizeAsset>,
+}
+
+// Components
 
 #[derive(Component, Default)]
 pub struct AsteroidPlayer {
     player_id: u64,
+    movement_speed: f32,
+    rotation_speed: f32,
 }
 
 #[derive(Bundle, Default)]
@@ -37,7 +60,6 @@ pub struct AsteroidPlayerBundle {
     movement: Movement,
     collider: BoxCollider,
     border: TunnelBorder,
-    speed: Speed,
     controller: InputController<AsteroidAction>,
 }
 
@@ -58,12 +80,12 @@ impl AsteroidPlayerBundle {
     }
 
     pub fn with_movement_speed(mut self, movement_speed: f32) -> Self {
-        self.speed.movement_speed = movement_speed;
+        self.player.movement_speed = movement_speed;
         self
     }
 
     pub fn with_rotation_speed(mut self, rotation_speed: f32) -> Self {
-        self.speed.rotation_speed = rotation_speed;
+        self.player.rotation_speed = rotation_speed;
         self
     }
 
@@ -79,7 +101,6 @@ impl AsteroidPlayerBundle {
 
     pub fn preset_ship_fast() -> Self {
         AsteroidPlayerBundle::default()
-            .with_size(Vec2::splat(PLAYER_SIZE))
             .with_friction(0.03)
             .with_movement_speed(750.0)
             .with_rotation_speed(5.0)
@@ -87,21 +108,30 @@ impl AsteroidPlayerBundle {
 
     pub fn preset_ship_slow() -> Self {
         AsteroidPlayerBundle::default()
-            .with_size(Vec2::splat(PLAYER_SIZE))
             .with_friction(0.05)
             .with_movement_speed(500.0)
             .with_rotation_speed(4.0)
     }
 }
 
+// Conditions
+
 pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
     move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
+}
+
+// Systems
+
+#[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
+pub enum AsteroidPlayerSystem {
+    UpdatePlayerActions,
 }
 
 pub fn spawn_first_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_fast()
             .with_id(1)
+            .with_size(Vec2::splat(PLAYER_SIZE))
             .with_texture(asset_server.load("sprites/ship_blue.png"))
             .with_input_map(InputMap::default().with_keyboard_mappings()),
     );
@@ -111,6 +141,7 @@ pub fn spawn_second_player_system(mut commands: Commands, asset_server: Res<Asse
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_slow()
             .with_id(2)
+            .with_size(Vec2::splat(PLAYER_SIZE))
             .with_texture(asset_server.load("sprites/ship_red.png"))
             .with_input_map(InputMap::default().with_gamepad_mappings(0)),
     );
@@ -118,7 +149,7 @@ pub fn spawn_second_player_system(mut commands: Commands, asset_server: Res<Asse
 
 fn player_shoot_system(
     mut commands: Commands,
-    projectile_assets: Res<AsteroidProjectileAssets>,
+    assets: Res<AsteroidPlayerAssets>,
     player_query: Query<(&InputController<AsteroidAction>, &Movement), With<AsteroidPlayer>>,
 ) {
     const PROJECTILE_SPEED: f32 = 600.0;
@@ -127,7 +158,7 @@ fn player_shoot_system(
         if controller.input_action(AsteroidAction::Shoot) {
             commands.spawn(AsteroidProjectileBundle {
                 sprite: SpriteBundle {
-                    texture: projectile_assets.texture.clone(),
+                    texture: assets.projectile_texture.clone(),
                     ..Default::default()
                 },
                 movement: Movement {
@@ -137,7 +168,7 @@ fn player_shoot_system(
                     ..Default::default()
                 },
                 collider: BoxCollider {
-                    size: projectile_assets.projectile_size,
+                    size: Vec2::new(16.0, 24.0),
                     ..Default::default()
                 },
                 ..Default::default()
@@ -145,6 +176,43 @@ fn player_shoot_system(
         }
     }
 }
+
+fn player_move_system(
+    mut query: Query<(
+        &mut Movement,
+        &AsteroidPlayer,
+        &InputController<AsteroidAction>,
+    )>,
+) {
+    for (mut movement, player, controller) in &mut query {
+        let mut input_direction = Vec2::ZERO;
+
+        if controller.input_action(AsteroidAction::Forward) {
+            input_direction.y += 1.0;
+        }
+
+        if controller.input_action(AsteroidAction::Backward) {
+            input_direction.y -= 1.0;
+        }
+
+        if controller.input_action(AsteroidAction::TurnLeft) {
+            input_direction.x -= 1.0;
+        }
+
+        if controller.input_action(AsteroidAction::TurnRight) {
+            input_direction.x += 1.0;
+        }
+
+        // Rotation
+        movement.angular_velocity = -input_direction.x * player.rotation_speed;
+
+        // Translation
+        movement.acceleration =
+            movement.get_direction() * player.movement_speed * input_direction.y;
+    }
+}
+
+// Input maps
 
 impl InputMap<AsteroidAction> {
     fn with_keyboard_mappings(self) -> Self {

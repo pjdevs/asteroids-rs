@@ -7,7 +7,9 @@ use bevy::{
 
 use super::{
     physics::{aabb_from, BoxCollider, Movement},
-    player::{player_exists, spawn_first_player_system, spawn_second_player_system, AsteroidPlayer},
+    player::{
+        player_exists, spawn_first_player_system, spawn_second_player_system, AsteroidPlayer,
+    },
 };
 
 pub struct AsteroidDebugPlugin;
