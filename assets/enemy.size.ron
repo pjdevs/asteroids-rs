@@ -1,4 +1,4 @@
 (
     sprite_size: (160.0, 160.0),
-    collider_size: (70.0, 70.0)
+    collider_size: (60.0, 55.0)
 )
