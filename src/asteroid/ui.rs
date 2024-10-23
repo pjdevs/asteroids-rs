@@ -12,26 +12,76 @@ pub struct AsteroidUiPlugin;
 
 impl Plugin for AsteroidUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            Update,
-            ui_score_system.in_set(AsteroidUiSystem::UpdateInGameUi),
-        )
-        .add_systems(
-            Update,
-            ui_play_system.in_set(AsteroidUiSystem::UpdateMenuUi),
-        );
+        app.add_event::<ButtonEvent>()
+            .add_systems(
+                Update,
+                ui_score_system.in_set(AsteroidUiSystem::UpdateInGameUi),
+            )
+            .add_systems(
+                Update,
+                (
+                    ui_button_released_system,
+                    ui_play_system,
+                    ui_button_style_system,
+                )
+                    .in_set(AsteroidUiSystem::UpdateMenuUi),
+            );
     }
+}
+
+// TODO Isolate button click and make a bundle
+
+#[derive(Component, Default)]
+struct LastInteraction {
+    last: Interaction,
+}
+
+#[derive(Event)]
+enum ButtonEvent {
+    Clicked,
 }
 
 // Menu
 
+fn ui_button_released_system(
+    mut event: EventWriter<ButtonEvent>,
+    mut query: Query<(&mut LastInteraction, &Interaction), Changed<Interaction>>,
+) {
+    for (mut last, current) in &mut query {
+        if last.last == Interaction::Pressed && *current == Interaction::Hovered {
+            event.send(ButtonEvent::Clicked);
+        }
+        
+        println!("Last state was {:?} and is now {:?}", last.last, current);
+        last.last = *current;
+    }
+}
+
 fn ui_play_system(
-    query: Query<&Interaction, Changed<Interaction>>,
+    mut events: EventReader<ButtonEvent>,
     mut next_state: ResMut<NextState<AsteroidGameState>>,
 ) {
-    for interaction in query.iter() {
-        if *interaction == Interaction::Pressed {
-            next_state.set(AsteroidGameState::GameLoadingScreen)
+    for event in events.read() {
+        match event {
+            ButtonEvent::Clicked => next_state.set(AsteroidGameState::GameLoadingScreen),
+        }
+    }
+}
+
+fn ui_button_style_system(
+    mut query: Query<(&mut BorderColor, &Interaction), Changed<Interaction>>,
+) {
+    for (mut border, interaction) in &mut query {
+        match *interaction {
+            Interaction::Pressed => {
+                border.0 = Color::srgb(0.5, 0.5, 0.5);
+            }
+            Interaction::Hovered => {
+                border.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                border.0 = Color::BLACK;
+            }
         }
     }
 }
@@ -72,7 +122,7 @@ pub fn ui_menu_setup_system(mut commands: Commands) {
     );
 
     let container = commands.spawn(container_node).id();
-    let button = commands.spawn(button_node).id();
+    let button = commands.spawn(button_node).insert(LastInteraction::default()).id();
     let button_text = commands.spawn(button_text_node).id();
 
     commands.entity(button).push_children(&[button_text]);

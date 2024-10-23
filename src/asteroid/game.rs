@@ -39,9 +39,7 @@ impl Plugin for AsteroidGamePlugin {
             .add_loading_state::<AsteroidGameState>(
                 LoadingState::new(AsteroidGameState::GameLoadingScreen)
                     .continue_to_state(AsteroidGameState::InGame)
-                    .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                        "game.assets.ron",
-                    )
+                    .with_dynamic_assets_file::<StandardDynamicAssetCollection>("game.assets.ron")
                     .load_collection::<AsteroidPlayerAssets>()
                     .load_collection::<AsteroidEnemyAssets>()
                     .load_collection::<AsteroidGameplayAssets>(),
