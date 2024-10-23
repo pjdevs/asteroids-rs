@@ -2,7 +2,7 @@ use super::assets::SizeAsset;
 use super::gameplay::{
     gameplay_cleanup, gameplay_setup, AsteroidGameplayAssets, AsteroidGameplaySystem,
 };
-use super::states::{AsteroidGameState, AsteroidPauseState};
+use super::states::AsteroidGameState;
 use crate::asteroid::enemy::{AsteroidEnemy, AsteroidEnemyAssets, AsteroidEnemySystem};
 use crate::asteroid::input::AsteroidInputSystem;
 use crate::asteroid::physics::AsteroidPhysicsSystem;

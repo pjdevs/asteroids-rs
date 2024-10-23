@@ -1,4 +1,3 @@
-use bevy::input::gamepad::GamepadConnectionEvent;
 use bevy::prelude::*;
 use std::collections::HashMap;
 use std::hash::Hash;
