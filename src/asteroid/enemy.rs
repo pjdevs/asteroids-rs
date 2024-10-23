@@ -68,6 +68,7 @@ fn spawn_enemies_system(
     let random_angle = rand::random::<f32>() * std::f32::consts::PI * 1.99 + 0.1;
     let random_speed = rand::random::<f32>() * 100.0 + 50.0;
     let random_velocity = Vec2::new(random_angle.cos(), random_angle.sin()) * random_speed;
+    let random_angular_velocity = rand::random::<f32>() * 2.9 + 0.1;
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
     let random_position: Vec2 = 2.0
@@ -94,6 +95,7 @@ fn spawn_enemies_system(
         movement: Movement {
             position: random_position,
             velocity: random_velocity,
+            angular_velocity: random_angular_velocity,
             ..Default::default()
         },
         collider: BoxCollider {
