@@ -5,9 +5,9 @@ use super::{
     physics::{BoxCollider, Movement},
     projectile::AsteroidProjectileBundle,
 };
-use crate::asteroid::assets::SizeAsset;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::AssetCollection;
+
 // TODO Make player assets
 // TODO Refactor all behaviors in components (Ship, Shoot, ..)
 
@@ -39,9 +39,8 @@ pub struct AsteroidPlayerAssets {
 
     #[asset(key = "player.projectile.texture")]
     pub projectile_texture: Handle<Image>,
-
-    #[asset(key = "player.size")]
-    pub player_size: Handle<SizeAsset>,
+    // #[asset(path = "size.ron")]
+    // pub player_size: Handle<SizeAsset>,
 }
 
 // Components
@@ -127,22 +126,22 @@ pub enum AsteroidPlayerSystem {
     UpdatePlayerActions,
 }
 
-pub fn spawn_first_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn spawn_first_player_system(mut commands: Commands, assets: Res<AsteroidPlayerAssets>) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_fast()
             .with_id(1)
             .with_size(Vec2::splat(PLAYER_SIZE))
-            .with_texture(asset_server.load("sprites/ship_blue.png"))
+            .with_texture(assets.player_one_texture.clone())
             .with_input_map(InputMap::default().with_keyboard_mappings()),
     );
 }
 
-pub fn spawn_second_player_system(mut commands: Commands, asset_server: Res<AssetServer>) {
+pub fn spawn_second_player_system(mut commands: Commands, assets: Res<AsteroidPlayerAssets>) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_slow()
             .with_id(2)
             .with_size(Vec2::splat(PLAYER_SIZE))
-            .with_texture(asset_server.load("sprites/ship_red.png"))
+            .with_texture(assets.player_two_texture.clone())
             .with_input_map(InputMap::default().with_gamepad_mappings(0)),
     );
 }

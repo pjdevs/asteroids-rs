@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::asteroid::assets::SizeAsset;
 use crate::asteroid::physics::BoxCollider;
-use bevy::{prelude::*, time::common_conditions::on_timer};
+use bevy::{asset::ron::de, prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::AssetCollection;
 
 use super::{border::TunnelBorder, physics::Movement};
@@ -28,10 +28,10 @@ impl Plugin for AsteroidEnemyPlugin {
 
 #[derive(Resource, AssetCollection)]
 pub struct AsteroidEnemyAssets {
-    #[asset(key = "enemy.texture")]
+    #[asset(path = "sprites/asteroid01.png")]
     pub enemy_texture: Handle<Image>,
 
-    #[asset(key = "enemy.size")]
+    #[asset(path = "enemy.size.ron")]
     pub enemy_size: Handle<SizeAsset>,
 }
 
@@ -75,9 +75,17 @@ fn spawn_enemies_system(
         * Vec2::new(rand::random::<f32>().round(), rand::random::<f32>().round())
         - half_screen_size;
 
+    let size = size_assets
+        .get(&enemy_assets.enemy_size)
+        .unwrap_or(&SizeAsset { sprite_size: Vec2::ZERO, collider_size: Vec2::ZERO });
+
     commands.spawn(AsteroidEnemyBundle {
         sprite: SpriteBundle {
             texture: enemy_assets.enemy_texture.clone(),
+            sprite: Sprite {
+                custom_size: Some(size.sprite_size),
+                ..Default::default()
+            },
             ..Default::default()
         },
         movement: Movement {
@@ -86,10 +94,7 @@ fn spawn_enemies_system(
             ..Default::default()
         },
         collider: BoxCollider {
-            size: size_assets
-                .get(&enemy_assets.enemy_size)
-                .unwrap_or(&SizeAsset { size: Vec2::ZERO })
-                .size,
+            size: size.collider_size,
             ..Default::default()
         },
         ..Default::default()

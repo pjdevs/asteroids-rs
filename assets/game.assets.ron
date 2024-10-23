@@ -1,0 +1,19 @@
+({
+    "player.one_texture": Image(
+        path: "sprites/ship_blue.png",
+    ),
+    "player.two_texture": Image(
+        path: "sprites/ship_red.png",
+    ),
+    "player.projectile.texture": Image(
+        path: "sprites/laser.png",
+    ),
+
+    "enemy.texture": Image(
+        path: "sprites/asteroid.png",
+    ),
+    
+    "gameplay.background.texture": Image(
+        path: "sprites/background.png",
+    ),
+})

@@ -1,4 +1,5 @@
 use bevy::{math::bounding::IntersectsVolume, prelude::*};
+use bevy_asset_loader::asset_collection::AssetCollection;
 
 use super::{
     enemy::AsteroidEnemy,
@@ -23,7 +24,8 @@ impl Plugin for AsteroidGameplayPlugin {
                     gameplay_projectile_ennemy_collision_system
                         .run_if(any_with_component::<AsteroidProjectile>),
                     gameplay_collision_destruction_system,
-                ),
+                )
+                    .in_set(AsteroidGameplaySystem::UpdateGameplay),
             );
     }
 }
@@ -46,7 +48,44 @@ pub struct CollisionEvent {
     seconds_entity: Entity,
 }
 
-pub fn gameplay_player_ennemy_collision_system(
+// Assets
+
+#[derive(Resource, AssetCollection)]
+pub struct AsteroidGameplayAssets {
+    #[asset(key = "gameplay.background.texture")]
+    pub background_texture: Handle<Image>,
+}
+
+// Systems
+
+#[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
+pub enum AsteroidGameplaySystem {
+    UpdateGameplay,
+}
+
+pub fn gameplay_setup(
+    mut commands: Commands,
+    assets: Res<AsteroidGameplayAssets>,
+    camera_query: Query<&Camera>,
+) {
+    commands.spawn(SpriteBundle {
+        texture: assets.background_texture.clone(),
+        sprite: Sprite {
+            custom_size: camera_query.single().logical_viewport_size(),
+            ..Default::default()
+        },
+        transform: Transform::from_xyz(0.0, 0.0, -1.0),
+        ..Default::default()
+    });
+}
+
+pub fn gameplay_cleanup(mut commands: Commands, query: Query<Entity, With<Sprite>>) {
+    for entity in &query {
+        commands.entity(entity).despawn();
+    }
+}
+
+fn gameplay_player_ennemy_collision_system(
     mut collision_event: EventWriter<CollisionEvent>,
     player_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidPlayer>>,
     ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnemy>>,
@@ -83,7 +122,7 @@ pub fn gameplay_player_ennemy_collision_system(
 
 // TODO Maybe another component for player projectile to be able to use them for ennemies
 
-pub fn gameplay_projectile_ennemy_collision_system(
+fn gameplay_projectile_ennemy_collision_system(
     mut collision_event: EventWriter<CollisionEvent>,
     projectile_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidProjectile>>,
     ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnemy>>,

@@ -1,3 +1,7 @@
+use super::assets::SizeAsset;
+use super::gameplay::{
+    gameplay_cleanup, gameplay_setup, AsteroidGameplayAssets, AsteroidGameplaySystem,
+};
 use super::states::{AsteroidGameState, AsteroidPauseState};
 use crate::asteroid::enemy::{AsteroidEnemy, AsteroidEnemyAssets, AsteroidEnemySystem};
 use crate::asteroid::input::AsteroidInputSystem;
@@ -8,8 +12,10 @@ use crate::asteroid::player::{
 use crate::asteroid::projectile::AsteroidProjectile;
 use crate::asteroid::systems::{despawn_entities_with, remove_resource};
 use crate::asteroid::ui::{ui_in_game_setup_system, ui_menu_setup_system};
+use bevy::input::common_conditions::input_just_released;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
+use bevy_common_assets::ron::RonAssetPlugin;
 
 pub struct AsteroidGamePlugin;
 
@@ -17,7 +23,7 @@ pub struct AsteroidGamePlugin;
 
 impl Plugin for AsteroidGamePlugin {
     fn build(&self, app: &mut App) {
-        app
+        app.add_plugins(RonAssetPlugin::<SizeAsset>::new(&["size.ron"]))
             // Game Startup
             .add_systems(Startup, game_startup_system)
             // States
@@ -32,27 +38,41 @@ impl Plugin for AsteroidGamePlugin {
             // Game Loading
             .add_loading_state::<AsteroidGameState>(
                 LoadingState::new(AsteroidGameState::GameLoadingScreen)
+                    .continue_to_state(AsteroidGameState::InGame)
                     .with_dynamic_assets_file::<StandardDynamicAssetCollection>(
-                        "asteroid.assets.ron",
+                        "game.assets.ron",
                     )
                     .load_collection::<AsteroidPlayerAssets>()
                     .load_collection::<AsteroidEnemyAssets>()
-                    .continue_to_state(AsteroidGameState::InGame),
+                    .load_collection::<AsteroidGameplayAssets>(),
             )
             // In Game
             .add_systems(
                 OnEnter(AsteroidGameState::InGame),
-                (spawn_first_player_system, ui_in_game_setup_system),
+                (
+                    spawn_first_player_system,
+                    ui_in_game_setup_system,
+                    gameplay_setup,
+                ),
             )
             .add_systems(
                 OnExit(AsteroidGameState::InGame),
                 (
                     remove_resource::<AsteroidPlayerAssets>,
                     remove_resource::<AsteroidEnemyAssets>,
+                    remove_resource::<AsteroidGameplayAssets>,
                     despawn_entities_with::<Node>,
                     despawn_entities_with::<AsteroidPlayer>,
                     despawn_entities_with::<AsteroidProjectile>,
                     despawn_entities_with::<AsteroidEnemy>,
+                    gameplay_cleanup,
+                ),
+            )
+            .add_systems(
+                Update,
+                game_exit.run_if(
+                    in_state(AsteroidGameState::InGame)
+                        .and_then(input_just_released(KeyCode::Escape)),
                 ),
             )
             .configure_sets(
@@ -61,6 +81,7 @@ impl Plugin for AsteroidGamePlugin {
                     AsteroidInputSystem::UpdateInput,
                     AsteroidPlayerSystem::UpdatePlayerActions,
                     AsteroidEnemySystem::UpdateSpawnEnemies,
+                    AsteroidGameplaySystem::UpdateGameplay,
                 )
                     .run_if(in_state(AsteroidGameState::InGame)),
             )
@@ -79,4 +100,8 @@ impl Plugin for AsteroidGamePlugin {
 
 fn game_startup_system(mut commands: Commands) {
     commands.spawn(Camera2dBundle::default());
+}
+
+fn game_exit(mut next_state: ResMut<NextState<AsteroidGameState>>) {
+    next_state.set(AsteroidGameState::MainMenu);
 }

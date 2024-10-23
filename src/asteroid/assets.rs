@@ -3,5 +3,6 @@ use serde::Deserialize;
 
 #[derive(Deserialize, Asset, TypePath)]
 pub struct SizeAsset {
-    pub size: Vec2,
+    pub sprite_size: Vec2,
+    pub collider_size: Vec2,
 }

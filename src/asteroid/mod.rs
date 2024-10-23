@@ -14,7 +14,7 @@ mod systems;
 mod ui;
 
 use actions::AsteroidAction;
-use bevy::app::Plugin;
+use bevy::app::{PluginGroup, PluginGroupBuilder};
 use border::AsteroidBorderPlugin;
 use debug::AsteroidDebugPlugin;
 use enemy::AsteroidEnemyPlugin;
@@ -25,20 +25,21 @@ use physics::AsteroidPhysicsPlugin;
 use player::AsteroidPlayerPlugin;
 use ui::AsteroidUiPlugin;
 
-pub struct AsteroidPlugin;
+pub struct AsteroidPlugins;
 
-impl Plugin for AsteroidPlugin {
-    fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_plugins(AsteroidInputPlugin::<AsteroidAction>::default())
-            .add_plugins(AsteroidPhysicsPlugin)
-            .add_plugins(AsteroidBorderPlugin)
-            .add_plugins(AsteroidPlayerPlugin)
-            .add_plugins(AsteroidEnemyPlugin {
+impl PluginGroup for AsteroidPlugins {
+    fn build(self) -> bevy::app::PluginGroupBuilder {
+        PluginGroupBuilder::start::<Self>()
+            .add(AsteroidInputPlugin::<AsteroidAction>::default())
+            .add(AsteroidPhysicsPlugin)
+            .add(AsteroidBorderPlugin)
+            .add(AsteroidPlayerPlugin)
+            .add(AsteroidEnemyPlugin {
                 enemy_spawn_delay_seconds: 1,
             })
-            .add_plugins(AsteroidDebugPlugin)
-            .add_plugins(AsteroidGameplayPlugin)
-            .add_plugins(AsteroidUiPlugin)
-            .add_plugins(AsteroidGamePlugin);
+            .add(AsteroidDebugPlugin)
+            .add(AsteroidGameplayPlugin)
+            .add(AsteroidUiPlugin)
+            .add(AsteroidGamePlugin)
     }
 }

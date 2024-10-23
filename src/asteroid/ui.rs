@@ -1,6 +1,6 @@
-use bevy::prelude::*;
-use crate::asteroid::states::AsteroidGameState;
 use super::gameplay::Score;
+use crate::asteroid::states::AsteroidGameState;
+use bevy::prelude::*;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AsteroidUiSystem {
@@ -25,7 +25,10 @@ impl Plugin for AsteroidUiPlugin {
 
 // Menu
 
-fn ui_play_system(query: Query<&Interaction, Changed<Interaction>>, mut next_state: ResMut<NextState<AsteroidGameState>>) {
+fn ui_play_system(
+    query: Query<&Interaction, Changed<Interaction>>,
+    mut next_state: ResMut<NextState<AsteroidGameState>>,
+) {
     for interaction in query.iter() {
         if *interaction == Interaction::Pressed {
             next_state.set(AsteroidGameState::GameLoadingScreen)
