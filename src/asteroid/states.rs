@@ -8,9 +8,9 @@ pub enum AsteroidGameState {
     InGame,
 }
 
-#[derive(States, Debug, Hash, Eq, PartialEq, Clone, Default)]
-pub enum AsteroidPauseState {
-    #[default]
-    Running,
-    Paused,
-}
+// #[derive(States, Debug, Hash, Eq, PartialEq, Clone, Default)]
+// pub enum AsteroidPauseState {
+//     #[default]
+//     Running,
+//     Paused,
+// }

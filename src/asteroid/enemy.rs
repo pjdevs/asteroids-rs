@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use crate::asteroid::assets::SizeAsset;
 use crate::asteroid::physics::BoxCollider;
-use bevy::{asset::ron::de, prelude::*, time::common_conditions::on_timer};
+use bevy::{prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::AssetCollection;
 
 use super::{border::TunnelBorder, physics::Movement};

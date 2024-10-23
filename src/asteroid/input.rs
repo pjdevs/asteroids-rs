@@ -215,15 +215,15 @@ fn input_update_maps<A: ActionLike>(
     }
 }
 
-pub fn on_gamepad_connection(
-    gamepad_id: usize,
-) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
-    move |mut reader: EventReader<GamepadConnectionEvent>| {
-        reader
-            .read()
-            .any(|e| e.gamepad.id == gamepad_id && e.connected())
-    }
-}
+// pub fn on_gamepad_connection(
+//     gamepad_id: usize,
+// ) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
+//     move |mut reader: EventReader<GamepadConnectionEvent>| {
+//         reader
+//             .read()
+//             .any(|e| e.gamepad.id == gamepad_id && e.connected())
+//     }
+// }
 
 // pub fn on_gamepad_disconnection(
 //     gamepad_id: usize,

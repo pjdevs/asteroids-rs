@@ -28,7 +28,7 @@ impl Plugin for AsteroidGamePlugin {
             .add_systems(Startup, game_startup_system)
             // States
             .init_state::<AsteroidGameState>()
-            .init_state::<AsteroidPauseState>()
+            // .init_state::<AsteroidPauseState>()
             // Main Menu
             .add_systems(OnEnter(AsteroidGameState::MainMenu), ui_menu_setup_system)
             .add_systems(
