@@ -5,16 +5,35 @@ edition = "2021"
 
 # Enable a small amount of optimization in the dev profile.
 [profile.dev]
-opt-level = 1
+debug = 0
+strip = "debuginfo" # Can be reenabled if specific needs
+opt-level = 0 # Switch to 1 for more runtime performance
+# overflow-checks = false # Uncomment for better math performance
 
 # Enable a large amount of optimization in the dev profile for dependencies.
 [profile.dev.package."*"]
 opt-level = 3
 
+[profile.release]
+opt-level = 3
+panic = 'abort'
+debug = 0
+strip = "debuginfo"
+# lto = "thin" # Enable for more inlining with a bigger tradeoff in compile times
+
+[profile.distribution]
+inherits = "release"
+strip = true
+lto = "thin"
+codegen-units = 1
+
 [dependencies]
-bevy = {version = "0.14.2", default-features = false, features = ["bevy_asset", "bevy_audio", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_render", "bevy_sprite", "bevy_state", "bevy_text", "bevy_ui", "bevy_winit", "default_font", "multi_threaded", "png", "sysinfo_plugin"]} #, "dynamic_linking"] }
+bevy = {version = "0.14.2", default-features = false, features = ["bevy_asset", "bevy_audio", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_render", "bevy_sprite", "bevy_state", "bevy_text", "bevy_ui", "bevy_winit", "default_font", "multi_threaded", "png", "sysinfo_plugin"] }
 bevy_common_assets = { version = "0.11.0", features = ["ron"] }
 bevy_asset_loader = { version = "0.21.0" , features = ["2d", "standard_dynamic_assets"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 rand = "0.8"
 serde = { version = "1.0.210", features = ["derive"] }
+
+[features]
+dev = ["bevy/dynamic_linking", "bevy/file_watcher", "bevy/asset_processor"]

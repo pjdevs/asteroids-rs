@@ -4,6 +4,7 @@ use bevy::prelude::*;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AsteroidUiSystem {
+    UpdateCoreUi,
     UpdateMenuUi,
     UpdateInGameUi,
 }
@@ -13,6 +14,10 @@ pub struct AsteroidUiPlugin;
 impl Plugin for AsteroidUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ButtonEvent>()
+            .add_systems(
+                Update,
+                ui_button_released_system.in_set(AsteroidUiSystem::UpdateCoreUi),
+            )
             .add_systems(
                 Update,
                 ui_score_system.in_set(AsteroidUiSystem::UpdateInGameUi),
@@ -29,33 +34,7 @@ impl Plugin for AsteroidUiPlugin {
     }
 }
 
-// TODO Isolate button click and make a bundle
-
-#[derive(Component, Default)]
-struct LastInteraction {
-    last: Interaction,
-}
-
-#[derive(Event)]
-enum ButtonEvent {
-    Clicked,
-}
-
 // Menu
-
-fn ui_button_released_system(
-    mut event: EventWriter<ButtonEvent>,
-    mut query: Query<(&mut LastInteraction, &Interaction), Changed<Interaction>>,
-) {
-    for (mut last, current) in &mut query {
-        if last.last == Interaction::Pressed && *current == Interaction::Hovered {
-            event.send(ButtonEvent::Clicked);
-        }
-        
-        println!("Last state was {:?} and is now {:?}", last.last, current);
-        last.last = *current;
-    }
-}
 
 fn ui_play_system(
     mut events: EventReader<ButtonEvent>,
@@ -63,7 +42,7 @@ fn ui_play_system(
 ) {
     for event in events.read() {
         match event {
-            ButtonEvent::Clicked => next_state.set(AsteroidGameState::GameLoadingScreen),
+            ButtonEvent::Clicked(_) => next_state.set(AsteroidGameState::GameLoadingScreen),
         }
     }
 }
@@ -122,7 +101,10 @@ pub fn ui_menu_setup_system(mut commands: Commands) {
     );
 
     let container = commands.spawn(container_node).id();
-    let button = commands.spawn(button_node).insert(LastInteraction::default()).id();
+    let button = commands
+        .spawn(button_node)
+        .insert(LastInteraction::default())
+        .id();
     let button_text = commands.spawn(button_text_node).id();
 
     commands.entity(button).push_children(&[button_text]);
@@ -164,5 +146,37 @@ pub fn ui_in_game_setup_system(mut commands: Commands) {
 fn ui_score_system(score: Res<Score>, mut query: Query<(&mut Text, &ScoreText)>) {
     for (mut text, score_text) in &mut query {
         text.sections[0].value = score_text.get_score_text(score.get_score());
+    }
+}
+
+// Release buttons
+
+#[derive(Bundle)]
+pub struct GameButtonBundle {
+    button: ButtonBundle,
+    last_interaction: LastInteraction,
+}
+
+#[derive(Component, Default)]
+struct LastInteraction {
+    last: Interaction,
+}
+
+#[derive(Event)]
+enum ButtonEvent {
+    Clicked(Entity),
+}
+
+fn ui_button_released_system(
+    mut event: EventWriter<ButtonEvent>,
+    mut query: Query<(Entity, &mut LastInteraction, &Interaction), Changed<Interaction>>,
+) {
+    for (entity, mut last, current) in &mut query {
+        if last.last == Interaction::Pressed && *current == Interaction::Hovered {
+            event.send(ButtonEvent::Clicked(entity));
+        }
+
+        println!("Last state was {:?} and is now {:?}", last.last, current);
+        last.last = *current;
     }
 }
