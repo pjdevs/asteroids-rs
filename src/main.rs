@@ -4,7 +4,5 @@ use asteroid::AsteroidPlugins;
 use bevy::prelude::*;
 
 fn main() {
-    App::new()
-        .add_plugins(AsteroidPlugins)
-        .run();
+    App::new().add_plugins(AsteroidPlugins).run();
 }

@@ -15,7 +15,10 @@ mod ui;
 mod window;
 
 use actions::AsteroidAction;
-use bevy::{app::{PluginGroup, PluginGroupBuilder}, DefaultPlugins};
+use bevy::{
+    app::{PluginGroup, PluginGroupBuilder},
+    DefaultPlugins,
+};
 use border::AsteroidBorderPlugin;
 use debug::AsteroidDebugPlugin;
 use enemy::AsteroidEnemyPlugin;

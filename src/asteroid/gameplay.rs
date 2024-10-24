@@ -2,10 +2,9 @@ use bevy::{math::bounding::IntersectsVolume, prelude::*};
 use bevy_asset_loader::asset_collection::AssetCollection;
 
 use super::{
-    enemy::AsteroidEnemy,
-    physics::{aabb_from, BoxCollider, Movement},
-    player::AsteroidPlayer,
+    enemy::AsteroidEnemy, physics::BoxCollider, player::AsteroidPlayer,
     projectile::AsteroidProjectile,
+    physics::Movement
 };
 
 const COLLISION_SEARCH_LIMIT_SQUARED: f32 = 128.0 * 128.0;
@@ -95,7 +94,7 @@ fn gameplay_player_ennemy_collision_system(
             continue;
         }
 
-        let player_aabb = aabb_from(player_movement, player_collider);
+        let player_obb = player_collider.obb_2d(player_movement);
 
         // TODO Implement this with quadtrees directly in physcis plugin
         // TODO Investigate parallel iteration to trigger event
@@ -108,9 +107,9 @@ fn gameplay_player_ennemy_collision_system(
                     < COLLISION_SEARCH_LIMIT_SQUARED
             })
             .for_each(|(ennemy, ennemy_movement, ennemy_collider)| {
-                let ennemy_aabb = aabb_from(ennemy_movement, ennemy_collider);
+                let ennemy_obb = ennemy_collider.obb_2d(ennemy_movement);
 
-                if player_aabb.intersects(&ennemy_aabb) {
+                if player_obb.intersects(&ennemy_obb) {
                     collision_event.send(CollisionEvent {
                         first_entity: player,
                         seconds_entity: ennemy,
@@ -136,8 +135,8 @@ fn gameplay_projectile_ennemy_collision_system(
                 .distance_squared(ennemy_movement.position)
                 < COLLISION_SEARCH_LIMIT_SQUARED
             {
-                let projectile_aabb = aabb_from(projectile_movement, projectile_collider);
-                let ennemy_aabb = aabb_from(ennemy_movement, ennemy_collider);
+                let projectile_aabb = projectile_collider.obb_2d(projectile_movement);
+                let ennemy_aabb = ennemy_collider.obb_2d(ennemy_movement);
 
                 if projectile_aabb.intersects(&ennemy_aabb) {
                     collision_event.send(CollisionEvent {
