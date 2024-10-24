@@ -36,13 +36,29 @@ impl Plugin for AsteroidUiPlugin {
 
 // Menu
 
+#[derive(Component)]
+enum MenuButtonAction {
+    Play,
+    // Options,
+    // Exit,
+}
+
 fn ui_play_system(
     mut events: EventReader<ButtonEvent>,
     mut next_state: ResMut<NextState<AsteroidGameState>>,
+    query: Query<&MenuButtonAction>,
 ) {
     for event in events.read() {
         match event {
-            ButtonEvent::Clicked(_) => next_state.set(AsteroidGameState::GameLoadingScreen),
+            ButtonEvent::Clicked(entity) => {
+                if let Ok(action) = query.get(*entity) {
+                    match action {
+                        MenuButtonAction::Play => {
+                            next_state.set(AsteroidGameState::GameLoadingScreen)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -102,8 +118,11 @@ pub fn ui_menu_setup_system(mut commands: Commands) {
 
     let container = commands.spawn(container_node).id();
     let button = commands
-        .spawn(button_node)
-        .insert(LastInteraction::default())
+        .spawn((
+            button_node,
+            LastInteraction::default(),
+            MenuButtonAction::Play,
+        ))
         .id();
     let button_text = commands.spawn(button_text_node).id();
 
@@ -151,12 +170,6 @@ fn ui_score_system(score: Res<Score>, mut query: Query<(&mut Text, &ScoreText)>)
 
 // Release buttons
 
-#[derive(Bundle)]
-pub struct GameButtonBundle {
-    button: ButtonBundle,
-    last_interaction: LastInteraction,
-}
-
 #[derive(Component, Default)]
 struct LastInteraction {
     last: Interaction,
@@ -176,7 +189,6 @@ fn ui_button_released_system(
             event.send(ButtonEvent::Clicked(entity));
         }
 
-        println!("Last state was {:?} and is now {:?}", last.last, current);
         last.last = *current;
     }
 }

@@ -2,9 +2,8 @@ use bevy::{math::bounding::IntersectsVolume, prelude::*};
 use bevy_asset_loader::asset_collection::AssetCollection;
 
 use super::{
-    enemy::AsteroidEnemy, physics::BoxCollider, player::AsteroidPlayer,
+    enemy::AsteroidEnemy, physics::BoxCollider, physics::Movement, player::AsteroidPlayer,
     projectile::AsteroidProjectile,
-    physics::Movement
 };
 
 const COLLISION_SEARCH_LIMIT_SQUARED: f32 = 128.0 * 128.0;

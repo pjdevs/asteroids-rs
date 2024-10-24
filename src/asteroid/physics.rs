@@ -131,19 +131,7 @@ pub struct Obb2d {
 }
 
 impl Obb2d {
-    pub fn new(aabb: Aabb2d, rotation: impl Into<Rot2>) -> Self {
-        Self {
-            center: aabb.center(),
-            half_size: aabb.half_size(),
-            rotation: rotation.into(),
-        }
-    }
-
-    pub fn aabb_2d(&self) -> Aabb2d {
-        Rectangle::from_size(self.half_size * 2.0).aabb_2d(self.center, self.rotation)
-    }
-
-    /// Project the OBB2d onto a given axis and check if there's an overlap
+    /// Project the Obb2d onto a given axis and check if there's an overlap
     fn overlap_on_axis_2d(&self, obb: &Obb2d, axis: Vec2) -> bool {
         let projection1 = Self::project_obb2d(self, axis);
         let projection2 = Self::project_obb2d(obb, axis);
@@ -152,7 +140,7 @@ impl Obb2d {
         projection1.1 >= projection2.0 && projection2.1 >= projection1.0
     }
 
-    /// Project an OBB2d onto an axis and return the minimum and maximum points
+    /// Project an Obb2d onto an axis and return the minimum and maximum points
     fn project_obb2d(obb: &Obb2d, axis: Vec2) -> (f32, f32) {
         // Get the corners of the OBB
         let corners = [
@@ -236,7 +224,7 @@ impl BoundingVolume for Obb2d {
     }
 
     fn rotate_by(&mut self, rotation: impl Into<Self::Rotation>) {
-        self.rotation = Rot2::radians(self.rotation.as_radians() + rotation.into().as_radians())
+        self.rotation = self.rotation * rotation.into()
     }
 }
 
@@ -264,5 +252,20 @@ impl IntersectsVolume<Obb2d> for Obb2d {
 
         // If no separating axis is found, the OBBs are intersecting
         true
+    }
+}
+
+impl Bounded2d for Obb2d {
+    fn aabb_2d(&self, translation: Vec2, rotation: impl Into<Rot2>) -> Aabb2d {
+        Rectangle::new(self.half_size.x * 2.0, self.half_size.y * 2.0)
+            .aabb_2d(self.center + translation, rotation.into() * self.rotation)
+    }
+
+    fn bounding_circle(
+        &self,
+        translation: Vec2,
+        rotation: impl Into<Rot2>,
+    ) -> bevy::math::bounding::BoundingCircle {
+        self.aabb_2d(translation, rotation).bounding_circle()
     }
 }

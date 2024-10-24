@@ -78,10 +78,7 @@ fn spawn_enemies_system(
 
     let size = size_assets
         .get(&enemy_assets.enemy_size)
-        .unwrap_or(&SizeAsset {
-            sprite_size: Vec2::ZERO,
-            collider_size: Vec2::ZERO,
-        });
+        .expect("Cannot find enemy size asset");
 
     commands.spawn(AsteroidEnemyBundle {
         sprite: SpriteBundle {

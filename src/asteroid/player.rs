@@ -1,5 +1,6 @@
 use super::{
     actions::AsteroidAction,
+    assets::SizeAsset,
     border::TunnelBorder,
     input::{AxisSide, ButtonMode, InputController, InputMap, InputMapping},
     physics::{BoxCollider, Movement},
@@ -8,10 +9,7 @@ use super::{
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::AssetCollection;
 
-// TODO Make player assets
 // TODO Refactor all behaviors in components (Ship, Shoot, ..)
-
-const PLAYER_SIZE: f32 = 48.0;
 
 // Plugin
 
@@ -39,8 +37,9 @@ pub struct AsteroidPlayerAssets {
 
     #[asset(key = "player.projectile.texture")]
     pub projectile_texture: Handle<Image>,
-    // #[asset(path = "size.ron")]
-    // pub player_size: Handle<SizeAsset>,
+
+    #[asset(path = "player.size.ron")]
+    pub player_size: Handle<SizeAsset>,
 }
 
 // Components
@@ -126,21 +125,39 @@ pub enum AsteroidPlayerSystem {
     UpdatePlayerActions,
 }
 
-pub fn spawn_first_player_system(mut commands: Commands, assets: Res<AsteroidPlayerAssets>) {
+pub fn spawn_first_player_system(
+    mut commands: Commands,
+    sizes: Res<Assets<SizeAsset>>,
+    assets: Res<AsteroidPlayerAssets>,
+) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_fast()
             .with_id(1)
-            .with_size(Vec2::splat(PLAYER_SIZE))
+            .with_size(
+                sizes
+                    .get(&assets.player_size)
+                    .expect("Cannot find player size assset")
+                    .collider_size,
+            )
             .with_texture(assets.player_one_texture.clone())
             .with_input_map(InputMap::default().with_keyboard_mappings()),
     );
 }
 
-pub fn spawn_second_player_system(mut commands: Commands, assets: Res<AsteroidPlayerAssets>) {
+pub fn spawn_second_player_system(
+    mut commands: Commands,
+    sizes: Res<Assets<SizeAsset>>,
+    assets: Res<AsteroidPlayerAssets>,
+) {
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_slow()
             .with_id(2)
-            .with_size(Vec2::splat(PLAYER_SIZE))
+            .with_size(
+                sizes
+                    .get(&assets.player_size)
+                    .expect("Cannot find player size assset")
+                    .collider_size,
+            )
             .with_texture(assets.player_two_texture.clone())
             .with_input_map(InputMap::default().with_gamepad_mappings(0)),
     );

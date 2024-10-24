@@ -1,8 +1,4 @@
-use bevy::{
-    color::palettes::css::{GREEN, RED},
-    input::common_conditions::input_just_pressed,
-    prelude::*,
-};
+use bevy::{color::palettes::css::GREEN, input::common_conditions::input_just_pressed, prelude::*};
 
 use super::{
     physics::{BoxCollider, Movement},
@@ -61,9 +57,6 @@ fn debug_toggle_invincible_system(mut query: Query<&mut BoxCollider, With<Astero
 
 fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &BoxCollider)>) {
     for (movement, collider) in &query {
-        // let aabb = aabb_from(movement, collider);
-        // gizmos.line_2d(aabb.min, aabb.max, RED);
-        // gizmos.rect_2d(aabb.center(), 0.0, aabb.half_size() * 2.0, GREEN);
         gizmos.rect_2d(movement.position, movement.rotation, collider.size, GREEN);
     }
 }
