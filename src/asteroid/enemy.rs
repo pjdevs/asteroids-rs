@@ -1,11 +1,13 @@
 use std::time::Duration;
 
 use crate::asteroid::assets::SizeAsset;
-use crate::asteroid::physics::BoxCollider;
-use bevy::{prelude::*, time::common_conditions::on_timer};
+use bevy::{math::bounding::BoundingCircle, prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::AssetCollection;
 
-use super::{border::TunnelBorder, physics::Movement};
+use super::{
+    border::TunnelBorder,
+    physics::{Collider, Movement, Shape},
+};
 
 pub struct AsteroidEnemyPlugin {
     pub enemy_spawn_delay_seconds: u64,
@@ -45,7 +47,7 @@ pub struct AsteroidEnemyBundle {
     enemy: AsteroidEnemy,
     sprite: SpriteBundle,
     movement: Movement,
-    collider: BoxCollider,
+    collider: Collider,
     border: TunnelBorder,
 }
 
@@ -95,10 +97,10 @@ fn spawn_enemies_system(
             angular_velocity: random_angular_velocity,
             ..Default::default()
         },
-        collider: BoxCollider {
-            size: size.collider_size,
-            ..Default::default()
-        },
+        collider: Collider::from_shape(Shape::Circle(BoundingCircle::new(
+            Vec2::ZERO,
+            size.collider_size.x / 2.0,
+        ))),
         ..Default::default()
     });
 }

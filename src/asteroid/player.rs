@@ -1,9 +1,11 @@
+use crate::asteroid::physics::Obb2d;
+
 use super::{
     actions::AsteroidAction,
     assets::SizeAsset,
     border::TunnelBorder,
-    input::{AxisSide, ButtonMode, InputController, InputMap, InputMapping},
-    physics::{BoxCollider, Movement},
+    input::{AsteroidInputSystem, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
+    physics::{Collider, Movement, Shape},
     projectile::AsteroidProjectileBundle,
 };
 use bevy::prelude::*;
@@ -20,6 +22,7 @@ impl Plugin for AsteroidPlayerPlugin {
         app.add_systems(
             Update,
             (player_move_system, player_shoot_system)
+                .after(AsteroidInputSystem::UpdateInput)
                 .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
         );
     }
@@ -40,6 +43,9 @@ pub struct AsteroidPlayerAssets {
 
     #[asset(path = "player.size.ron")]
     pub player_size: Handle<SizeAsset>,
+
+    #[asset(path = "player.projectile.size.ron")]
+    pub player_projectile_size: Handle<SizeAsset>,
 }
 
 // Components
@@ -56,7 +62,7 @@ pub struct AsteroidPlayerBundle {
     player: AsteroidPlayer,
     sprite: SpriteBundle,
     movement: Movement,
-    collider: BoxCollider,
+    collider: Collider,
     border: TunnelBorder,
     controller: InputController<AsteroidAction>,
 }
@@ -68,7 +74,7 @@ impl AsteroidPlayerBundle {
     }
 
     pub fn with_size(mut self, size: Vec2) -> Self {
-        self.collider.size = size;
+        self.collider = Collider::from_shape(Shape::Obb(Obb2d::new(Vec2::ZERO, size / 2.0, 0.0)));
         self
     }
 
@@ -166,15 +172,24 @@ pub fn spawn_second_player_system(
 fn player_shoot_system(
     mut commands: Commands,
     assets: Res<AsteroidPlayerAssets>,
+    sizes: Res<Assets<SizeAsset>>,
     player_query: Query<(&InputController<AsteroidAction>, &Movement), With<AsteroidPlayer>>,
 ) {
     const PROJECTILE_SPEED: f32 = 600.0;
+
+    let size_asset = sizes
+        .get(&assets.player_projectile_size)
+        .expect("Cannot find projectile size assset");
 
     for (controller, player_movement) in &player_query {
         if controller.input_action(AsteroidAction::Shoot) {
             commands.spawn(AsteroidProjectileBundle {
                 sprite: SpriteBundle {
                     texture: assets.projectile_texture.clone(),
+                    sprite: Sprite {
+                        custom_size: None, //Some(size_asset.sprite_size),
+                        ..Default::default()
+                    },
                     ..Default::default()
                 },
                 movement: Movement {
@@ -183,10 +198,11 @@ fn player_shoot_system(
                     rotation: player_movement.rotation,
                     ..Default::default()
                 },
-                collider: BoxCollider {
-                    size: Vec2::new(16.0, 24.0),
-                    ..Default::default()
-                },
+                collider: Collider::from_shape(Shape::Obb(Obb2d::new(
+                    Vec2::ZERO,
+                    size_asset.collider_size / 2.0,
+                    0.0,
+                ))),
                 ..Default::default()
             });
         }

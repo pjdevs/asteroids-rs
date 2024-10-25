@@ -1,30 +1,20 @@
-use bevy::{math::bounding::IntersectsVolume, prelude::*};
+use bevy::prelude::*;
 use bevy_asset_loader::asset_collection::AssetCollection;
 
 use super::{
-    enemy::AsteroidEnemy, physics::BoxCollider, physics::Movement, player::AsteroidPlayer,
+    enemy::AsteroidEnemy, physics::CollisionEvent, player::AsteroidPlayer,
     projectile::AsteroidProjectile,
 };
-
-const COLLISION_SEARCH_LIMIT_SQUARED: f32 = 128.0 * 128.0;
 
 pub struct AsteroidGameplayPlugin;
 
 impl Plugin for AsteroidGameplayPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Score>()
-            .add_event::<CollisionEvent>()
-            .add_systems(
-                Update,
-                (
-                    gameplay_player_ennemy_collision_system
-                        .run_if(any_with_component::<AsteroidPlayer>),
-                    gameplay_projectile_ennemy_collision_system
-                        .run_if(any_with_component::<AsteroidProjectile>),
-                    gameplay_collision_destruction_system,
-                )
-                    .in_set(AsteroidGameplaySystem::UpdateGameplay),
-            );
+        app.init_resource::<Score>().add_systems(
+            Update,
+            (gameplay_system.run_if(any_with_component::<AsteroidPlayer>),)
+                .in_set(AsteroidGameplaySystem::UpdateGameplay),
+        );
     }
 }
 
@@ -38,12 +28,6 @@ impl Score {
     pub fn get_score(&self) -> u64 {
         self.score
     }
-}
-
-#[derive(Event)]
-pub struct CollisionEvent {
-    first_entity: Entity,
-    seconds_entity: Entity,
 }
 
 // Assets
@@ -83,84 +67,28 @@ pub fn gameplay_cleanup(mut commands: Commands, query: Query<Entity, With<Sprite
     }
 }
 
-fn gameplay_player_ennemy_collision_system(
-    mut collision_event: EventWriter<CollisionEvent>,
-    player_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidPlayer>>,
-    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnemy>>,
-) {
-    for (player, player_movement, player_collider) in &player_query {
-        if !player_collider.enabled {
-            continue;
-        }
-
-        let player_obb = player_collider.obb_2d(player_movement);
-
-        // TODO Implement this with quadtrees directly in physcis plugin
-        // TODO Investigate parallel iteration to trigger event
-        ennemies_query
-            .iter()
-            .filter(|(_, ennemy_movement, _)| {
-                player_movement
-                    .position
-                    .distance_squared(ennemy_movement.position)
-                    < COLLISION_SEARCH_LIMIT_SQUARED
-            })
-            .for_each(|(ennemy, ennemy_movement, ennemy_collider)| {
-                let ennemy_obb = ennemy_collider.obb_2d(ennemy_movement);
-
-                if player_obb.intersects(&ennemy_obb) {
-                    collision_event.send(CollisionEvent {
-                        first_entity: player,
-                        seconds_entity: ennemy,
-                    });
-                }
-            });
-    }
-}
-
-// TODO Maybe another component for player projectile to be able to use them for ennemies
-
-fn gameplay_projectile_ennemy_collision_system(
-    mut collision_event: EventWriter<CollisionEvent>,
-    projectile_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidProjectile>>,
-    ennemies_query: Query<(Entity, &Movement, &BoxCollider), With<AsteroidEnemy>>,
-) {
-    // TODO Implement this with quadtrees directly in physcis plugin
-    // TODO Investigate parallel iteration to trigger event
-    for (ennemy, ennemy_movement, ennemy_collider) in &ennemies_query {
-        for (projectile, projectile_movement, projectile_collider) in &projectile_query {
-            if projectile_movement
-                .position
-                .distance_squared(ennemy_movement.position)
-                < COLLISION_SEARCH_LIMIT_SQUARED
-            {
-                let projectile_aabb = projectile_collider.obb_2d(projectile_movement);
-                let ennemy_aabb = ennemy_collider.obb_2d(ennemy_movement);
-
-                if projectile_aabb.intersects(&ennemy_aabb) {
-                    collision_event.send(CollisionEvent {
-                        first_entity: projectile,
-                        seconds_entity: ennemy,
-                    });
-                }
-            }
-        }
-    }
-}
-
-fn gameplay_collision_destruction_system(
+// TODO Make more events like enemy destroyed etc
+// TODO Seperate different collision types somehow
+fn gameplay_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
+    player_query: Query<Entity, With<AsteroidPlayer>>,
+    ennemies_query: Query<Entity, With<AsteroidEnemy>>,
+    projectile_query: Query<Entity, With<AsteroidProjectile>>,
     mut score: ResMut<Score>,
 ) {
-    for (event, _) in collision_event.par_read() {
-        if let Some(mut first) = commands.get_entity(event.first_entity) {
-            first.despawn();
+    for collision in collision_event.read() {
+        if let Ok(player) = player_query.get(collision.first) {
+            commands.entity(player).despawn();
         }
 
-        if let Some(mut second) = commands.get_entity(event.seconds_entity) {
-            second.despawn();
+        if let Ok(projectile) = projectile_query.get(collision.first) {
+            commands.entity(projectile).despawn();
             score.score += 10;
+        }
+
+        if let Ok(enemy) = ennemies_query.get(collision.second) {
+            commands.entity(enemy).despawn();
         }
     }
 }

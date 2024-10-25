@@ -21,12 +21,13 @@ use bevy::{
 };
 use border::AsteroidBorderPlugin;
 use debug::AsteroidDebugPlugin;
-use enemy::AsteroidEnemyPlugin;
+use enemy::{AsteroidEnemy, AsteroidEnemyPlugin};
 use game::AsteroidGamePlugin;
 use gameplay::AsteroidGameplayPlugin;
 use input::AsteroidInputPlugin;
 use physics::AsteroidPhysicsPlugin;
-use player::AsteroidPlayerPlugin;
+use player::{AsteroidPlayer, AsteroidPlayerPlugin};
+use projectile::AsteroidProjectile;
 use ui::AsteroidUiPlugin;
 use window::asteroid_window_plugin;
 
@@ -37,7 +38,11 @@ impl PluginGroup for AsteroidPlugins {
         PluginGroupBuilder::start::<Self>()
             .add_group(DefaultPlugins.set(asteroid_window_plugin()))
             .add(AsteroidInputPlugin::<AsteroidAction>::default())
-            .add(AsteroidPhysicsPlugin)
+            .add(
+                AsteroidPhysicsPlugin::default()
+                    .with_collisions_between::<AsteroidPlayer, AsteroidEnemy>()
+                    .with_collisions_between::<AsteroidProjectile, AsteroidEnemy>(),
+            )
             .add(AsteroidBorderPlugin)
             .add(AsteroidPlayerPlugin)
             .add(AsteroidEnemyPlugin {
