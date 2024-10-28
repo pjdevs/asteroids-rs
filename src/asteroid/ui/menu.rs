@@ -1,26 +1,23 @@
-use super::gameplay::Score;
-use crate::asteroid::states::AsteroidGameState;
+use crate::asteroid::{states::AsteroidGameState, systems::despawn_entities_with};
 use bevy::prelude::*;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AsteroidUiSystem {
-    UpdateCoreUi,
-    UpdateMenuUi,
-    UpdateInGameUi,
+pub enum AsteroidMenuUiSystem {
+    UpdateUi,
 }
 
-pub struct AsteroidUiPlugin;
+pub struct AsteroidMenuUiPlugin;
 
-impl Plugin for AsteroidUiPlugin {
+impl Plugin for AsteroidMenuUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ButtonEvent>()
             .add_systems(
-                Update,
-                ui_button_released_system.in_set(AsteroidUiSystem::UpdateCoreUi),
+                OnEnter(AsteroidGameState::MainMenu),
+                (ui_menu_setup_system,),
             )
             .add_systems(
-                Update,
-                ui_score_system.in_set(AsteroidUiSystem::UpdateInGameUi),
+                OnExit(AsteroidGameState::MainMenu),
+                (despawn_entities_with::<Node>,),
             )
             .add_systems(
                 Update,
@@ -29,56 +26,17 @@ impl Plugin for AsteroidUiPlugin {
                     ui_play_system,
                     ui_button_style_system,
                 )
-                    .in_set(AsteroidUiSystem::UpdateMenuUi),
+                    .run_if(in_state(AsteroidGameState::MainMenu))
+                    .in_set(AsteroidMenuUiSystem::UpdateUi),
             );
     }
 }
-
-// Menu
 
 #[derive(Component)]
 enum MenuButtonAction {
     Play,
     // Options,
     // Exit,
-}
-
-fn ui_play_system(
-    mut events: EventReader<ButtonEvent>,
-    mut next_state: ResMut<NextState<AsteroidGameState>>,
-    query: Query<&MenuButtonAction>,
-) {
-    for event in events.read() {
-        match event {
-            ButtonEvent::Clicked(entity) => {
-                if let Ok(action) = query.get(*entity) {
-                    match action {
-                        MenuButtonAction::Play => {
-                            next_state.set(AsteroidGameState::GameLoadingScreen)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-fn ui_button_style_system(
-    mut query: Query<(&mut BorderColor, &Interaction), Changed<Interaction>>,
-) {
-    for (mut border, interaction) in &mut query {
-        match *interaction {
-            Interaction::Pressed => {
-                border.0 = Color::srgb(0.5, 0.5, 0.5);
-            }
-            Interaction::Hovered => {
-                border.0 = Color::WHITE;
-            }
-            Interaction::None => {
-                border.0 = Color::BLACK;
-            }
-        }
-    }
 }
 
 pub fn ui_menu_setup_system(mut commands: Commands) {
@@ -130,41 +88,41 @@ pub fn ui_menu_setup_system(mut commands: Commands) {
     commands.entity(container).push_children(&[button]);
 }
 
-// In Game
-
-#[derive(Component)]
-struct ScoreText;
-
-impl ScoreText {
-    fn get_score_text(&self, score: u64) -> String {
-        format!("Score: {}", score)
+fn ui_play_system(
+    mut events: EventReader<ButtonEvent>,
+    mut next_state: ResMut<NextState<AsteroidGameState>>,
+    query: Query<&MenuButtonAction>,
+) {
+    for event in events.read() {
+        match event {
+            ButtonEvent::Clicked(entity) => {
+                if let Ok(action) = query.get(*entity) {
+                    match action {
+                        MenuButtonAction::Play => {
+                            next_state.set(AsteroidGameState::GameLoadingScreen)
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 
-pub fn ui_in_game_setup_system(mut commands: Commands) {
-    let score_text = ScoreText;
-    let text = TextBundle::from_section(
-        score_text.get_score_text(0),
-        TextStyle {
-            font_size: 24.0,
-            color: Color::WHITE,
-            ..Default::default()
-        },
-    )
-    .with_text_justify(JustifyText::Center)
-    .with_style(Style {
-        position_type: PositionType::Absolute,
-        bottom: Val::Px(5.0),
-        right: Val::Px(5.0),
-        ..Default::default()
-    });
-
-    commands.spawn((text, score_text));
-}
-
-fn ui_score_system(score: Res<Score>, mut query: Query<(&mut Text, &ScoreText)>) {
-    for (mut text, score_text) in &mut query {
-        text.sections[0].value = score_text.get_score_text(score.get_score());
+fn ui_button_style_system(
+    mut query: Query<(&mut BorderColor, &Interaction), Changed<Interaction>>,
+) {
+    for (mut border, interaction) in &mut query {
+        match *interaction {
+            Interaction::Pressed => {
+                border.0 = Color::srgb(0.5, 0.5, 0.5);
+            }
+            Interaction::Hovered => {
+                border.0 = Color::WHITE;
+            }
+            Interaction::None => {
+                border.0 = Color::BLACK;
+            }
+        }
     }
 }
 

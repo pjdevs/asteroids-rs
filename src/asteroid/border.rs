@@ -1,12 +1,16 @@
 use bevy::prelude::*;
 
-use super::physics::Movement;
+use super::{physics::movement::Movement, states::AsteroidGameState};
 
 pub struct AsteroidBorderPlugin;
 
 impl Plugin for AsteroidBorderPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(Update, (border_tunnel_system, border_despawn_system));
+        app.add_systems(
+            Update,
+            (border_tunnel_system, border_despawn_system)
+                .run_if(in_state(AsteroidGameState::InGame)),
+        );
     }
 }
 

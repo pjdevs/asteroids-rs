@@ -1,20 +1,43 @@
 use bevy::prelude::*;
-use bevy_asset_loader::asset_collection::AssetCollection;
+use bevy_asset_loader::prelude::*;
 
 use super::{
-    enemy::AsteroidEnemy, physics::CollisionEvent, player::AsteroidPlayer,
+    enemy::AsteroidEnemy,
+    physics::collision::CollisionEvent,
+    player::AsteroidPlayer,
     projectile::AsteroidProjectile,
+    states::AsteroidGameState,
+    systems::{despawn_entities_with, remove_resource},
 };
 
 pub struct AsteroidGameplayPlugin;
 
 impl Plugin for AsteroidGameplayPlugin {
     fn build(&self, app: &mut App) {
-        app.init_resource::<Score>().add_systems(
-            Update,
-            (gameplay_system.run_if(any_with_component::<AsteroidPlayer>),)
-                .in_set(AsteroidGameplaySystem::UpdateGameplay),
-        );
+        app.init_resource::<Score>()
+            .add_systems(
+                OnEnter(AsteroidGameState::InGame),
+                (add_score_system, spawn_background_system),
+            )
+            .add_systems(
+                OnExit(AsteroidGameState::InGame),
+                (
+                    remove_resource::<Score>,
+                    despawn_entities_with::<Background>,
+                ),
+            )
+            .add_systems(
+                Update,
+                gameplay_collision_system
+                    .run_if(on_event::<CollisionEvent>())
+                    .run_if(in_state(AsteroidGameState::InGame))
+                    .run_if(any_with_component::<AsteroidPlayer>)
+                    .in_set(AsteroidGameplaySystem::UpdateGameplay),
+            )
+            .configure_loading_state(
+                LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
+                    .load_collection::<AsteroidGameplayAssets>(),
+            );
     }
 }
 
@@ -29,6 +52,9 @@ impl Score {
         self.score
     }
 }
+
+#[derive(Component)]
+struct Background;
 
 // Assets
 
@@ -45,31 +71,31 @@ pub enum AsteroidGameplaySystem {
     UpdateGameplay,
 }
 
-pub fn gameplay_setup(
+pub fn add_score_system(mut commands: Commands) {
+    commands.init_resource::<Score>();
+}
+
+pub fn spawn_background_system(
     mut commands: Commands,
     assets: Res<AsteroidGameplayAssets>,
     camera_query: Query<&Camera>,
 ) {
-    commands.spawn(SpriteBundle {
-        texture: assets.background_texture.clone(),
-        sprite: Sprite {
-            custom_size: camera_query.single().logical_viewport_size(),
+    commands.spawn((
+        SpriteBundle {
+            texture: assets.background_texture.clone(),
+            sprite: Sprite {
+                custom_size: camera_query.single().logical_viewport_size(),
+                ..Default::default()
+            },
+            transform: Transform::from_xyz(0.0, 0.0, -1.0),
             ..Default::default()
         },
-        transform: Transform::from_xyz(0.0, 0.0, -1.0),
-        ..Default::default()
-    });
+        Background,
+    ));
 }
 
-pub fn gameplay_cleanup(mut commands: Commands, query: Query<Entity, With<Sprite>>) {
-    for entity in &query {
-        commands.entity(entity).despawn();
-    }
-}
-
-// TODO Make more events like enemy destroyed etc
-// TODO Seperate different collision types somehow
-fn gameplay_system(
+// TODO Make more events like enemy destroyed etc to handle everything separately
+fn gameplay_collision_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
     player_query: Query<Entity, With<AsteroidPlayer>>,

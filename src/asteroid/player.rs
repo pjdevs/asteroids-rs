@@ -1,15 +1,19 @@
-use crate::asteroid::physics::Obb2d;
-
 use super::{
     actions::AsteroidAction,
     assets::SizeAsset,
     border::TunnelBorder,
     input::{AsteroidInputSystem, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
-    physics::{Collider, Movement, Shape},
+    physics::{
+        collision::{Collider, Shape},
+        movement::Movement,
+        obb::Obb2d,
+    },
     projectile::AsteroidProjectileBundle,
+    states::AsteroidGameState,
+    systems::{despawn_entities_with, remove_resource},
 };
 use bevy::prelude::*;
-use bevy_asset_loader::prelude::AssetCollection;
+use bevy_asset_loader::prelude::*;
 
 // TODO Refactor all behaviors in components (Ship, Shoot, ..)
 
@@ -20,10 +24,26 @@ pub struct AsteroidPlayerPlugin;
 impl Plugin for AsteroidPlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
+            OnEnter(AsteroidGameState::InGame),
+            spawn_first_player_system,
+        )
+        .add_systems(
+            OnExit(AsteroidGameState::InGame),
+            (
+                remove_resource::<AsteroidPlayerAssets>,
+                despawn_entities_with::<AsteroidPlayer>,
+            ),
+        )
+        .add_systems(
             Update,
             (player_move_system, player_shoot_system)
+                .run_if(in_state(AsteroidGameState::InGame))
                 .after(AsteroidInputSystem::UpdateInput)
                 .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
+        )
+        .configure_loading_state(
+            LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
+                .load_collection::<AsteroidPlayerAssets>(),
         );
     }
 }

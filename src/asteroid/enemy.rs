@@ -2,11 +2,9 @@ use std::time::Duration;
 
 use crate::asteroid::assets::SizeAsset;
 use bevy::{math::bounding::BoundingCircle, prelude::*, time::common_conditions::on_timer};
-use bevy_asset_loader::prelude::AssetCollection;
-
+use bevy_asset_loader::prelude::*;
 use super::{
-    border::TunnelBorder,
-    physics::{Collider, Movement, Shape},
+    border::TunnelBorder, physics::{collision::{Collider, Shape}, movement::Movement}, states::AsteroidGameState, systems::{despawn_entities_with, remove_resource}
 };
 
 pub struct AsteroidEnemyPlugin {
@@ -16,12 +14,24 @@ pub struct AsteroidEnemyPlugin {
 impl Plugin for AsteroidEnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
+            OnExit(AsteroidGameState::InGame),
+            (
+                remove_resource::<AsteroidEnemyAssets>,
+                despawn_entities_with::<AsteroidEnemy>,
+            ),
+        )
+        .add_systems(
             Update,
             spawn_enemies_system
+                .run_if(in_state(AsteroidGameState::InGame))
                 .run_if(on_timer(Duration::from_secs(
                     self.enemy_spawn_delay_seconds,
                 )))
                 .in_set(AsteroidEnemySystem::UpdateSpawnEnemies),
+        )
+        .configure_loading_state(
+            LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
+                .load_collection::<AsteroidEnemyAssets>(),
         );
     }
 }
