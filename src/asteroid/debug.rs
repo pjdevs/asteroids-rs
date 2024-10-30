@@ -66,7 +66,7 @@ fn debug_toggle_invincible_system(mut query: Query<&mut Collider, With<AsteroidP
     }
 }
 
-fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(Option<&Movement>, &Collider)>) {
+fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &Collider)>) {
     for (movement, collider) in &query {
         let color = if collider.enabled { GREEN } else { WHITE };
 

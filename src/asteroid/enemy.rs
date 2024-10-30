@@ -3,8 +3,9 @@ use std::time::Duration;
 use super::{
     border::TunnelBorder,
     gameplay::{CollisionDamager, Health},
+    layers,
     physics::{
-        collision::{Collider, Shape},
+        collision::{Collider, CollisionLayers, Shape},
         movement::Movement,
     },
     states::AsteroidGameState,
@@ -65,6 +66,7 @@ pub struct AsteroidEnemyBundle {
     sprite: SpriteBundle,
     movement: Movement,
     collider: Collider,
+    layers: CollisionLayers,
     border: TunnelBorder,
     health: Health,
     damager: CollisionDamager,
@@ -120,6 +122,7 @@ fn spawn_enemies_system(
             Vec2::ZERO,
             size.collider_size.x / 2.0,
         ))),
+        layers: CollisionLayers::new(layers::ENEMY_MASK, layers::PLAYER_MASK),
         damager: CollisionDamager::new(100),
         ..Default::default()
     });

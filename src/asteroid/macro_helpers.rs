@@ -2,7 +2,7 @@
 macro_rules! get {
     ($var:ident, $query:expr, $entity:expr) => {
         let Ok($var) = $query.get($entity) else {
-            continue;
+            return;
         };
     };
 }
@@ -11,7 +11,7 @@ macro_rules! get {
 macro_rules! get_mut {
     ($var:ident, $query:expr, $entity:expr) => {
         let Ok(mut $var) = $query.get_mut($entity) else {
-            continue;
+            return;
         };
     };
 }

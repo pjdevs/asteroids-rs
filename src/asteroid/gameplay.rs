@@ -120,12 +120,32 @@ fn gameplay_collision_damage_system(
     mut health_query: Query<&mut Health>,
 ) {
     for collision in collision_event.read() {
-        get!(damager, damager_query, collision.first);
-        get_mut!(health, &mut health_query, collision.second);
-
-        let damage = damager.get_damage(&health);
-        health.damage(damage);
+        handle_damage(
+            collision.first,
+            collision.second,
+            &damager_query,
+            &mut health_query,
+        );
+        handle_damage(
+            collision.second,
+            collision.first,
+            &damager_query,
+            &mut health_query,
+        );
     }
+}
+
+fn handle_damage(
+    first: Entity,
+    second: Entity,
+    damager_query: &Query<&CollisionDamager>,
+    health_query: &mut Query<&mut Health>,
+) {
+    get!(damager, damager_query, first);
+    get_mut!(health, health_query, second);
+
+    let damage = damager.get_damage(&health);
+    health.damage(damage);
 }
 
 fn gameplay_death_system(mut commands: Commands, health_query: Query<(Entity, &Health)>) {
@@ -161,7 +181,6 @@ impl CollisionDamager {
     pub fn new(damage_amount: i32) -> Self {
         Self { damage_amount }
     }
-
 }
 
 impl Damager for CollisionDamager {

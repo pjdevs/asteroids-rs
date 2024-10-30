@@ -5,8 +5,9 @@ use super::{
     assets::SizeAsset,
     border::TunnelBorder,
     input::{AsteroidInputSystem, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
+    layers,
     physics::{
-        collision::{Collider, Shape},
+        collision::{Collider, CollisionLayers, LayerMask, Shape},
         movement::Movement,
         obb::Obb2d,
     },
@@ -79,15 +80,31 @@ pub struct AsteroidPlayer {
     rotation_speed: f32,
 }
 
-#[derive(Bundle, Default)]
+#[derive(Bundle)]
 pub struct AsteroidPlayerBundle {
     player: AsteroidPlayer,
     sprite: SpriteBundle,
     movement: Movement,
     collider: Collider,
+    layers: CollisionLayers,
     border: TunnelBorder,
     controller: InputController<AsteroidAction>,
     health: Health,
+}
+
+impl Default for AsteroidPlayerBundle {
+    fn default() -> Self {
+        Self {
+            player: Default::default(),
+            sprite: Default::default(),
+            movement: Default::default(),
+            collider: Default::default(),
+            layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
+            border: Default::default(),
+            controller: Default::default(),
+            health: Default::default(),
+        }
+    }
 }
 
 impl AsteroidPlayerBundle {
@@ -226,6 +243,7 @@ fn player_shoot_system(
                     size_asset.collider_size / 2.0,
                     0.0,
                 ))),
+                layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
                 health: Health::new(1),
                 damager: CollisionDamager::new(50),
                 ..Default::default()

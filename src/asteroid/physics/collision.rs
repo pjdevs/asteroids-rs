@@ -1,4 +1,4 @@
-use std::sync::Mutex;
+use std::ops::{BitAnd, BitOr};
 
 use super::obb::Obb2d;
 use super::Movement;
@@ -42,11 +42,7 @@ impl Shape {
         }
     }
 
-    pub fn transformed_by(&self, transform: Option<&Movement>) -> Self {
-        let Some(movement) = transform else {
-            return *self;
-        };
-
+    pub fn transformed_by(&self, movement: &Movement) -> Self {
         match self {
             Shape::Aabb(aabb) => {
                 Shape::Aabb(aabb.transformed_by(movement.position, movement.rotation))
@@ -74,41 +70,85 @@ pub struct CollisionEvent {
     pub second: Entity,
 }
 
-pub(super) fn collision_detection_between<A: Component, B: Component>(
-    events: EventWriter<CollisionEvent>,
-    query_first: Query<(Entity, &Collider, Option<&Movement>), With<A>>,
-    query_second: Query<(Entity, &Collider, Option<&Movement>), With<B>>,
-) {
-    let events_mutex = Mutex::new(events);
+pub type BitMask = u8;
 
+#[derive(Clone, Copy, PartialEq, Eq, Hash, Default)]
+pub struct LayerMask(pub BitMask);
+
+impl LayerMask {
+    pub const ALL: LayerMask = LayerMask(BitMask::MAX);
+    pub const NONE: LayerMask = LayerMask(BitMask::MIN);
+}
+
+impl BitAnd for LayerMask {
+    type Output = LayerMask;
+
+    #[inline(always)]
+    fn bitand(self, rhs: Self) -> Self::Output {
+        LayerMask(self.0 & rhs.0)
+    }
+}
+
+impl BitOr for LayerMask {
+    type Output = LayerMask;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        LayerMask(self.0 | rhs.0)
+    }
+}
+
+#[derive(Component)]
+pub struct CollisionLayers {
+    members: LayerMask,
+    filters: LayerMask,
+}
+
+impl CollisionLayers {
+    pub fn new(members: LayerMask, filters: LayerMask) -> Self {
+        Self { members, filters }
+    }
+}
+
+impl Default for CollisionLayers {
+    fn default() -> Self {
+        Self {
+            members: LayerMask::ALL,
+            filters: Default::default(),
+        }
+    }
+}
+
+impl CollisionLayers {
+    pub fn interact_with(&self, layers: &CollisionLayers) -> bool {
+        self.members & layers.filters != LayerMask::NONE
+            && self.filters & layers.members != LayerMask::NONE
+    }
+}
+
+pub(super) fn physics_collision_system(
+    mut events: EventWriter<CollisionEvent>,
+    query: Query<(Entity, &Collider, &CollisionLayers, &Movement)>,
+) {
     // TODO Implement a general collision system with quadtree, BVH ??
-    for (entity_first, collider_first, movement_first) in &query_first {
-        if !collider_first.enabled {
+    for [(entity_first, collider_first, layers_first, movement_first), (entity_second, collider_second, layers_second, movement_second)] in
+        query.iter_combinations()
+    {
+        if !collider_first.enabled
+            || !collider_second.enabled
+            || !layers_first.interact_with(layers_second)
+        {
             continue;
         }
 
-        query_second
-            .par_iter()
-            .for_each(|(entity_second, collider_second, movement_second)| {
-                if entity_first != entity_second && collider_second.enabled {
-                    if collider_first
-                        .shape
-                        .transformed_by(movement_first)
-                        .intersects(&collider_second.shape.transformed_by(movement_second))
-                    {
-                        match events_mutex.lock() {
-                            Ok(mut events) => {
-                                events.send(CollisionEvent {
-                                    first: entity_first,
-                                    second: entity_second,
-                                });
-                            }
-                            Err(err) => {
-                                error!("Error locking event reader for collisions: {}", err);
-                            }
-                        }
-                    }
-                }
+        if collider_first
+            .shape
+            .transformed_by(movement_first)
+            .intersects(&collider_second.shape.transformed_by(movement_second))
+        {
+            events.send(CollisionEvent {
+                first: entity_first,
+                second: entity_second,
             });
+        }
     }
 }

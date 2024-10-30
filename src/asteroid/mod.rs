@@ -6,6 +6,7 @@ mod enemy;
 mod game;
 mod gameplay;
 mod input;
+mod layers;
 mod macro_helpers;
 mod physics;
 mod player;
@@ -24,7 +25,7 @@ use border::AsteroidBorderPlugin;
 use debug::AsteroidDebugPlugin;
 use enemy::AsteroidEnemyPlugin;
 use game::AsteroidGamePlugin;
-use gameplay::{AsteroidGameplayPlugin, CollisionDamager, Health};
+use gameplay::AsteroidGameplayPlugin;
 use input::AsteroidInputPlugin;
 use physics::AsteroidPhysicsPlugin;
 use player::AsteroidPlayerPlugin;
@@ -41,10 +42,7 @@ impl PluginGroup for AsteroidPlugins {
             .add_group(DefaultPlugins.set(asteroid_window_plugin()))
             .add(AsteroidGamePlugin)
             .add(AsteroidInputPlugin::<AsteroidAction>::default())
-            .add(
-                AsteroidPhysicsPlugin::default()
-                    .with_collisions_between::<CollisionDamager, Health>(),
-            )
+            .add(AsteroidPhysicsPlugin)
             .add(AsteroidBorderPlugin)
             .add(AsteroidProjectilePlugin)
             .add(AsteroidPlayerPlugin)
