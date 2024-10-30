@@ -8,10 +8,8 @@ mod ui;
 mod utils;
 
 use audio::AsteroidAudioPlugin;
-use bevy::{
-    app::{PluginGroup, PluginGroupBuilder},
-    DefaultPlugins,
-};
+use bevy::app::{PluginGroup, PluginGroupBuilder};
+use bevy::DefaultPlugins;
 use core::actions::AsteroidAction;
 use debug::AsteroidDebugPlugin;
 use game::border::AsteroidBorderPlugin;
