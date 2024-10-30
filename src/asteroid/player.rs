@@ -7,7 +7,7 @@ use super::{
     input::{AsteroidInputSystem, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
     layers,
     physics::{
-        collision::{Collider, CollisionLayers, LayerMask, Shape},
+        collision::{Collider, CollisionLayers, Shape},
         movement::Movement,
         obb::Obb2d,
     },
