@@ -1,3 +1,5 @@
+use crate::asteroid::gameplay::{CollisionDamager, Health};
+
 use super::{
     actions::AsteroidAction,
     assets::SizeAsset,
@@ -85,6 +87,7 @@ pub struct AsteroidPlayerBundle {
     collider: Collider,
     border: TunnelBorder,
     controller: InputController<AsteroidAction>,
+    health: Health,
 }
 
 impl AsteroidPlayerBundle {
@@ -223,6 +226,8 @@ fn player_shoot_system(
                     size_asset.collider_size / 2.0,
                     0.0,
                 ))),
+                health: Health::new(1),
+                damager: CollisionDamager::new(50),
                 ..Default::default()
             });
         }

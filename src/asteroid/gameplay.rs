@@ -1,11 +1,11 @@
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
+use crate::{get, get_mut};
+
 use super::{
     enemy::AsteroidEnemy,
     physics::collision::CollisionEvent,
-    player::AsteroidPlayer,
-    projectile::AsteroidProjectile,
     states::AsteroidGameState,
     systems::{despawn_entities_with, remove_resource},
 };
@@ -28,11 +28,21 @@ impl Plugin for AsteroidGameplayPlugin {
             )
             .add_systems(
                 Update,
-                gameplay_collision_system
-                    .run_if(on_event::<CollisionEvent>())
+                (
+                    gameplay_collision_damage_system.run_if(on_event::<CollisionEvent>()),
+                    gameplay_death_system.after(gameplay_collision_damage_system),
+                    gameplay_score_system
+                        .run_if(any_with_component::<Dead>)
+                        .after(gameplay_death_system),
+                )
                     .run_if(in_state(AsteroidGameState::InGame))
-                    .run_if(any_with_component::<AsteroidPlayer>)
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
+            )
+            .add_systems(
+                PostUpdate,
+                gameplay_despawn_dead_system
+                    .run_if(any_with_component::<Dead>)
+                    .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
             )
             .configure_loading_state(
                 LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
@@ -69,13 +79,23 @@ pub struct AsteroidGameplayAssets {
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AsteroidGameplaySystem {
     UpdateGameplay,
+    PostUpdateGameplay,
 }
 
-pub fn add_score_system(mut commands: Commands) {
+fn add_score_system(mut commands: Commands) {
     commands.init_resource::<Score>();
 }
 
-pub fn spawn_background_system(
+fn gameplay_score_system(
+    mut score: ResMut<Score>,
+    query: Query<Entity, (With<AsteroidEnemy>, With<Dead>)>,
+) {
+    for _ in &query {
+        score.score += 10;
+    }
+}
+
+fn spawn_background_system(
     mut commands: Commands,
     assets: Res<AsteroidGameplayAssets>,
     camera_query: Query<&Camera>,
@@ -94,27 +114,93 @@ pub fn spawn_background_system(
     ));
 }
 
-// TODO Make more events like enemy destroyed etc to handle everything separately
-fn gameplay_collision_system(
-    mut commands: Commands,
+fn gameplay_collision_damage_system(
     mut collision_event: EventReader<CollisionEvent>,
-    player_query: Query<Entity, With<AsteroidPlayer>>,
-    ennemies_query: Query<Entity, With<AsteroidEnemy>>,
-    projectile_query: Query<Entity, With<AsteroidProjectile>>,
-    mut score: ResMut<Score>,
+    damager_query: Query<&CollisionDamager>,
+    mut health_query: Query<&mut Health>,
 ) {
     for collision in collision_event.read() {
-        if let Ok(player) = player_query.get(collision.first) {
-            commands.entity(player).despawn();
-        }
+        get!(damager, damager_query, collision.first);
+        get_mut!(health, &mut health_query, collision.second);
 
-        if let Ok(projectile) = projectile_query.get(collision.first) {
-            commands.entity(projectile).despawn();
-            score.score += 10;
-        }
+        let damage = damager.get_damage(&health);
+        health.damage(damage);
+    }
+}
 
-        if let Ok(enemy) = ennemies_query.get(collision.second) {
-            commands.entity(enemy).despawn();
+fn gameplay_death_system(mut commands: Commands, health_query: Query<(Entity, &Health)>) {
+    for (entity, health) in &health_query {
+        if health.is_dead() {
+            commands.entity(entity).insert(Dead);
         }
+    }
+}
+
+fn gameplay_despawn_dead_system(mut commands: Commands, dead_query: Query<Entity, With<Dead>>) {
+    for entity in &dead_query {
+        commands.entity(entity).despawn();
+    }
+}
+
+pub trait Damager {
+    fn get_damage(&self, health: &Health) -> i32;
+}
+
+#[derive(Component)]
+pub struct CollisionDamager {
+    damage_amount: i32,
+}
+
+impl Default for CollisionDamager {
+    fn default() -> Self {
+        Self { damage_amount: 10 }
+    }
+}
+
+impl CollisionDamager {
+    pub fn new(damage_amount: i32) -> Self {
+        Self { damage_amount }
+    }
+
+}
+
+impl Damager for CollisionDamager {
+    fn get_damage(&self, _: &Health) -> i32 {
+        self.damage_amount
+    }
+}
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct Dead;
+
+#[derive(Component)]
+pub struct Health {
+    max_health: i32,
+    current_health: i32,
+}
+
+impl Default for Health {
+    fn default() -> Self {
+        Self::new(100)
+    }
+}
+
+impl Health {
+    pub fn new(max_health: i32) -> Self {
+        Self {
+            max_health,
+            current_health: max_health,
+        }
+    }
+
+    #[inline(always)]
+    pub fn damage(&mut self, amount: i32) {
+        self.current_health = (self.current_health - amount).clamp(0, self.max_health);
+    }
+
+    #[inline(always)]
+    pub fn is_dead(&self) -> bool {
+        self.current_health <= 0
     }
 }

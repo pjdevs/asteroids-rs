@@ -1,5 +1,6 @@
 use super::{
     border::DespawnBorder,
+    gameplay::{CollisionDamager, Health},
     physics::{collision::Collider, movement::Movement},
     states::AsteroidGameState,
     systems::despawn_entities_with,
@@ -16,6 +17,8 @@ pub struct AsteroidProjectileBundle {
     pub movement: Movement,
     pub collider: Collider,
     pub border: DespawnBorder,
+    pub health: Health,
+    pub damager: CollisionDamager,
 }
 
 pub struct AsteroidProjectilePlugin;

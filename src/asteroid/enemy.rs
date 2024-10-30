@@ -1,11 +1,18 @@
 use std::time::Duration;
 
+use super::{
+    border::TunnelBorder,
+    gameplay::{CollisionDamager, Health},
+    physics::{
+        collision::{Collider, Shape},
+        movement::Movement,
+    },
+    states::AsteroidGameState,
+    systems::{despawn_entities_with, remove_resource},
+};
 use crate::asteroid::assets::SizeAsset;
 use bevy::{math::bounding::BoundingCircle, prelude::*, time::common_conditions::on_timer};
 use bevy_asset_loader::prelude::*;
-use super::{
-    border::TunnelBorder, physics::{collision::{Collider, Shape}, movement::Movement}, states::AsteroidGameState, systems::{despawn_entities_with, remove_resource}
-};
 
 pub struct AsteroidEnemyPlugin {
     pub enemy_spawn_delay_seconds: u64,
@@ -59,6 +66,8 @@ pub struct AsteroidEnemyBundle {
     movement: Movement,
     collider: Collider,
     border: TunnelBorder,
+    health: Health,
+    damager: CollisionDamager,
 }
 
 // Systems
@@ -111,6 +120,7 @@ fn spawn_enemies_system(
             Vec2::ZERO,
             size.collider_size.x / 2.0,
         ))),
+        damager: CollisionDamager::new(100),
         ..Default::default()
     });
 }

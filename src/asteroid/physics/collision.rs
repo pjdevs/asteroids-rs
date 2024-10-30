@@ -1,3 +1,5 @@
+use std::sync::Mutex;
+
 use super::obb::Obb2d;
 use super::Movement;
 use bevy::math::bounding::*;
@@ -66,39 +68,47 @@ impl Default for Collider {
     }
 }
 
-#[derive(Event)]
+#[derive(Event, Clone, Copy)]
 pub struct CollisionEvent {
     pub first: Entity,
     pub second: Entity,
 }
 
 pub(super) fn collision_detection_between<A: Component, B: Component>(
-    mut events: EventWriter<CollisionEvent>,
+    events: EventWriter<CollisionEvent>,
     query_first: Query<(Entity, &Collider, Option<&Movement>), With<A>>,
     query_second: Query<(Entity, &Collider, Option<&Movement>), With<B>>,
 ) {
+    let events_mutex = Mutex::new(events);
+
     // TODO Implement a general collision system with quadtree, BVH ??
-    // TODO Investigate parallel iteration to trigger event
     for (entity_first, collider_first, movement_first) in &query_first {
         if !collider_first.enabled {
             continue;
         }
 
-        for (entity_second, collider_second, movement_second) in &query_second {
-            if !collider_second.enabled {
-                continue;
-            }
-
-            if collider_first
-                .shape
-                .transformed_by(movement_first)
-                .intersects(&collider_second.shape.transformed_by(movement_second))
-            {
-                events.send(CollisionEvent {
-                    first: entity_first,
-                    second: entity_second,
-                });
-            }
-        }
+        query_second
+            .par_iter()
+            .for_each(|(entity_second, collider_second, movement_second)| {
+                if entity_first != entity_second && collider_second.enabled {
+                    if collider_first
+                        .shape
+                        .transformed_by(movement_first)
+                        .intersects(&collider_second.shape.transformed_by(movement_second))
+                    {
+                        match events_mutex.lock() {
+                            Ok(mut events) => {
+                                events.send(CollisionEvent {
+                                    first: entity_first,
+                                    second: entity_second,
+                                });
+                            }
+                            Err(err) => {
+                                error!("Error locking event reader for collisions: {}", err);
+                            }
+                        }
+                    }
+                }
+            });
     }
 }
