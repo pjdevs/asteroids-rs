@@ -1,5 +1,6 @@
-use crate::asteroid::gameplay::Score;
-use crate::asteroid::{states::AsteroidGameState, systems::despawn_entities_with};
+use crate::asteroid::core::prelude::*;
+use crate::asteroid::game::prelude::*;
+use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]

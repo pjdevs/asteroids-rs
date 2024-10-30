@@ -1,13 +1,7 @@
-use super::{
-    border::DespawnBorder,
-    gameplay::{CollisionDamager, Health},
-    physics::{
-        collision::{Collider, CollisionLayers},
-        movement::Movement,
-    },
-    states::AsteroidGameState,
-    systems::despawn_entities_with,
-};
+use crate::asteroid::core::prelude::*;
+use crate::asteroid::game::prelude::*;
+use crate::asteroid::physics::prelude::*;
+use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
 #[derive(Component, Default)]

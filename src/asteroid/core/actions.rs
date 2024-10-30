@@ -1,4 +1,4 @@
-use super::input::ActionLike;
+use crate::asteroid::input::ActionLike;
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Default)]
 pub enum AsteroidAction {

@@ -233,3 +233,7 @@ fn input_update_maps<A: ActionLike>(
 //             .any(|e| e.gamepad.id == gamepad_id && e.disconnected())
 //     }
 // }
+
+pub mod prelude {
+    pub use super::*;
+}

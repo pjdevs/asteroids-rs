@@ -1,14 +1,10 @@
+use super::prelude::*;
+use crate::asteroid::core::prelude::*;
+use crate::asteroid::physics::prelude::*;
+use crate::asteroid::utils::prelude::*;
+use crate::{get, get_mut};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-
-use crate::{get, get_mut};
-
-use super::{
-    enemy::AsteroidEnemy,
-    physics::collision::CollisionEvent,
-    states::AsteroidGameState,
-    systems::{despawn_entities_with, remove_resource},
-};
 
 pub struct AsteroidGameplayPlugin;
 

@@ -1,38 +1,30 @@
-mod actions;
-mod assets;
-mod border;
+mod audio;
+mod core;
 mod debug;
-mod enemy;
 mod game;
-mod gameplay;
 mod input;
-mod layers;
-mod macro_helpers;
 mod physics;
-mod player;
-mod projectile;
-mod states;
-mod systems;
 mod ui;
-mod window;
+mod utils;
 
-use actions::AsteroidAction;
+use audio::AsteroidAudioPlugin;
 use bevy::{
     app::{PluginGroup, PluginGroupBuilder},
     DefaultPlugins,
 };
-use border::AsteroidBorderPlugin;
+use core::actions::AsteroidAction;
 use debug::AsteroidDebugPlugin;
-use enemy::AsteroidEnemyPlugin;
-use game::AsteroidGamePlugin;
-use gameplay::AsteroidGameplayPlugin;
+use game::border::AsteroidBorderPlugin;
+use game::enemy::AsteroidEnemyPlugin;
+use game::gameplay::AsteroidGameplayPlugin;
+use game::player::AsteroidPlayerPlugin;
+use game::projectile::AsteroidProjectilePlugin;
+use game::setup::AsteroidSetupPlugin;
 use input::AsteroidInputPlugin;
 use physics::AsteroidPhysicsPlugin;
-use player::AsteroidPlayerPlugin;
-use projectile::AsteroidProjectilePlugin;
 use ui::game::AsteroidGameUiPlugin;
 use ui::menu::AsteroidMenuUiPlugin;
-use window::asteroid_window_plugin;
+use utils::window::asteroid_window_plugin;
 
 pub struct AsteroidPlugins;
 
@@ -40,7 +32,7 @@ impl PluginGroup for AsteroidPlugins {
     fn build(self) -> bevy::app::PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add_group(DefaultPlugins.set(asteroid_window_plugin()))
-            .add(AsteroidGamePlugin)
+            .add(AsteroidSetupPlugin)
             .add(AsteroidInputPlugin::<AsteroidAction>::default())
             .add(AsteroidPhysicsPlugin)
             .add(AsteroidBorderPlugin)
@@ -53,5 +45,6 @@ impl PluginGroup for AsteroidPlugins {
             .add(AsteroidGameplayPlugin)
             .add(AsteroidMenuUiPlugin)
             .add(AsteroidGameUiPlugin)
+            .add(AsteroidAudioPlugin)
     }
 }

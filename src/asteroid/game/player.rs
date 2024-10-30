@@ -1,24 +1,12 @@
-use crate::asteroid::gameplay::{CollisionDamager, Health};
-
-use super::{
-    actions::AsteroidAction,
-    assets::SizeAsset,
-    border::TunnelBorder,
-    input::{AsteroidInputSystem, AxisSide, ButtonMode, InputController, InputMap, InputMapping},
-    layers,
-    physics::{
-        collision::{Collider, CollisionLayers, Shape},
-        movement::Movement,
-        obb::Obb2d,
-    },
-    projectile::AsteroidProjectileBundle,
-    states::AsteroidGameState,
-    systems::{despawn_entities_with, remove_resource},
-};
+use crate::asteroid::core::prelude::*;
+use crate::asteroid::game::prelude::*;
+use crate::asteroid::input::prelude::*;
+use crate::asteroid::physics::prelude::*;
+use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-// TODO Refactor all behaviors in components (Ship, Shoot, ..)
+// TODO Refactor all behaviors in components (Ship, Shoot, ..) ????
 
 // Plugin
 

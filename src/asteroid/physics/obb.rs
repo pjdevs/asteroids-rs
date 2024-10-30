@@ -1,7 +1,5 @@
-use bevy::{
-    math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume},
-    prelude::*,
-};
+use bevy::math::bounding::{Aabb2d, BoundingCircle, BoundingVolume, IntersectsVolume};
+use bevy::prelude::*;
 
 /// A 2D oriented bounding box
 #[derive(Debug, Clone, Copy)]

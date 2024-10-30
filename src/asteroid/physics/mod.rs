@@ -6,7 +6,7 @@ use bevy::prelude::*;
 use collision::*;
 use movement::*;
 
-use super::states::AsteroidGameState;
+use super::core::prelude::*;
 
 #[derive(Default)]
 pub struct AsteroidPhysicsPlugin;
@@ -40,4 +40,10 @@ pub enum AsteroidPhysicsSystem {
     FixedUpdateMovement,
     PostUpdateExtrapolateTransform,
     FixedUpdateCollisionDetection,
+}
+
+pub mod prelude {
+    pub use super::collision::{Collider, CollisionEvent, CollisionLayers, Shape};
+    pub use super::movement::Movement;
+    pub use super::obb::Obb2d;
 }

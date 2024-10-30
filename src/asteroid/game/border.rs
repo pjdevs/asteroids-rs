@@ -1,6 +1,6 @@
+use crate::asteroid::core::prelude::*;
+use crate::asteroid::physics::prelude::*;
 use bevy::prelude::*;
-
-use super::{physics::movement::Movement, states::AsteroidGameState};
 
 pub struct AsteroidBorderPlugin;
 

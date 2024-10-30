@@ -1,13 +1,12 @@
-use super::assets::SizeAsset;
-use super::states::AsteroidGameState;
+use crate::asteroid::core::prelude::*;
 use bevy::input::common_conditions::input_just_released;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 
-pub struct AsteroidGamePlugin;
+pub struct AsteroidSetupPlugin;
 
-impl Plugin for AsteroidGamePlugin {
+impl Plugin for AsteroidSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RonAssetPlugin::<SizeAsset>::new(&["size.ron"]))
             // Game Startup
