@@ -15,7 +15,7 @@ pub struct AsteroidEnemyPlugin {
 impl Plugin for AsteroidEnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnExit(AsteroidGameState::InGame),
+            OnExit(AsteroidGameState::Game),
             (
                 remove_resource::<AsteroidEnemyAssets>,
                 despawn_entities_with::<AsteroidEnemy>,
@@ -24,14 +24,14 @@ impl Plugin for AsteroidEnemyPlugin {
         .add_systems(
             Update,
             spawn_enemies_system
-                .run_if(in_state(AsteroidGameState::InGame))
+                .run_if(in_state(AsteroidGameState::Game))
                 .run_if(on_timer(Duration::from_secs(
                     self.enemy_spawn_delay_seconds,
                 )))
                 .in_set(AsteroidEnemySystem::UpdateSpawnEnemies),
         )
         .configure_loading_state(
-            LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
+            LoadingStateConfig::new(AsteroidGameState::GameLoading)
                 .load_collection::<AsteroidEnemyAssets>(),
         );
     }
@@ -41,7 +41,7 @@ impl Plugin for AsteroidEnemyPlugin {
 
 #[derive(Resource, AssetCollection)]
 pub struct AsteroidEnemyAssets {
-    #[asset(path = "sprites/asteroid01.png")]
+    #[asset(key = "enemy.texture")]
     pub enemy_texture: Handle<Image>,
 
     #[asset(path = "enemy.size.ron")]

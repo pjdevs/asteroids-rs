@@ -23,12 +23,12 @@ impl Plugin for AsteroidPhysicsPlugin {
                         .in_set(AsteroidPhysicsSystem::FixedUpdateCollisionDetection)
                         .after(physics_fixed_movement_system),
                 )
-                    .run_if(in_state(AsteroidGameState::InGame)),
+                    .run_if(in_state(AsteroidGameState::Game)),
             )
             .add_systems(
                 PostUpdate,
                 physics_transform_extrapolate_system
-                    .run_if(in_state(AsteroidGameState::InGame))
+                    .run_if(in_state(AsteroidGameState::Game))
                     .before(TransformSystem::TransformPropagate)
                     .in_set(AsteroidPhysicsSystem::PostUpdateExtrapolateTransform),
             );

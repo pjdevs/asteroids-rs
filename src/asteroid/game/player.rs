@@ -14,28 +14,26 @@ pub struct AsteroidPlayerPlugin;
 
 impl Plugin for AsteroidPlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(AsteroidGameState::InGame),
-            spawn_first_player_system,
-        )
-        .add_systems(
-            OnExit(AsteroidGameState::InGame),
-            (
-                remove_resource::<AsteroidPlayerAssets>,
-                despawn_entities_with::<AsteroidPlayer>,
-            ),
-        )
-        .add_systems(
-            Update,
-            (player_move_system, player_shoot_system)
-                .run_if(in_state(AsteroidGameState::InGame))
-                .after(AsteroidInputSystem::UpdateInput)
-                .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
-        )
-        .configure_loading_state(
-            LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
-                .load_collection::<AsteroidPlayerAssets>(),
-        );
+        app.add_event::<PlayerShoot>()
+            .add_systems(OnEnter(AsteroidGameState::Game), spawn_first_player_system)
+            .add_systems(
+                OnExit(AsteroidGameState::Game),
+                (
+                    remove_resource::<AsteroidPlayerAssets>,
+                    despawn_entities_with::<AsteroidPlayer>,
+                ),
+            )
+            .add_systems(
+                Update,
+                (player_move_system, player_shoot_system)
+                    .run_if(in_state(AsteroidGameState::Game))
+                    .after(AsteroidInputSystem::UpdateInput)
+                    .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
+            )
+            .configure_loading_state(
+                LoadingStateConfig::new(AsteroidGameState::GameLoading)
+                    .load_collection::<AsteroidPlayerAssets>(),
+            );
     }
 }
 
@@ -58,6 +56,11 @@ pub struct AsteroidPlayerAssets {
     #[asset(path = "player.projectile.size.ron")]
     pub player_projectile_size: Handle<SizeAsset>,
 }
+
+// Events
+
+#[derive(Event)]
+pub struct PlayerShoot;
 
 // Components
 
@@ -199,6 +202,7 @@ pub fn spawn_second_player_system(
 
 fn player_shoot_system(
     mut commands: Commands,
+    mut shoot_events: EventWriter<PlayerShoot>,
     assets: Res<AsteroidPlayerAssets>,
     sizes: Res<Assets<SizeAsset>>,
     player_query: Query<(&InputController<AsteroidAction>, &Movement), With<AsteroidPlayer>>,
@@ -236,6 +240,8 @@ fn player_shoot_system(
                 damager: CollisionDamager::new(50),
                 ..Default::default()
             });
+
+            shoot_events.send(PlayerShoot);
         }
     }
 }

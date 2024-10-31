@@ -12,11 +12,11 @@ impl Plugin for AsteroidGameplayPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Score>()
             .add_systems(
-                OnEnter(AsteroidGameState::InGame),
+                OnEnter(AsteroidGameState::Game),
                 (add_score_system, spawn_background_system),
             )
             .add_systems(
-                OnExit(AsteroidGameState::InGame),
+                OnExit(AsteroidGameState::Game),
                 (
                     remove_resource::<Score>,
                     despawn_entities_with::<Background>,
@@ -25,13 +25,16 @@ impl Plugin for AsteroidGameplayPlugin {
             .add_systems(
                 Update,
                 (
-                    gameplay_collision_damage_system.run_if(on_event::<CollisionEvent>()),
-                    gameplay_death_system.after(gameplay_collision_damage_system),
+                    (
+                        gameplay_collision_damage_system.run_if(on_event::<CollisionEvent>()),
+                        gameplay_death_system.after(gameplay_collision_damage_system),
+                    )
+                        .in_set(AsteroidGameplaySystem::UpdateDamageSystem),
                     gameplay_score_system
                         .run_if(any_with_component::<Dead>)
                         .after(gameplay_death_system),
                 )
-                    .run_if(in_state(AsteroidGameState::InGame))
+                    .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
             )
             .add_systems(
@@ -41,11 +44,13 @@ impl Plugin for AsteroidGameplayPlugin {
                     .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
             )
             .configure_loading_state(
-                LoadingStateConfig::new(AsteroidGameState::GameLoadingScreen)
+                LoadingStateConfig::new(AsteroidGameState::GameLoading)
                     .load_collection::<AsteroidGameplayAssets>(),
             );
     }
 }
+
+// Components
 
 #[derive(Resource, Default)]
 pub struct Score {
@@ -75,6 +80,7 @@ pub struct AsteroidGameplayAssets {
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AsteroidGameplaySystem {
     UpdateGameplay,
+    UpdateDamageSystem,
     PostUpdateGameplay,
 }
 
@@ -144,7 +150,10 @@ fn handle_damage(
     health.damage(damage);
 }
 
-fn gameplay_death_system(mut commands: Commands, health_query: Query<(Entity, &Health)>) {
+fn gameplay_death_system(
+    mut commands: Commands,
+    health_query: Query<(Entity, &Health), Without<Dead>>,
+) {
     for (entity, health) in &health_query {
         if health.is_dead() {
             commands.entity(entity).insert(Dead);
@@ -184,6 +193,9 @@ impl Damager for CollisionDamager {
         self.damage_amount
     }
 }
+
+#[derive(Component)]
+pub struct CollisionDespawn;
 
 #[derive(Component)]
 #[component(storage = "SparseSet")]

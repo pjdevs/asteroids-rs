@@ -1,3 +1,4 @@
+use super::prelude::Dead;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use bevy::prelude::*;
@@ -8,8 +9,7 @@ impl Plugin for AsteroidBorderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             Update,
-            (border_tunnel_system, border_despawn_system)
-                .run_if(in_state(AsteroidGameState::InGame)),
+            (border_tunnel_system, border_despawn_system).run_if(in_state(AsteroidGameState::Game)),
         );
     }
 }
@@ -18,10 +18,10 @@ impl Plugin for AsteroidBorderPlugin {
 pub struct TunnelBorder;
 
 #[derive(Component, Default)]
-pub struct DespawnBorder;
+pub struct DeadBorder;
 
 fn border_tunnel_system(
-    mut query: Query<&mut Movement, With<TunnelBorder>>,
+    mut query: Query<&mut Movement, (With<TunnelBorder>, Without<Dead>)>,
     camera_query: Query<&Camera>,
 ) {
     let half_screen_size = get_screen_half_size(camera_query.single());
@@ -41,7 +41,7 @@ fn border_tunnel_system(
 
 fn border_despawn_system(
     mut commands: Commands,
-    query: Query<(Entity, &Movement), With<DespawnBorder>>,
+    query: Query<(Entity, &Movement), With<DeadBorder>>,
     camera_query: Query<&Camera>,
 ) {
     let half_screen_size = get_screen_half_size(camera_query.single());
@@ -50,7 +50,7 @@ fn border_despawn_system(
         if movement.position.x.abs() > half_screen_size.x + 32.0
             || movement.position.y.abs() > half_screen_size.y + 32.0
         {
-            commands.entity(entity).despawn();
+            commands.entity(entity).insert(Dead);
         }
     });
 }

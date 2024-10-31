@@ -8,12 +8,24 @@
     "player.projectile.texture": Image(
         path: "sprites/laser.png",
     ),
+    "player.shoot.audio": File(
+        path: "audio/laser.ogg",
+    ),
 
     "enemy.texture": Image(
-        path: "sprites/asteroid.png",
+        path: "sprites/asteroid01.png",
     ),
     
     "gameplay.background.texture": Image(
         path: "sprites/background.png",
+    ),
+    "gameplay.music.audio": File(
+        path: "audio/game_music.ogg",
+    ),
+    "gameplay.death.audio": File(
+        path: "audio/explode.ogg",
+    ),
+    "gameplay.hit.audio": File(
+        path: "audio/hit.ogg",
     ),
 })

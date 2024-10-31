@@ -3,9 +3,10 @@ use bevy::prelude::*;
 #[derive(States, Debug, Hash, Eq, PartialEq, Clone, Default)]
 pub enum AsteroidGameState {
     #[default]
+    MainMenuLoading,
     MainMenu,
-    GameLoadingScreen,
-    InGame,
+    GameLoading,
+    Game,
 }
 
 // #[derive(States, Debug, Hash, Eq, PartialEq, Clone, Default)]

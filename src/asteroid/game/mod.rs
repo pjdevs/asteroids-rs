@@ -7,11 +7,12 @@ pub mod setup;
 
 pub mod prelude {
     pub use super::{
-        border::{DespawnBorder, TunnelBorder},
+        border::{DeadBorder, TunnelBorder},
         enemy::AsteroidEnemy,
-        gameplay::{CollisionDamager, Health, Score},
+        gameplay::{AsteroidGameplaySystem, CollisionDamager, Dead, Health, Score},
         player::{
             player_exists, spawn_first_player_system, spawn_second_player_system, AsteroidPlayer,
+            AsteroidPlayerSystem, PlayerShoot,
         },
         projectile::AsteroidProjectileBundle,
     };

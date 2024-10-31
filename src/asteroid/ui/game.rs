@@ -12,20 +12,17 @@ pub struct AsteroidGameUiPlugin;
 
 impl Plugin for AsteroidGameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(
-            OnEnter(AsteroidGameState::InGame),
-            (ui_in_game_setup_system,),
-        )
-        .add_systems(
-            OnExit(AsteroidGameState::InGame),
-            (despawn_entities_with::<Node>,),
-        )
-        .add_systems(
-            Update,
-            ui_score_system
-                .run_if(in_state(AsteroidGameState::InGame))
-                .in_set(AsteroidGameUiSystem::UpdateUi),
-        );
+        app.add_systems(OnEnter(AsteroidGameState::Game), (ui_in_game_setup_system,))
+            .add_systems(
+                OnExit(AsteroidGameState::Game),
+                (despawn_entities_with::<Node>,),
+            )
+            .add_systems(
+                Update,
+                ui_score_system
+                    .run_if(in_state(AsteroidGameState::Game))
+                    .in_set(AsteroidGameUiSystem::UpdateUi),
+            );
     }
 }
 

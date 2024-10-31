@@ -99,9 +99,7 @@ fn ui_play_system(
             ButtonEvent::Clicked(entity) => {
                 if let Ok(action) = query.get(*entity) {
                     match action {
-                        MenuButtonAction::Play => {
-                            next_state.set(AsteroidGameState::GameLoadingScreen)
-                        }
+                        MenuButtonAction::Play => next_state.set(AsteroidGameState::GameLoading),
                     }
                 }
             }
@@ -135,7 +133,7 @@ struct LastInteraction {
 }
 
 #[derive(Event)]
-enum ButtonEvent {
+pub enum ButtonEvent {
     Clicked(Entity),
 }
 

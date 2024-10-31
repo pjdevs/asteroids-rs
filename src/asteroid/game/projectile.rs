@@ -14,7 +14,7 @@ pub struct AsteroidProjectileBundle {
     pub movement: Movement,
     pub collider: Collider,
     pub layers: CollisionLayers,
-    pub border: DespawnBorder,
+    pub border: DeadBorder,
     pub health: Health,
     pub damager: CollisionDamager,
 }
@@ -24,7 +24,7 @@ pub struct AsteroidProjectilePlugin;
 impl Plugin for AsteroidProjectilePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnExit(AsteroidGameState::InGame),
+            OnExit(AsteroidGameState::Game),
             (despawn_entities_with::<AsteroidProjectile>,),
         );
     }
