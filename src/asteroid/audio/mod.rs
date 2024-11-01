@@ -9,6 +9,7 @@ use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use game::*;
 use menu::*;
+use utils::Music;
 
 // Plugin
 
@@ -34,7 +35,7 @@ impl Plugin for AsteroidAudioPlugin {
         .add_systems(
             OnExit(AsteroidGameState::MainMenu),
             (
-                despawn_entities_with::<Handle<AudioSource>>,
+                despawn_entities_with::<Music>,
                 remove_resource::<AsteroidMainMenuAudioAssets>,
             ),
         )
@@ -52,7 +53,7 @@ impl Plugin for AsteroidAudioPlugin {
         .add_systems(
             OnExit(AsteroidGameState::Game),
             (
-                despawn_entities_with::<Handle<AudioSource>>,
+                despawn_entities_with::<Music>,
                 remove_resource::<AsteroidGameAudioAssets>,
             ),
         )
