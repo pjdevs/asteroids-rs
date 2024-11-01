@@ -6,10 +6,12 @@ mod input;
 mod physics;
 mod ui;
 mod utils;
+mod editor;
 
 use audio::AsteroidAudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 use bevy::DefaultPlugins;
+use editor::AsteroidEditorPlugin;
 use core::actions::AsteroidAction;
 use debug::AsteroidDebugPlugin;
 use game::border::AsteroidBorderPlugin;
@@ -44,5 +46,6 @@ impl PluginGroup for AsteroidPlugins {
             .add(AsteroidMenuUiPlugin)
             .add(AsteroidGameUiPlugin)
             .add(AsteroidAudioPlugin)
+            .add(AsteroidEditorPlugin)
     }
 }
