@@ -25,3 +25,10 @@ macro_rules! get_single {
         }
     };
 }
+
+#[macro_export]
+macro_rules! asset {
+    ($assets:expr, $handle:expr) => {
+        $assets.get($handle).expect("Cannot find asset")
+    };
+}

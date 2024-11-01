@@ -1,4 +1,5 @@
 use super::prelude::*;
+use crate::asset;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
@@ -6,6 +7,7 @@ use bevy::math::bounding::BoundingCircle;
 use bevy::prelude::*;
 use bevy::time::common_conditions::on_timer;
 use bevy_asset_loader::prelude::*;
+use rand::Rng;
 use std::time::Duration;
 
 pub struct AsteroidEnemyPlugin {
@@ -46,6 +48,9 @@ pub struct AsteroidEnemyAssets {
 
     #[asset(path = "enemy.size.ron")]
     pub enemy_size: Handle<SizeAsset>,
+
+    #[asset(path = "enemy.spawner.ron")]
+    pub enemy_spawner: Handle<SpawnerAsset>,
 }
 
 // Components
@@ -72,29 +77,28 @@ pub enum AsteroidEnemySystem {
     UpdateSpawnEnemies,
 }
 
-// TODO Expose min max speed angle etc
-
 fn spawn_enemies_system(
     mut commands: Commands,
     enemy_assets: Res<AsteroidEnemyAssets>,
     size_assets: Res<Assets<SizeAsset>>,
+    spawner_assets: Res<Assets<SpawnerAsset>>,
     camera_query: Query<&Camera>,
 ) {
+    let spawner = asset!(spawner_assets, &enemy_assets.enemy_spawner);
+    let size = asset!(size_assets, &enemy_assets.enemy_size);
     let camera = camera_query.single();
-    let random_angle = rand::random::<f32>() * std::f32::consts::PI * 1.99 + 0.1;
-    let random_speed = rand::random::<f32>() * 100.0 + 50.0;
+    let mut random = rand::thread_rng();
+
+    let min_max_angle = spawner.min_max_angle * std::f32::consts::PI;
+    let random_angle = random.gen_range(min_max_angle.x..=min_max_angle.y);
+    let random_speed = random.gen_range(spawner.min_max_speed.x..=spawner.min_max_speed.y);
     let random_velocity = Vec2::new(random_angle.cos(), random_angle.sin()) * random_speed;
-    let random_angular_velocity = rand::random::<f32>() * 2.9 + 0.1;
+    let random_angular_velocity =
+        random.gen_range(spawner.min_max_angular_speed.x..=spawner.min_max_angular_speed.y);
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
-    let random_position: Vec2 = 2.0
-        * half_screen_size
-        * Vec2::new(rand::random::<f32>().round(), rand::random::<f32>().round())
-        - half_screen_size;
-
-    let size = size_assets
-        .get(&enemy_assets.enemy_size)
-        .expect("Cannot find enemy size asset");
+    let random_position: Vec2 =
+        2.0 * half_screen_size * Vec2::from(random.gen::<(f32, f32)>()).round() - half_screen_size;
 
     commands.spawn(AsteroidEnemyBundle {
         sprite: SpriteBundle {

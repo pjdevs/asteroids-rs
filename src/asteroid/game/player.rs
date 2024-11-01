@@ -1,3 +1,4 @@
+use crate::asset;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::game::prelude::*;
 use crate::asteroid::input::prelude::*;
@@ -170,12 +171,7 @@ pub fn spawn_first_player_system(
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_fast()
             .with_id(1)
-            .with_size(
-                sizes
-                    .get(&assets.player_size)
-                    .expect("Cannot find player size assset")
-                    .collider_size,
-            )
+            .with_size(asset!(sizes, &assets.player_size).collider_size)
             .with_texture(assets.player_one_texture.clone())
             .with_input_map(InputMap::default().with_keyboard_mappings()),
     );
@@ -189,12 +185,7 @@ pub fn spawn_second_player_system(
     commands.spawn(
         AsteroidPlayerBundle::preset_ship_slow()
             .with_id(2)
-            .with_size(
-                sizes
-                    .get(&assets.player_size)
-                    .expect("Cannot find player size assset")
-                    .collider_size,
-            )
+            .with_size(asset!(sizes, &assets.player_size).collider_size)
             .with_texture(assets.player_two_texture.clone())
             .with_input_map(InputMap::default().with_gamepad_mappings(0)),
     );
@@ -209,9 +200,7 @@ fn player_shoot_system(
 ) {
     const PROJECTILE_SPEED: f32 = 600.0;
 
-    let size_asset = sizes
-        .get(&assets.player_projectile_size)
-        .expect("Cannot find projectile size assset");
+    let size_asset = asset!(sizes, &assets.player_projectile_size);
 
     for (controller, player_movement) in &player_query {
         if controller.input_action(AsteroidAction::Shoot) {

@@ -9,6 +9,7 @@ pub struct AsteroidSetupPlugin;
 impl Plugin for AsteroidSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RonAssetPlugin::<SizeAsset>::new(&["size.ron"]))
+            .add_plugins(RonAssetPlugin::<SpawnerAsset>::new(&["spawner.ron"]))
             // Game Startup
             .add_systems(Startup, game_startup_system)
             // States
