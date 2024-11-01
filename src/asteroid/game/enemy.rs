@@ -97,14 +97,15 @@ fn spawn_enemies_system(
         random.gen_range(spawner.min_max_angular_speed.x..=spawner.min_max_angular_speed.y);
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
-    let random_position: Vec2 =
+    let random_position =
         2.0 * half_screen_size * Vec2::from(random.gen::<(f32, f32)>()).round() - half_screen_size;
+    let random_scale = random.gen_range(spawner.min_max_scale.x..=spawner.min_max_scale.y);
 
     commands.spawn(AsteroidEnemyBundle {
         sprite: SpriteBundle {
             texture: enemy_assets.enemy_texture.clone(),
             sprite: Sprite {
-                custom_size: Some(size.sprite_size),
+                custom_size: Some(size.sprite_size * random_scale),
                 ..Default::default()
             },
             ..Default::default()
@@ -117,7 +118,7 @@ fn spawn_enemies_system(
         },
         collider: Collider::from_shape(Shape::Circle(BoundingCircle::new(
             Vec2::ZERO,
-            size.collider_size.x / 2.0,
+            size.collider_size.x * random_scale / 2.0,
         ))),
         layers: CollisionLayers::new(layers::ENEMY_MASK, layers::PLAYER_MASK),
         damager: CollisionDamager::new(100),

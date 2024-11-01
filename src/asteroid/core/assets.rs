@@ -12,4 +12,5 @@ pub struct SpawnerAsset {
     pub min_max_speed: Vec2,
     pub min_max_angular_speed: Vec2,
     pub min_max_angle: Vec2,
+    pub min_max_scale: Vec2,
 }
