@@ -9,7 +9,10 @@ use super::utils::{spawn_music, spawn_sfx};
 #[derive(Resource, AssetCollection)]
 pub struct AsteroidGameAudioAssets {
     #[asset(key = "gameplay.death.audio")]
-    pub enemy_death_audio: Handle<AudioSource>,
+    pub gameplay_death_audio: Handle<AudioSource>,
+
+    #[asset(key = "gameplay.hit.audio")]
+    pub gameplay_hit_audio: Handle<AudioSource>,
 
     #[asset(key = "player.shoot.audio")]
     pub player_shoot_audio: Handle<AudioSource>,
@@ -40,6 +43,18 @@ pub fn audio_play_death_system(
     assets: Res<AsteroidGameAudioAssets>,
 ) {
     for _ in &query {
-        spawn_sfx(&mut commands, assets.enemy_death_audio.clone_weak());
+        spawn_sfx(&mut commands, assets.gameplay_death_audio.clone_weak());
+    }
+}
+
+pub fn audio_play_hit_system(
+    mut commands: Commands,
+    query: Query<Ref<Health>, With<AsteroidEnemy>>,
+    assets: Res<AsteroidGameAudioAssets>,
+) {
+    for health in &query {
+        if health.is_changed() && !health.is_added() {
+            spawn_sfx(&mut commands, assets.gameplay_hit_audio.clone_weak());
+        }
     }
 }
