@@ -195,9 +195,6 @@ impl Damager for CollisionDamager {
 }
 
 #[derive(Component)]
-pub struct CollisionDespawn;
-
-#[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct Dead;
 
