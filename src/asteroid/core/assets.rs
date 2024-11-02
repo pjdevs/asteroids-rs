@@ -7,8 +7,9 @@ pub struct SizeAsset {
     pub collider_size: Vec2,
 }
 
-#[derive(Deserialize, Asset, TypePath)]
+#[derive(Deserialize, Asset, Reflect)]
 pub struct SpawnerAsset {
+    pub spawn_delay_ms: u64,
     pub min_max_speed: Vec2,
     pub min_max_angular_speed: Vec2,
     pub min_max_angle: Vec2,

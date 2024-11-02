@@ -48,9 +48,7 @@ impl AsteroidPlugins {
             .add(AsteroidBorderPlugin)
             .add(AsteroidProjectilePlugin)
             .add(AsteroidPlayerPlugin)
-            .add(AsteroidEnemyPlugin {
-                enemy_spawn_delay_seconds: 1,
-            })
+            .add(AsteroidEnemyPlugin)
             .add(AsteroidGameplayPlugin)
             .add(AsteroidMenuUiPlugin)
             .add(AsteroidGameUiPlugin)

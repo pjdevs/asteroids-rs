@@ -15,7 +15,6 @@ pub struct AsteroidProjectileBundle {
     pub collider: Collider,
     pub layers: CollisionLayers,
     pub border: DeadBorder,
-    pub health: Health,
     pub damager: CollisionDamager,
 }
 

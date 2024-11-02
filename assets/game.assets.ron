@@ -8,8 +8,8 @@
     "player.projectile.texture": Image(
         path: "sprites/laser.png",
     ),
-    "player.shoot.audio": File(
-        path: "audio/laser.ogg",
+    "player.shoot.audios": Files(
+        paths: ["audio/laser.ogg", "audio/laser_m2.ogg", "audio/laser_p2.ogg"],
     ),
 
     "enemy.texture": Image(

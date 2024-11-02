@@ -224,7 +224,6 @@ fn player_shoot_system(
                     0.0,
                 ))),
                 layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
-                health: Health::new(1),
                 damager: CollisionDamager::new(50),
                 ..Default::default()
             });
