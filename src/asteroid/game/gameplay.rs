@@ -30,6 +30,9 @@ impl Plugin for AsteroidGameplayPlugin {
                         gameplay_death_system.after(gameplay_collision_damage_system),
                     )
                         .in_set(AsteroidGameplaySystem::UpdateDamageSystem),
+                    gameplay_collision_despawn_system
+                        .run_if(on_event::<CollisionEvent>())
+                        .run_if(any_with_component::<CollisionDespawn>),
                     gameplay_score_system
                         .run_if(any_with_component::<Dead>)
                         .after(gameplay_death_system),
@@ -116,6 +119,26 @@ fn spawn_background_system(
     ));
 }
 
+fn gameplay_collision_despawn_system(
+    mut commands: Commands,
+    mut collision_event: EventReader<CollisionEvent>,
+    query: Query<(), With<CollisionDespawn>>,
+) {
+    for collision in collision_event.read() {
+        handle_despawn(&mut commands, collision.first, &query);
+        handle_despawn(&mut commands, collision.second, &query);
+    }
+}
+
+fn handle_despawn(
+    commands: &mut Commands,
+    entity: Entity,
+    query: &Query<(), With<CollisionDespawn>>,
+) {
+    get!(_despawn, query, entity);
+    commands.entity(entity).despawn();
+}
+
 fn gameplay_collision_damage_system(
     mut collision_event: EventReader<CollisionEvent>,
     damager_query: Query<&CollisionDamager>,
@@ -166,6 +189,9 @@ fn gameplay_despawn_dead_system(mut commands: Commands, dead_query: Query<Entity
         commands.entity(entity).despawn();
     }
 }
+
+#[derive(Component, Default)]
+pub struct CollisionDespawn;
 
 pub trait Damager {
     fn get_damage(&self, health: &Health) -> i32;

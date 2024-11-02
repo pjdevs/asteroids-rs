@@ -1,17 +1,24 @@
 use super::core::prelude::*;
+use super::game::enemy::AsteroidEnemySpawner;
 use super::game::player::{spawn_first_player_system, spawn_second_player_system, AsteroidPlayer};
 use super::physics::prelude::*;
 use bevy::color::palettes::css::{GREEN, WHITE};
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::WorldInspectorPlugin;
+use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
 
 pub struct AsteroidDebugPlugin;
 
 impl Plugin for AsteroidDebugPlugin {
     fn build(&self, app: &mut App) {
-        app.add_plugins(WorldInspectorPlugin::new())
+        app
+            // Types
+            .register_type::<AsteroidEnemySpawner>()
+            // Inspectors
+            .add_plugins(WorldInspectorPlugin::new())
+            .add_plugins(ResourceInspectorPlugin::<AsteroidEnemySpawner>::default())
+            // Debug
             .insert_resource(AsteroidDebugConfig::default())
             .add_systems(
                 Update,

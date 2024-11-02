@@ -34,7 +34,10 @@ pub fn audio_play_shoot_system(
     assets: Res<AsteroidGameAudioAssets>,
 ) {
     let mut rng = rand::thread_rng();
-    let sfx = assets.player_shoot_audios.choose(&mut rng).expect("Cannot find random sfx");
+    let sfx = assets
+        .player_shoot_audios
+        .choose(&mut rng)
+        .expect("Cannot find random sfx");
 
     for _ in events.read() {
         spawn_sfx(&mut commands, sfx.clone_weak());

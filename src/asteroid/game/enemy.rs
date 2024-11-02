@@ -19,6 +19,7 @@ impl Plugin for AsteroidEnemyPlugin {
             OnExit(AsteroidGameState::Game),
             (
                 remove_resource::<AsteroidEnemyAssets>,
+                remove_resource::<AsteroidEnemySpawner>,
                 despawn_entities_with::<AsteroidEnemy>,
             ),
         )
@@ -26,9 +27,7 @@ impl Plugin for AsteroidEnemyPlugin {
             Update,
             spawn_enemies_system
                 .run_if(in_state(AsteroidGameState::Game))
-                .run_if(on_timer(Duration::from_millis(
-                    1500,
-                )))
+                .run_if(on_timer(Duration::from_millis(1500)))
                 .in_set(AsteroidEnemySystem::UpdateSpawnEnemies),
         )
         .configure_loading_state(
@@ -55,19 +54,20 @@ pub struct AsteroidEnemyAssets {
 
 // Resources
 #[derive(Resource, Reflect)]
+#[reflect(Resource)]
 pub struct AsteroidEnemySpawner {
     pub enabled: bool,
-    pub spawner_asset: SpawnerAsset,
+    pub spawner_asset: Handle<SpawnerAsset>,
 }
 
 impl FromWorld for AsteroidEnemySpawner {
     fn from_world(world: &mut World) -> Self {
         let mut system_state = SystemState::<Res<AsteroidEnemyAssets>>::new(world);
         let enemy_assets = system_state.get(world);
-        
+
         AsteroidEnemySpawner {
             enabled: true,
-            spawner_asset: enemy_assets.enemy_spawner,
+            spawner_asset: enemy_assets.enemy_spawner.clone_weak(),
         }
     }
 }
@@ -104,22 +104,28 @@ fn spawn_enemies_system(
     spawner_assets: Res<Assets<SpawnerAsset>>,
     camera_query: Query<&Camera>,
 ) {
-    let spawner_asset = asset!(spawner_assets, &enemy_assets.enemy_spawner);
+    if !enemy_spawner.enabled {
+        return;
+    }
+
+    let spawner_asset = asset!(spawner_assets, &enemy_spawner.spawner_asset);
     let size = asset!(size_assets, &enemy_assets.enemy_size);
     let camera = camera_query.single();
     let mut random = rand::thread_rng();
 
     let min_max_angle = spawner_asset.min_max_angle * std::f32::consts::PI;
     let random_angle = random.gen_range(min_max_angle.x..=min_max_angle.y);
-    let random_speed = random.gen_range(spawner_asset.min_max_speed.x..=spawner_asset.min_max_speed.y);
+    let random_speed =
+        random.gen_range(spawner_asset.min_max_speed.x..=spawner_asset.min_max_speed.y);
     let random_velocity = Vec2::new(random_angle.cos(), random_angle.sin()) * random_speed;
-    let random_angular_velocity =
-        random.gen_range(spawner_asset.min_max_angular_speed.x..=spawner_asset.min_max_angular_speed.y);
+    let random_angular_velocity = random
+        .gen_range(spawner_asset.min_max_angular_speed.x..=spawner_asset.min_max_angular_speed.y);
     let screen_size = camera.physical_target_size().unwrap();
     let half_screen_size = Vec2::new(screen_size.x as f32 / 2.0, screen_size.y as f32 / 2.0);
     let random_position =
         2.0 * half_screen_size * Vec2::from(random.gen::<(f32, f32)>()).round() - half_screen_size;
-    let random_scale = random.gen_range(spawner_asset.min_max_scale.x..=spawner_asset.min_max_scale.y);
+    let random_scale =
+        random.gen_range(spawner_asset.min_max_scale.x..=spawner_asset.min_max_scale.y);
 
     let enemy = AsteroidEnemyBundle {
         sprite: SpriteBundle {
