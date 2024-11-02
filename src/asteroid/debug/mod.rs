@@ -1,16 +1,18 @@
 use super::core::prelude::*;
-use super::game::prelude::*;
+use super::game::player::{spawn_first_player_system, spawn_second_player_system, AsteroidPlayer};
 use super::physics::prelude::*;
 use bevy::color::palettes::css::{GREEN, WHITE};
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
 
 pub struct AsteroidDebugPlugin;
 
 impl Plugin for AsteroidDebugPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(AsteroidDebugConfig::default())
+        app.add_plugins(WorldInspectorPlugin::new())
+            .insert_resource(AsteroidDebugConfig::default())
             .add_systems(
                 Update,
                 (
@@ -37,14 +39,24 @@ impl Plugin for AsteroidDebugPlugin {
     }
 }
 
+// Resources
+
 #[derive(Resource, Default)]
 struct AsteroidDebugConfig {
     is_debug_mode: bool,
 }
 
+// Conditions
+
+pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
+    move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
+}
+
 fn debug_is_active(config: Res<AsteroidDebugConfig>) -> bool {
     config.is_debug_mode
 }
+
+// Systems
 
 fn switch_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
     config.is_debug_mode = !config.is_debug_mode;

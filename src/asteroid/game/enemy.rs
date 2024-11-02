@@ -11,6 +11,7 @@ use rand::Rng;
 use std::time::Duration;
 
 pub struct AsteroidEnemyPlugin {
+    // TODO Move this in assets
     pub enemy_spawn_delay_seconds: u64,
 }
 

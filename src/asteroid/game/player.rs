@@ -26,10 +26,15 @@ impl Plugin for AsteroidPlayerPlugin {
             )
             .add_systems(
                 Update,
-                (player_move_system, player_shoot_system)
-                    .run_if(in_state(AsteroidGameState::Game))
-                    .after(AsteroidInputSystem::UpdateInput)
-                    .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
+                (
+                    (player_move_system, player_shoot_system)
+                        .run_if(in_state(AsteroidGameState::Game))
+                        .after(AsteroidInputSystem::UpdateInput)
+                        .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
+                    spawn_second_player_system
+                        .run_if(in_state(AsteroidGameState::Game))
+                        .run_if(on_gamepad_connection(0)),
+                ),
             )
             .configure_loading_state(
                 LoadingStateConfig::new(AsteroidGameState::GameLoading)
@@ -67,7 +72,7 @@ pub struct PlayerShoot;
 
 #[derive(Component, Default)]
 pub struct AsteroidPlayer {
-    player_id: u64,
+    pub player_id: u64,
     movement_speed: f32,
     rotation_speed: f32,
 }
@@ -148,12 +153,6 @@ impl AsteroidPlayerBundle {
             .with_movement_speed(500.0)
             .with_rotation_speed(4.0)
     }
-}
-
-// Conditions
-
-pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
-    move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
 }
 
 // Systems

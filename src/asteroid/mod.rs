@@ -1,18 +1,18 @@
 mod audio;
 mod core;
+#[cfg(feature = "dev")]
 mod debug;
 mod game;
 mod input;
 mod physics;
 mod ui;
 mod utils;
-mod editor;
 
 use audio::AsteroidAudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 use bevy::DefaultPlugins;
-use editor::AsteroidEditorPlugin;
 use core::actions::AsteroidAction;
+#[cfg(feature = "dev")]
 use debug::AsteroidDebugPlugin;
 use game::border::AsteroidBorderPlugin;
 use game::enemy::AsteroidEnemyPlugin;
@@ -29,7 +29,17 @@ use utils::window::asteroid_window_plugin;
 pub struct AsteroidPlugins;
 
 impl PluginGroup for AsteroidPlugins {
-    fn build(self) -> bevy::app::PluginGroupBuilder {
+    #[allow(unreachable_code)]
+    fn build(self) -> PluginGroupBuilder {
+        #[cfg(feature = "dev")]
+        return Self::dev_plugins();
+
+        Self::default_plugins()
+    }
+}
+
+impl AsteroidPlugins {
+    fn default_plugins() -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add_group(DefaultPlugins.set(asteroid_window_plugin()))
             .add(AsteroidSetupPlugin)
@@ -41,11 +51,14 @@ impl PluginGroup for AsteroidPlugins {
             .add(AsteroidEnemyPlugin {
                 enemy_spawn_delay_seconds: 1,
             })
-            .add(AsteroidDebugPlugin)
             .add(AsteroidGameplayPlugin)
             .add(AsteroidMenuUiPlugin)
             .add(AsteroidGameUiPlugin)
             .add(AsteroidAudioPlugin)
-            .add(AsteroidEditorPlugin)
+    }
+
+    #[cfg(feature = "dev")]
+    fn dev_plugins() -> PluginGroupBuilder {
+        Self::default_plugins().add(AsteroidDebugPlugin)
     }
 }

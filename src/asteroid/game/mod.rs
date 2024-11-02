@@ -10,10 +10,7 @@ pub mod prelude {
         border::{DeadBorder, TunnelBorder},
         enemy::AsteroidEnemy,
         gameplay::{AsteroidGameplaySystem, CollisionDamager, Dead, Health, Score},
-        player::{
-            player_exists, spawn_first_player_system, spawn_second_player_system, AsteroidPlayer,
-            AsteroidPlayerSystem, PlayerShoot,
-        },
+        player::{AsteroidPlayerSystem, PlayerShoot},
         projectile::AsteroidProjectileBundle,
     };
 }
