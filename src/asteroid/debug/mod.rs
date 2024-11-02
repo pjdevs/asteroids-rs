@@ -44,7 +44,7 @@ impl Plugin for AsteroidDebugPlugin {
                         debug_is_active
                             .and_then(any_with_component::<AsteroidPlayer>),
                     ),
-                    degug_gizmos_system.run_if(debug_show_gizmos),
+                    degug_gizmos_system.run_if(debug_is_active),
                 )
                     .run_if(in_state(AsteroidGameState::Game)),
             );
@@ -70,15 +70,7 @@ fn debug_is_active(config: Res<AsteroidDebugConfig>) -> bool {
     config.is_debug_mode
 }
 
-fn debug_show_gizmos(config: Res<AsteroidDebugConfig>) -> bool {
-    config.is_debug_mode && config.show_gizmos
-}
-
 // Systems
-
-fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
-    config.is_debug_mode = !config.is_debug_mode;
-}
 
 fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
@@ -95,7 +87,11 @@ fn debug_invincible_system(
     }
 }
 
-fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &Collider)>) {
+fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &Collider)>, config: Res<AsteroidDebugConfig>) {
+    if !config.show_gizmos {
+        return;
+    }
+
     for (movement, collider) in &query {
         let color = if collider.enabled { GREEN } else { WHITE };
 
