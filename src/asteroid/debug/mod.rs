@@ -1,12 +1,17 @@
 use super::core::prelude::*;
-use super::game::enemy::AsteroidEnemySpawner;
 use super::game::player::{spawn_first_player_system, spawn_second_player_system, AsteroidPlayer};
+use super::game::prelude::*;
 use super::physics::prelude::*;
 use bevy::color::palettes::css::{GREEN, WHITE};
+use bevy::ecs::system::RunSystemOnce;
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::*;
+use bevy::window::PrimaryWindow;
+use bevy_inspector_egui::bevy_egui::EguiContext;
+use bevy_inspector_egui::{egui, quick::*};
+
+// TODO Merge default quick inspector into own UI
 
 pub struct AsteroidDebugPlugin;
 
@@ -30,21 +35,12 @@ impl Plugin for AsteroidDebugPlugin {
                 Update,
                 (
                     toggle_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
-                    spawn_first_player_system.run_if(
-                        debug_is_active
-                            .and_then(not(player_exists(1)))
-                            .and_then(input_just_pressed(KeyCode::Digit1)),
-                    ),
-                    spawn_second_player_system.run_if(
-                        debug_is_active
-                            .and_then(not(player_exists(2)))
-                            .and_then(input_just_pressed(KeyCode::Digit2)),
-                    ),
-                    debug_invincible_system.run_if(
-                        debug_is_active
-                            .and_then(any_with_component::<AsteroidPlayer>),
-                    ),
-                    degug_gizmos_system.run_if(debug_is_active),
+                    (
+                        debug_invincible_system.run_if(any_with_component::<AsteroidPlayer>),
+                        degug_gizmos_system,
+                        debug_custom_ui,
+                    )
+                        .run_if(debug_is_active),
                 )
                     .run_if(in_state(AsteroidGameState::Game)),
             );
@@ -87,7 +83,11 @@ fn debug_invincible_system(
     }
 }
 
-fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &Collider)>, config: Res<AsteroidDebugConfig>) {
+fn degug_gizmos_system(
+    mut gizmos: Gizmos,
+    query: Query<(&Movement, &Collider)>,
+    config: Res<AsteroidDebugConfig>,
+) {
     if !config.show_gizmos {
         return;
     }
@@ -107,4 +107,47 @@ fn degug_gizmos_system(mut gizmos: Gizmos, query: Query<(&Movement, &Collider)>,
             }
         };
     }
+}
+
+fn kill_all_enemies_system(mut commands: Commands, query: Query<Entity, With<AsteroidEnemy>>) {
+    for enemy in &query {
+        commands.entity(enemy).insert(Dead);
+    }
+}
+
+// TODO Emit events and use commands to avoid use exclusive system ?
+fn debug_custom_ui(world: &mut World) {
+    let Ok(egui_context) = world
+        .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
+        .get_single(world)
+    else {
+        return;
+    };
+    let mut egui_context = egui_context.clone();
+
+    egui::Window::new("Debug Commands").show(egui_context.get_mut(), |ui| {
+        egui::ScrollArea::vertical().show(ui, |ui| {
+            ui.heading("Players");
+
+            if ui.button("Spawn Player 1").clicked() {
+                let player_exists = world.run_system_once(player_exists(1));
+                if !player_exists {
+                    world.run_system_once(spawn_first_player_system);
+                }
+            }
+
+            if ui.button("Spawn Player 2").clicked() {
+                let player_exists = world.run_system_once(player_exists(2));
+                if !player_exists {
+                    world.run_system_once(spawn_second_player_system);
+                }
+            }
+
+            ui.heading("Enemies");
+
+            if ui.button("Kill All Enemies").clicked() {
+                world.run_system_once(kill_all_enemies_system);
+            }
+        });
+    });
 }
