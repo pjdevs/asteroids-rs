@@ -6,7 +6,6 @@ use crate::asteroid::utils::prelude::*;
 use bevy::ecs::system::SystemState;
 use bevy::math::bounding::BoundingCircle;
 use bevy::prelude::*;
-use bevy::time::common_conditions::on_timer;
 use bevy_asset_loader::prelude::*;
 use rand::Rng;
 use std::time::Duration;
@@ -26,8 +25,10 @@ impl Plugin for AsteroidEnemyPlugin {
         .add_systems(
             Update,
             spawn_enemies_system
-                .run_if(in_state(AsteroidGameState::Game))
-                .run_if(on_timer(Duration::from_millis(1500)))
+                .run_if(
+                    in_state(AsteroidGameState::Game)
+                        .and_then(on_spawn_timer::<AsteroidEnemySpawner>()),
+                )
                 .in_set(AsteroidEnemySystem::UpdateSpawnEnemies),
         )
         .configure_loading_state(
@@ -57,7 +58,14 @@ pub struct AsteroidEnemyAssets {
 #[reflect(Resource)]
 pub struct AsteroidEnemySpawner {
     pub enabled: bool,
+    #[reflect(ignore)]
     pub spawner_asset: Handle<SpawnerAsset>,
+}
+
+impl Spawner for AsteroidEnemySpawner {
+    fn spawner(&self) -> Handle<SpawnerAsset> {
+        self.spawner_asset.clone_weak()
+    }
 }
 
 impl FromWorld for AsteroidEnemySpawner {
@@ -94,6 +102,25 @@ pub struct AsteroidEnemyBundle {
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AsteroidEnemySystem {
     UpdateSpawnEnemies,
+}
+
+pub trait Spawner: Resource {
+    fn spawner(&self) -> Handle<SpawnerAsset>;
+}
+
+fn on_spawn_timer<S: Spawner>(
+) -> impl FnMut(Res<Time>, Res<S>, Res<Assets<SpawnerAsset>>) -> bool + Clone {
+    let mut timer = Timer::new(Duration::ZERO, TimerMode::Repeating);
+
+    move |time: Res<Time>, spawner: Res<S>, spawner_assets: Res<Assets<SpawnerAsset>>| {
+        if spawner.is_changed() {
+            let spawner_asset = asset!(spawner_assets, &spawner.spawner());
+            timer.set_duration(Duration::from_millis(spawner_asset.spawn_delay_ms));
+        }
+
+        timer.tick(time.delta());
+        timer.just_finished()
+    }
 }
 
 fn spawn_enemies_system(

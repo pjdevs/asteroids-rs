@@ -6,7 +6,7 @@ use bevy::color::palettes::css::{GREEN, WHITE};
 use bevy::input::common_conditions::input_just_pressed;
 use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
-use bevy_inspector_egui::quick::{ResourceInspectorPlugin, WorldInspectorPlugin};
+use bevy_inspector_egui::quick::*;
 
 pub struct AsteroidDebugPlugin;
 
@@ -16,14 +16,20 @@ impl Plugin for AsteroidDebugPlugin {
             // Types
             .register_type::<AsteroidEnemySpawner>()
             // Inspectors
-            .add_plugins(WorldInspectorPlugin::new())
-            .add_plugins(ResourceInspectorPlugin::<AsteroidEnemySpawner>::default())
+            // .add_plugins(WorldInspectorPlugin::default().run_if(debug_is_active))
+            .add_plugins(
+                ResourceInspectorPlugin::<AsteroidEnemySpawner>::default().run_if(debug_is_active),
+            )
+            .add_plugins(
+                ResourceInspectorPlugin::<AsteroidDebugConfig>::default().run_if(debug_is_active),
+            )
+            .add_plugins(AssetInspectorPlugin::<SpawnerAsset>::default().run_if(debug_is_active))
             // Debug
             .insert_resource(AsteroidDebugConfig::default())
             .add_systems(
                 Update,
                 (
-                    switch_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
+                    toggle_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
                     spawn_first_player_system.run_if(
                         debug_is_active
                             .and_then(not(player_exists(1)))
@@ -34,12 +40,11 @@ impl Plugin for AsteroidDebugPlugin {
                             .and_then(not(player_exists(2)))
                             .and_then(input_just_pressed(KeyCode::Digit2)),
                     ),
-                    debug_toggle_invincible_system.run_if(
+                    debug_invincible_system.run_if(
                         debug_is_active
-                            .and_then(any_with_component::<AsteroidPlayer>)
-                            .and_then(input_just_pressed(KeyCode::KeyI)),
+                            .and_then(any_with_component::<AsteroidPlayer>),
                     ),
-                    degug_gizmos_system.run_if(debug_is_active),
+                    degug_gizmos_system.run_if(debug_show_gizmos),
                 )
                     .run_if(in_state(AsteroidGameState::Game)),
             );
@@ -48,9 +53,11 @@ impl Plugin for AsteroidDebugPlugin {
 
 // Resources
 
-#[derive(Resource, Default)]
+#[derive(Resource, Default, Reflect)]
 struct AsteroidDebugConfig {
     is_debug_mode: bool,
+    show_gizmos: bool,
+    is_invincible: bool,
 }
 
 // Conditions
@@ -63,15 +70,28 @@ fn debug_is_active(config: Res<AsteroidDebugConfig>) -> bool {
     config.is_debug_mode
 }
 
+fn debug_show_gizmos(config: Res<AsteroidDebugConfig>) -> bool {
+    config.is_debug_mode && config.show_gizmos
+}
+
 // Systems
 
-fn switch_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
+fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
 }
 
-fn debug_toggle_invincible_system(mut query: Query<&mut Collider, With<AsteroidPlayer>>) {
-    for mut collider in &mut query {
-        collider.enabled = !collider.enabled;
+fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
+    config.is_debug_mode = !config.is_debug_mode;
+}
+
+fn debug_invincible_system(
+    mut query: Query<&mut Collider, With<AsteroidPlayer>>,
+    config: Res<AsteroidDebugConfig>,
+) {
+    if config.is_changed() {
+        for mut collider in &mut query {
+            collider.enabled = !config.is_invincible;
+        }
     }
 }
 
