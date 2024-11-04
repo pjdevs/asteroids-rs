@@ -1,6 +1,6 @@
 use super::prelude::Dead;
 use crate::asteroid::core::prelude::*;
-use crate::asteroid::physics::prelude::*;
+use crate::asteroid::physics::{prelude::*, AsteroidPhysicsSystem};
 use bevy::prelude::*;
 
 pub struct AsteroidBorderPlugin;
@@ -8,11 +8,12 @@ pub struct AsteroidBorderPlugin;
 impl Plugin for AsteroidBorderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (
                 border_tunnel_system.run_if(any_with_component::<TunnelBorder>),
                 border_despawn_system.run_if(any_with_component::<KillBorder>),
             )
+                .after(AsteroidPhysicsSystem::FixedUpdateMovement)
                 .run_if(in_state(AsteroidGameState::Game)),
         );
     }
@@ -25,28 +26,27 @@ pub struct TunnelBorder;
 pub struct KillBorder;
 
 fn border_tunnel_system(
-    mut query: Query<&mut Movement, (With<TunnelBorder>, Without<Dead>)>,
+    mut query: Query<&mut Movement, With<TunnelBorder>>,
     camera_query: Query<&Camera>,
 ) {
     let half_screen_size = get_screen_half_size(camera_query.single());
 
     query.par_iter_mut().for_each(|mut movement| {
         let offset = movement.position.abs() - half_screen_size;
-        let position_sign = movement.position.signum();
 
         if offset.x > 0.0 {
-            movement.position.x = -movement.position.x + 2.0 * position_sign.x * offset.x;
+            movement.position.x = -movement.position.x;
         }
 
         if offset.y > 0.0 {
-            movement.position.y = -movement.position.y + 2.0 * position_sign.y * offset.y;
+            movement.position.y = -movement.position.y;
         }
     });
 }
 
 fn border_despawn_system(
     parallel_commands: ParallelCommands,
-    query: Query<(Entity, &Movement), With<KillBorder>>,
+    query: Query<(Entity, &Movement), (With<KillBorder>, Without<Dead>)>,
     camera_query: Query<&Camera>,
 ) {
     let half_screen_size = get_screen_half_size(camera_query.single());
@@ -64,10 +64,10 @@ fn border_despawn_system(
 
 fn get_screen_half_size(camera: &Camera) -> Vec2 {
     let screen_size = camera.physical_target_size().unwrap();
-    // Add a little extra offset to fake a larger screen that the camero do not see
-    // so transition from one border to another are smooth
+    // Add a little extra offset to fake a larger screen so that the camero do not see
+    // the transition from one border to another
     Vec2::new(
-        screen_size.x as f32 / 2.0 + 20.0,
-        screen_size.y as f32 / 2.0 + 20.0,
+        screen_size.x as f32 / 2.0 + 32.0,
+        screen_size.y as f32 / 2.0 + 32.0,
     )
 }
