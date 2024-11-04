@@ -47,7 +47,7 @@ pub struct AsteroidEnemyAssets {
 }
 
 // Spawner
-#[derive(Component, Reflect)]
+#[derive(Component, Default, Reflect)]
 pub struct AsteroidEnemySpawner;
 
 impl FromWorld for AsteroidSpawner<AsteroidEnemySpawner> {

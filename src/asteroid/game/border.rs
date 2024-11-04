@@ -66,5 +66,8 @@ fn get_screen_half_size(camera: &Camera) -> Vec2 {
     let screen_size = camera.physical_target_size().unwrap();
     // Add a little extra offset to fake a larger screen that the camero do not see
     // so transition from one border to another are smooth
-    Vec2::new(screen_size.x as f32 / 2.0 + 20.0, screen_size.y as f32 / 2.0 + 20.0)
+    Vec2::new(
+        screen_size.x as f32 / 2.0 + 20.0,
+        screen_size.y as f32 / 2.0 + 20.0,
+    )
 }

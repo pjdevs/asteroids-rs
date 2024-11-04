@@ -13,6 +13,7 @@ use std::time::Duration;
 #[reflect(Resource)]
 pub struct AsteroidSpawner<M: Component> {
     pub enabled: bool,
+    pub entities_count: usize,
     #[reflect(ignore)]
     pub spawner_asset: Handle<SpawnerAsset>,
     #[reflect(ignore)]
@@ -23,6 +24,7 @@ impl<M: Component> AsteroidSpawner<M> {
     pub fn from_asset(spawner_asset: Handle<SpawnerAsset>) -> Self {
         Self {
             enabled: true,
+            entities_count: 0,
             spawner_asset,
             _spawned_type: PhantomData,
         }
@@ -30,7 +32,7 @@ impl<M: Component> AsteroidSpawner<M> {
 }
 
 pub trait SpawnerAppExt {
-    fn add_spawner<M: Component>(
+    fn add_spawner<M: Component + Default>(
         &mut self,
         loading_state: impl FreelyMutableState,
         spawning_state: impl FreelyMutableState,
@@ -42,7 +44,7 @@ pub trait SpawnerAppExt {
 }
 
 impl SpawnerAppExt for App {
-    fn add_spawner<M: Component>(
+    fn add_spawner<M: Component + Default>(
         &mut self,
         loading_state: impl FreelyMutableState,
         spawning_state: impl FreelyMutableState,
@@ -57,13 +59,15 @@ impl SpawnerAppExt for App {
         )
         .add_systems(
             Update,
-            make_spawnable_system
-                .pipe(spawner_system::<M>)
-                .run_if(
+            (
+                make_spawnable_system.pipe(spawner_system::<M>).run_if(
                     in_state(spawning_state.clone())
                         .and_then(spawner_enabled::<M>)
                         .and_then(on_spawn_timer::<M>()),
-                )
+                ),
+                update_spawned_entity_count::<M>.run_if(in_state(spawning_state.clone())),
+            )
+                .chain()
                 .in_set(set),
         )
         .add_systems(
@@ -73,11 +77,19 @@ impl SpawnerAppExt for App {
     }
 }
 
-fn spawner_enabled<M: Component>(spawner: Res<AsteroidSpawner<M>>) -> bool {
-    spawner.enabled
+fn spawner_enabled<M: Component>(
+    spawner: Res<AsteroidSpawner<M>>,
+    spawner_assets: Res<Assets<SpawnerAsset>>,
+) -> bool {
+    if spawner.enabled {
+        let spawner_asset = asset!(spawner_assets, &spawner.spawner_asset);
+        spawner.entities_count < spawner_asset.max_entity_count
+    } else {
+        false
+    }
 }
 
-pub fn spawner_system<M: Component>(
+pub fn spawner_system<M: Component + Default>(
     In(entity): In<Entity>,
     mut commands: Commands,
     spawner: Res<AsteroidSpawner<M>>,
@@ -102,23 +114,40 @@ pub fn spawner_system<M: Component>(
     let random_scale =
         random.gen_range(spawner_asset.min_max_scale.x..=spawner_asset.min_max_scale.y);
 
-    commands.entity(entity).add(move |mut e: EntityWorldMut| {
-        if let Some(mut movement) = e.get_mut::<Movement>() {
-            movement.position = random_position;
-            movement.velocity = random_velocity;
-            movement.angular_velocity = random_angular_velocity;
-        }
-
-        // TODO Make a Size/Scale component or include it into movement?
-        if let Some(mut sprite) = e.get_mut::<Sprite>() {
-            if let Some(size) = sprite.custom_size {
-                sprite.custom_size = Some(size * random_scale);
+    commands
+        .entity(entity)
+        .add(move |mut entity_commands: EntityWorldMut| {
+            if let Some(mut movement) = entity_commands.get_mut::<Movement>() {
+                movement.position = random_position;
+                movement.velocity = random_velocity;
+                movement.angular_velocity = random_angular_velocity;
             }
-        };
 
-        if let Some(mut collider) = e.get_mut::<Collider>() {
-            collider.shape = collider.shape.scaled(random_scale);
-        };
+            // TODO Make a Size/Scale component or include it into movement?
+            if let Some(mut sprite) = entity_commands.get_mut::<Sprite>() {
+                if let Some(size) = sprite.custom_size {
+                    sprite.custom_size = Some(size * random_scale);
+                }
+            };
+
+            if let Some(mut collider) = entity_commands.get_mut::<Collider>() {
+                collider.shape = collider.shape.scaled(random_scale);
+            };
+
+            entity_commands.insert(M::default());
+        });
+}
+
+fn update_spawned_entity_count<M: Component>(
+    mut spawner: ResMut<AsteroidSpawner<M>>,
+    added: Query<(), Added<M>>,
+    mut removed: RemovedComponents<M>,
+) {
+    added.iter().for_each(|()| {
+        spawner.entities_count += 1;
+    });
+    removed.read().for_each(|_| {
+        spawner.entities_count -= 1;
     });
 }
 
