@@ -38,3 +38,17 @@ To distribute the game with maximum optimization enabled :
 ```
 cargo build --profile distribution -F tracing/release_max_level_off -F log/release_max_level_off
 ```
+
+## License
+
+Licensed under MIT license ([LICENSE](LICENSE.md) or [https://opensource.org/license/MIT](https://opensource.org/license/MIT))
+
+Assets in the `asteroid-rs/assets` are all public domain.
+
+## Contribution
+
+Anyone is free to contribute to add "intersting" feature to show off more Bevy/Rust features.
+
+Constributors :
+
+- pjdevs
