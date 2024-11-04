@@ -107,9 +107,9 @@ pub fn spawner_system<M: Component>(
         }
 
         // TODO Make a Size/Scale component or include it into movement?
-        if let Some(sprite) = e.get_mut::<Sprite>() {
-            if let Some(mut size) = sprite.custom_size {
-                size *= random_scale;
+        if let Some(mut sprite) = e.get_mut::<Sprite>() {
+            if let Some(size) = sprite.custom_size {
+                sprite.custom_size = Some(size * random_scale);
             }
         };
 
