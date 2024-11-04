@@ -1,1 +1,0 @@
-cargo build --profile distribution -F tracing/release_max_level_off -F log/release_max_level_off
