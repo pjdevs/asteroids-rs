@@ -57,11 +57,14 @@ impl SpawnerAppExt for App {
         )
         .add_systems(
             Update,
-            make_spawnable_system.pipe(spawner_system::<M>).run_if(
-                in_state(spawning_state.clone())
-                    .and_then(spawner_enabled::<M>)
-                    .and_then(on_spawn_timer::<M>()),
-            ).in_set(set),
+            make_spawnable_system
+                .pipe(spawner_system::<M>)
+                .run_if(
+                    in_state(spawning_state.clone())
+                        .and_then(spawner_enabled::<M>)
+                        .and_then(on_spawn_timer::<M>()),
+                )
+                .in_set(set),
         )
         .add_systems(
             OnExit(spawning_state),
