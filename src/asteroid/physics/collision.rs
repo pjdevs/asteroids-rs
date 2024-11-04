@@ -53,6 +53,14 @@ impl Shape {
             }
         }
     }
+
+    pub fn scaled(&self, scale: f32) -> Self {
+        match self {
+            Shape::Aabb(aabb) => Shape::Aabb(aabb.scale_around_center((scale, scale))),
+            Shape::Obb(obb) => Shape::Obb(obb.scale_around_center((scale, scale))),
+            Shape::Circle(circle) => Shape::Circle(circle.scale_around_center(scale)),
+        }
+    }
 }
 
 impl Default for Collider {

@@ -4,6 +4,7 @@ pub mod gameplay;
 pub mod player;
 pub mod projectile;
 pub mod setup;
+pub mod spawner;
 
 pub mod prelude {
     pub use super::{
@@ -12,5 +13,6 @@ pub mod prelude {
         gameplay::{AsteroidGameplaySystem, CollisionDamager, Dead, Health, KillCollision, Score},
         player::{AsteroidPlayerSystem, PlayerShoot},
         projectile::AsteroidProjectileBundle,
+        spawner::{AsteroidSpawner, SpawnerAppExt},
     };
 }

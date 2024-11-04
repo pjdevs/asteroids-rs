@@ -19,11 +19,12 @@ impl Plugin for AsteroidDebugPlugin {
     fn build(&self, app: &mut App) {
         app
             // Types
-            .register_type::<AsteroidEnemySpawner>()
+            .register_type::<AsteroidSpawner<AsteroidEnemySpawner>>()
             // Inspectors
             // .add_plugins(WorldInspectorPlugin::default().run_if(debug_is_active))
             .add_plugins(
-                ResourceInspectorPlugin::<AsteroidEnemySpawner>::default().run_if(debug_is_active),
+                ResourceInspectorPlugin::<AsteroidSpawner<AsteroidEnemySpawner>>::default()
+                    .run_if(debug_is_active),
             )
             .add_plugins(
                 ResourceInspectorPlugin::<AsteroidDebugConfig>::default().run_if(debug_is_active),
