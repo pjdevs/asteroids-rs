@@ -87,6 +87,7 @@ pub struct AsteroidPlayerBundle {
     border: TunnelBorder,
     controller: InputController<AsteroidAction>,
     health: Health,
+    despawn: DespawnIfDead,
 }
 
 impl Default for AsteroidPlayerBundle {
@@ -100,6 +101,7 @@ impl Default for AsteroidPlayerBundle {
             border: Default::default(),
             controller: Default::default(),
             health: Default::default(),
+            despawn: Default::default(),
         }
     }
 }

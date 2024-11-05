@@ -9,6 +9,7 @@ mod physics;
 mod ui;
 mod utils;
 
+use animation::AsteroidAnimationPlugin;
 use audio::AsteroidAudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 use bevy::DefaultPlugins;
@@ -46,6 +47,7 @@ impl AsteroidPlugins {
             .add(AsteroidSetupPlugin)
             .add(AsteroidInputPlugin::<AsteroidAction>::default())
             .add(AsteroidPhysicsPlugin)
+            .add(AsteroidAnimationPlugin)
             .add(AsteroidBorderPlugin)
             .add(AsteroidProjectilePlugin)
             .add(AsteroidPlayerPlugin)

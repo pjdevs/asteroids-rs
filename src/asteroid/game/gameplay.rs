@@ -27,22 +27,20 @@ impl Plugin for AsteroidGameplayPlugin {
                 (
                     (
                         gameplay_collision_damage_system.run_if(on_event::<CollisionEvent>()),
-                        gameplay_death_system.after(gameplay_collision_damage_system),
+                        gameplay_death_system,
                     )
+                        .chain()
                         .in_set(AsteroidGameplaySystem::UpdateDamageSystem),
                     gameplay_collision_despawn_system
                         .run_if(on_event::<CollisionEvent>())
                         .run_if(any_with_component::<KillCollision>),
-                    gameplay_score_system
-                        .run_if(any_with_component::<Dead>)
-                        .after(gameplay_death_system),
                 )
                     .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
             )
             .add_systems(
                 PostUpdate,
-                gameplay_despawn_dead_system
+                (gameplay_score_system, gameplay_despawn_dead_system)
                     .run_if(any_with_component::<Dead>)
                     .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
             )
@@ -93,10 +91,11 @@ fn add_score_system(mut commands: Commands) {
 
 fn gameplay_score_system(
     mut score: ResMut<Score>,
-    query: Query<Entity, (With<AsteroidEnemy>, With<Dead>)>,
+    query: Query<Entity, (With<AsteroidEnemy>, Added<Dead>)>,
 ) {
-    for _ in &query {
+    for e in &query {
         score.score += 10;
+        info!("{:?} is dead", e);
     }
 }
 
@@ -135,7 +134,7 @@ fn handle_instant_kill(
     entity: Entity,
     query: &Query<(), With<KillCollision>>,
 ) {
-    get!(_despawn, query, entity);
+    get!(_despawn, query, entity, return);
     commands.entity(entity).insert(Dead);
 }
 
@@ -166,8 +165,8 @@ fn handle_damage(
     damager_query: &Query<&CollisionDamager>,
     health_query: &mut Query<&mut Health>,
 ) {
-    get!(damager, damager_query, first);
-    get_mut!(health, health_query, second);
+    get!(damager, damager_query, first, return);
+    get_mut!(health, health_query, second, return);
 
     let damage = damager.get_damage(&health);
     health.damage(damage);
@@ -184,11 +183,17 @@ fn gameplay_death_system(
     }
 }
 
-fn gameplay_despawn_dead_system(mut commands: Commands, dead_query: Query<Entity, With<Dead>>) {
+fn gameplay_despawn_dead_system(
+    mut commands: Commands,
+    dead_query: Query<Entity, (With<Dead>, With<DespawnIfDead>)>,
+) {
     for entity in &dead_query {
         commands.entity(entity).despawn();
     }
 }
+
+#[derive(Component, Default)]
+pub struct DespawnIfDead;
 
 #[derive(Component, Default)]
 pub struct KillCollision;

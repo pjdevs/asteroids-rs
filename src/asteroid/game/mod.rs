@@ -10,7 +10,10 @@ pub mod prelude {
     pub use super::{
         border::{KillBorder, TunnelBorder},
         enemy::{AsteroidEnemy, AsteroidEnemySpawner},
-        gameplay::{AsteroidGameplaySystem, CollisionDamager, Dead, Health, KillCollision, Score},
+        gameplay::{
+            AsteroidGameplaySystem, CollisionDamager, Dead, DespawnIfDead, Health, KillCollision,
+            Score,
+        },
         player::{AsteroidPlayerSystem, PlayerShoot},
         projectile::AsteroidProjectileBundle,
         spawner::{AsteroidSpawner, SpawnerAppExt},

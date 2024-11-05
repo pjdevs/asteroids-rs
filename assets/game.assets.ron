@@ -13,7 +13,17 @@
     ),
 
     "enemy.texture": Image(
-        path: "sprites/asteroid01.png",
+        path: "sprites/asteroid01_atlas.png",
+    ),
+    "enemy.layout": TextureAtlasLayout(
+        tile_size_x: 96,
+        tile_size_y: 96,
+        columns: 8,
+        rows: 1,
+        padding_x: 0,
+        padding_y: 0,
+        offset_x: 0,
+        offset_y: 0,
     ),
     
     "gameplay.background.texture": Image(
