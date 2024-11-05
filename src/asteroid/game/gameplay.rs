@@ -95,7 +95,6 @@ fn gameplay_score_system(
 ) {
     for e in &query {
         score.score += 10;
-        info!("{:?} is dead", e);
     }
 }
 
