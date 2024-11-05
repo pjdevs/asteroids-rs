@@ -139,7 +139,7 @@ fn explode_enemy_system(
         collider.enabled = false;
         // TODO Test feeling
         // movement.velocity = Vec2::ZERO;
-        // movement.angular_velocity = 0.0;
+        movement.angular_velocity = 0.0;
 
         commands
             .entity(entity)

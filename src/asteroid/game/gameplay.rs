@@ -93,7 +93,7 @@ fn gameplay_score_system(
     mut score: ResMut<Score>,
     query: Query<Entity, (With<AsteroidEnemy>, Added<Dead>)>,
 ) {
-    for e in &query {
+    for _ in &query {
         score.score += 10;
     }
 }

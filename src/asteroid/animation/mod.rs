@@ -20,10 +20,8 @@ pub struct Animation {
     play_mode: AnimationPlayMode,
     start: usize,
     end: usize,
-    // timer: Timer,
+    timer: Timer,
     completed: bool,
-    elapsed: Duration,
-    frame_duration: Duration,
 }
 
 impl Animation {
@@ -32,10 +30,8 @@ impl Animation {
             play_mode,
             start,
             end,
-            // timer: Timer::from_seconds(1.0 / fps, TimerMode::Repeating),
+            timer: Timer::from_seconds(duration_secs / (end - start + 1) as f32, TimerMode::Repeating),
             completed: false,
-            elapsed: Duration::ZERO,
-            frame_duration: Duration::from_secs_f32(duration_secs / (end - start + 1) as f32),
         }
     }
 }
@@ -52,13 +48,9 @@ fn animate(
 ) {
     query.iter_mut().filter(|(_, _, a)| !a.completed).for_each(
         |(entity, mut atlas, mut animation)| {
-            animation.elapsed += time.delta();
+            animation.timer.tick(time.delta());
 
-            let frame_duration = animation.frame_duration;
-
-            if animation.elapsed >= frame_duration {
-                animation.elapsed -= frame_duration;
-
+            if animation.timer.just_finished() {
                 if atlas.index == animation.end {
                     match animation.play_mode {
                         AnimationPlayMode::Loop => {
