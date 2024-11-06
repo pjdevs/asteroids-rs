@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 pub enum AnimationPlayMode {
-    // Loop,
+    Loop,
     OneShot,
 }
 
