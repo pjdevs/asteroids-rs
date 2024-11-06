@@ -249,6 +249,17 @@ impl Health {
     }
 
     #[inline(always)]
+    pub fn get_max_health(&self) -> i32 {
+        self.max_health
+    }
+
+    #[inline(always)]
+    pub fn set_max_health(&mut self, new_max: i32) {
+        self.max_health = new_max;
+        self.current_health = self.max_health;
+    }
+
+    #[inline(always)]
     pub fn damage(&mut self, amount: i32) {
         self.current_health = (self.current_health - amount).clamp(0, self.max_health);
     }

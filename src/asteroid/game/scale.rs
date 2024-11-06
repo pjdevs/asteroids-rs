@@ -2,6 +2,8 @@ use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use bevy::prelude::*;
 
+use super::prelude::Health;
+
 pub struct AsteroidScalePlugin;
 
 impl Plugin for AsteroidScalePlugin {
@@ -35,6 +37,12 @@ fn setup_scale_hooks(world: &mut World) {
                 component.scale
             } else {
                 1.0
+            };
+
+            // TODO Handle this elsewhere as this is more gameplay?
+            if let Some(mut health) = world.get_mut::<Health>(entity) {
+                let max_health = health.get_max_health() as f32;
+                health.set_max_health(max_health.lerp(200.0, scale - 1.0 + 0.2) as i32);
             };
 
             if let Some(mut sprite) = world.get_mut::<Sprite>(entity) {
