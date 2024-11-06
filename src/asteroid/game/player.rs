@@ -210,6 +210,7 @@ fn player_shoot_system(
                     texture: assets.projectile_texture.clone(),
                     sprite: Sprite {
                         custom_size: None, //Some(size_asset.sprite_size),
+                        color: Color::srgb(5.0, 5.0, 7.0),
                         ..Default::default()
                     },
                     ..Default::default()

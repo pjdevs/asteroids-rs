@@ -29,7 +29,10 @@ impl Animation {
             play_mode,
             start,
             end,
-            timer: Timer::from_seconds(duration_secs / (end - start + 1) as f32, TimerMode::Repeating),
+            timer: Timer::from_seconds(
+                duration_secs / (end - start + 1) as f32,
+                TimerMode::Repeating,
+            ),
             completed: false,
         }
     }

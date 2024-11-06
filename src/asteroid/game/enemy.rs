@@ -8,6 +8,7 @@ use bevy::ecs::system::SystemState;
 use bevy::math::bounding::BoundingCircle;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
+use bevy_trauma_shake::Shake;
 
 pub struct AsteroidEnemyPlugin;
 
@@ -133,15 +134,25 @@ fn spawn_enemy_system(
 
 fn explode_enemy_system(
     mut commands: Commands,
-    mut query: Query<(Entity, &mut Movement, &mut Collider), (With<AsteroidEnemy>, Added<Dead>)>,
+    mut query: Query<
+        (Entity, &mut Movement, &mut Collider, &mut Sprite),
+        (With<AsteroidEnemy>, Added<Dead>),
+    >,
+    mut shake_query: Query<&mut Shake>,
 ) {
-    for (entity, mut movement, mut collider) in &mut query {
+    let mut shake = shake_query.single_mut();
+
+    for (entity, mut movement, mut collider, mut sprite) in &mut query {
         collider.enabled = false;
         movement.angular_velocity = 0.0;
+
+        sprite.color = Color::srgb(5.0, 3.0, 0.0);
 
         commands
             .entity(entity)
             .insert(Animation::new(AnimationPlayMode::OneShot, 1, 7, 0.3));
+
+        shake.add_trauma(0.2);
     }
 }
 

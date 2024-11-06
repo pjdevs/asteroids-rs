@@ -13,6 +13,7 @@ use animation::AsteroidAnimationPlugin;
 use audio::AsteroidAudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 use bevy::DefaultPlugins;
+use bevy_trauma_shake::TraumaPlugin;
 use core::actions::AsteroidAction;
 #[cfg(feature = "dev")]
 use debug::AsteroidDebugPlugin;
@@ -44,6 +45,7 @@ impl AsteroidPlugins {
     fn default_plugins() -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
             .add_group(DefaultPlugins.set(asteroid_window_plugin()))
+            .add(TraumaPlugin)
             .add(AsteroidSetupPlugin)
             .add(AsteroidInputPlugin::<AsteroidAction>::default())
             .add(AsteroidPhysicsPlugin)
