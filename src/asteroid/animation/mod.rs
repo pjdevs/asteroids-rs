@@ -1,8 +1,7 @@
 use bevy::prelude::*;
-use std::time::Duration;
 
 pub enum AnimationPlayMode {
-    Loop,
+    // Loop,
     OneShot,
 }
 
