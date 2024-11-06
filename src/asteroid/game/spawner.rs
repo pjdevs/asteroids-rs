@@ -1,3 +1,4 @@
+use super::prelude::*;
 use crate::asset;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
@@ -123,18 +124,9 @@ pub fn spawner_system<M: Component + Default>(
                 movement.angular_velocity = random_angular_velocity;
             }
 
-            // TODO Make a Size/Scale component or include it into movement?
-            if let Some(mut sprite) = entity_commands.get_mut::<Sprite>() {
-                if let Some(size) = sprite.custom_size {
-                    sprite.custom_size = Some(size * random_scale);
-                }
-            };
-
-            if let Some(mut collider) = entity_commands.get_mut::<Collider>() {
-                collider.shape = collider.shape.scaled(random_scale);
-            };
-
-            entity_commands.insert(M::default());
+            entity_commands
+                .insert(AsteroidScaled::new(random_scale))
+                .insert(M::default());
         });
 }
 

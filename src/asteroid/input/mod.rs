@@ -4,8 +4,6 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::marker::PhantomData;
 
-// TODO Make this support mouse if needed
-
 #[derive(Default)]
 pub struct AsteroidInputPlugin<A: ActionLike> {
     a: PhantomData<A>,

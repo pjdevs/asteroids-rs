@@ -91,10 +91,10 @@ fn add_score_system(mut commands: Commands) {
 
 fn gameplay_score_system(
     mut score: ResMut<Score>,
-    query: Query<Entity, (With<AsteroidEnemy>, Added<Dead>)>,
+    query: Query<&AsteroidScaled, (With<AsteroidEnemy>, Added<Dead>)>,
 ) {
-    for _ in &query {
-        score.score += 10;
+    for scaled in &query {
+        score.score += (10.0 * scaled.scale) as u64;
     }
 }
 

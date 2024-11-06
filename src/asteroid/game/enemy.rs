@@ -132,17 +132,18 @@ fn spawn_enemy_system(
     }
 }
 
+// TODO Think about moviing this to like VFX plugin?
 fn explode_enemy_system(
     mut commands: Commands,
     mut query: Query<
-        (Entity, &mut Movement, &mut Collider, &mut Sprite),
+        (Entity, &mut Movement, &mut Collider, &mut Sprite, &AsteroidScaled),
         (With<AsteroidEnemy>, Added<Dead>),
     >,
     mut shake_query: Query<&mut Shake>,
 ) {
     let mut shake = shake_query.single_mut();
 
-    for (entity, mut movement, mut collider, mut sprite) in &mut query {
+    for (entity, mut movement, mut collider, mut sprite, scaled) in &mut query {
         collider.enabled = false;
         movement.angular_velocity = 0.0;
 
@@ -152,10 +153,11 @@ fn explode_enemy_system(
             .entity(entity)
             .insert(Animation::new(AnimationPlayMode::OneShot, 1, 7, 0.3));
 
-        shake.add_trauma(0.2);
+        shake.add_trauma(0.2 * scaled.scale);
     }
 }
 
+// TODO Handle specific animation
 fn kill_exploded_enemy_system(
     mut commands: Commands,
     mut events: EventReader<AnimationCompleted>,
