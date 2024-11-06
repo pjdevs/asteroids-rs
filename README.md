@@ -10,6 +10,7 @@ This project aims to be a basic game to get famialiar with the possibilities of 
 - [x] Keyboard and controller inputs for players
 - [x] Dynamic asset loading with `bevy_asset_loader`
 - [x] Basic custom physcis and collisions
+- [x] Basic spritesheet animations
 - [x] Basic gameplay mechanics (endless mode shooter, score, spawners, ...)
 - [ ] More gameplay mechanics (events, ...)
 - [ ] Collectible bonuses 
