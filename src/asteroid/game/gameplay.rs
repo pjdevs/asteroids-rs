@@ -5,6 +5,9 @@ use crate::asteroid::utils::prelude::*;
 use crate::{get, get_mut};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
+use std::collections::HashMap;
+
+// TODO Split this in health, gameplay etc
 
 pub struct AsteroidGameplayPlugin;
 
@@ -13,12 +16,18 @@ impl Plugin for AsteroidGameplayPlugin {
         app.init_resource::<Score>()
             .add_systems(
                 OnEnter(AsteroidGameState::Game),
-                (add_score_system, spawn_background_system),
+                (
+                    gameplay_add_score_system,
+                    gameplay_add_lives_system,
+                    gameplay_spawn_background_system,
+                ),
             )
             .add_systems(
                 OnExit(AsteroidGameState::Game),
                 (
                     remove_resource::<Score>,
+                    remove_resource::<PlayerLives>,
+                    despawn_entities_with::<PlayerRespawnTimer>,
                     despawn_entities_with::<Background>,
                 ),
             )
@@ -34,13 +43,19 @@ impl Plugin for AsteroidGameplayPlugin {
                     gameplay_collision_despawn_system
                         .run_if(on_event::<CollisionEvent>())
                         .run_if(any_with_component::<KillCollision>),
+                    ganeplay_setup_player_respawn.run_if(any_with_component::<AsteroidPlayer>),
+                    gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
                 )
                     .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
             )
             .add_systems(
                 PostUpdate,
-                (gameplay_score_system, gameplay_despawn_dead_system)
+                (
+                    gameplay_score_system,
+                    gameplay_loose_lives,
+                    gameplay_despawn_dead_system,
+                )
                     .run_if(any_with_component::<Dead>)
                     .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
             )
@@ -51,7 +66,7 @@ impl Plugin for AsteroidGameplayPlugin {
     }
 }
 
-// Components
+// Resources
 
 #[derive(Resource, Default)]
 pub struct Score {
@@ -66,7 +81,107 @@ impl Score {
 }
 
 #[derive(Component)]
+pub struct PlayerRespawnTimer {
+    player_id: u64,
+    timer: Timer,
+}
+
+#[derive(Resource, Default)]
+pub struct PlayerLives {
+    lives: HashMap<u64, u64>,
+}
+
+impl PlayerLives {
+    #[inline]
+    pub fn get_lives(&self, player_id: u64) -> Option<u64> {
+        self.lives.get(&player_id).copied()
+    }
+}
+
+// Components
+
+#[derive(Component)]
 struct Background;
+
+#[derive(Component, Default)]
+#[component(storage = "SparseSet")]
+pub struct DespawnIfDead;
+
+#[derive(Component, Default)]
+pub struct KillCollision;
+
+pub trait Damager {
+    fn get_damage(&self, health: &Health) -> i32;
+}
+
+#[derive(Component)]
+pub struct CollisionDamager {
+    damage_amount: i32,
+}
+
+impl Default for CollisionDamager {
+    fn default() -> Self {
+        Self { damage_amount: 10 }
+    }
+}
+
+impl CollisionDamager {
+    pub fn new(damage_amount: i32) -> Self {
+        Self { damage_amount }
+    }
+}
+
+impl Damager for CollisionDamager {
+    fn get_damage(&self, _: &Health) -> i32 {
+        self.damage_amount
+    }
+}
+
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct Dead;
+
+#[derive(Component)]
+pub struct Health {
+    max_health: i32,
+    current_health: i32,
+}
+
+impl Default for Health {
+    fn default() -> Self {
+        Self::new(100)
+    }
+}
+
+impl Health {
+    pub fn new(max_health: i32) -> Self {
+        Self {
+            max_health,
+            current_health: max_health,
+        }
+    }
+
+    #[inline(always)]
+    pub fn get_max_health(&self) -> i32 {
+        self.max_health
+    }
+
+    #[inline(always)]
+    pub fn set_max_health(&mut self, new_max: i32) {
+        self.max_health = new_max;
+        self.current_health = self.max_health;
+    }
+
+    #[inline(always)]
+    pub fn damage(&mut self, amount: i32) {
+        self.current_health = (self.current_health - amount).clamp(0, self.max_health);
+    }
+
+    #[inline(always)]
+    pub fn is_dead(&self) -> bool {
+        self.current_health <= 0
+    }
+}
 
 // Assets
 
@@ -85,8 +200,12 @@ pub enum AsteroidGameplaySystem {
     PostUpdateGameplay,
 }
 
-fn add_score_system(mut commands: Commands) {
+fn gameplay_add_score_system(mut commands: Commands) {
     commands.init_resource::<Score>();
+}
+
+fn gameplay_add_lives_system(mut commands: Commands) {
+    commands.init_resource::<PlayerLives>();
 }
 
 fn gameplay_score_system(
@@ -98,7 +217,7 @@ fn gameplay_score_system(
     }
 }
 
-fn spawn_background_system(
+fn gameplay_spawn_background_system(
     mut commands: Commands,
     assets: Res<AsteroidGameplayAssets>,
     camera_query: Query<&Camera>,
@@ -191,81 +310,60 @@ fn gameplay_despawn_dead_system(
     }
 }
 
-#[derive(Component, Default)]
-pub struct DespawnIfDead;
+fn gameplay_loose_lives(
+    mut commands: Commands,
+    mut player_lives: ResMut<PlayerLives>,
+    query: Query<&AsteroidPlayer, Added<Dead>>,
+    mut next_state: ResMut<NextState<AsteroidGameState>>
+) {
+    for player in &query {
+        if let Some(lives) = player_lives.lives.get_mut(&player.player_id) {
+            println!("Old lives: {}", *lives);
 
-#[derive(Component, Default)]
-pub struct KillCollision;
+            *lives -= 1;
 
-pub trait Damager {
-    fn get_damage(&self, health: &Health) -> i32;
-}
+            println!("New lives: {}", *lives);
 
-#[derive(Component)]
-pub struct CollisionDamager {
-    damage_amount: i32,
-}
-
-impl Default for CollisionDamager {
-    fn default() -> Self {
-        Self { damage_amount: 10 }
-    }
-}
-
-impl CollisionDamager {
-    pub fn new(damage_amount: i32) -> Self {
-        Self { damage_amount }
-    }
-}
-
-impl Damager for CollisionDamager {
-    fn get_damage(&self, _: &Health) -> i32 {
-        self.damage_amount
-    }
-}
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct Dead;
-
-#[derive(Component)]
-pub struct Health {
-    max_health: i32,
-    current_health: i32,
-}
-
-impl Default for Health {
-    fn default() -> Self {
-        Self::new(100)
-    }
-}
-
-impl Health {
-    pub fn new(max_health: i32) -> Self {
-        Self {
-            max_health,
-            current_health: max_health,
+            if *lives > 0 {
+                commands.spawn(PlayerRespawnTimer {
+                    player_id: player.player_id,
+                    timer: Timer::from_seconds(1.0, TimerMode::Once),
+                });
+            }
         }
     }
 
-    #[inline(always)]
-    pub fn get_max_health(&self) -> i32 {
-        self.max_health
+    if player_lives.lives.values().sum::<u64>() <= 0 {
+        next_state.set(AsteroidGameState::MainMenuLoading);
     }
+}
 
-    #[inline(always)]
-    pub fn set_max_health(&mut self, new_max: i32) {
-        self.max_health = new_max;
-        self.current_health = self.max_health;
+// TODO Explose default value in asset for both
+
+fn gameplay_respawn_player(
+    mut commands: Commands,
+    time: Res<Time>,
+    mut query: Query<(Entity, &mut PlayerRespawnTimer)>,
+) {
+    for (entity, mut respawner) in &mut query {
+        respawner.timer.tick(time.delta());
+
+        if respawner.timer.just_finished() {
+            let player_id = respawner.player_id;
+
+            commands.add(SpawnPlayer::new(player_id));
+            commands.entity(entity).despawn();
+        }
     }
+}
 
-    #[inline(always)]
-    pub fn damage(&mut self, amount: i32) {
-        self.current_health = (self.current_health - amount).clamp(0, self.max_health);
-    }
-
-    #[inline(always)]
-    pub fn is_dead(&self) -> bool {
-        self.current_health <= 0
+fn ganeplay_setup_player_respawn(
+    mut player_lives: ResMut<PlayerLives>,
+    query: Query<&AsteroidPlayer, Added<AsteroidPlayer>>,
+) {
+    for player in &query {
+        if !player_lives.lives.contains_key(&player.player_id) {
+            player_lives.lives.insert(player.player_id, 3);
+        }
     }
 }

@@ -14,11 +14,11 @@ use audio::AsteroidAudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 use bevy::DefaultPlugins;
 use bevy_trauma_shake::TraumaPlugin;
-use game::effects::AsteroidEffectsPlugin;
 use core::actions::AsteroidAction;
 #[cfg(feature = "dev")]
 use debug::AsteroidDebugPlugin;
 use game::border::AsteroidBorderPlugin;
+use game::effects::AsteroidEffectsPlugin;
 use game::enemy::AsteroidEnemyPlugin;
 use game::gameplay::AsteroidGameplayPlugin;
 use game::player::AsteroidPlayerPlugin;

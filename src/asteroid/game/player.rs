@@ -5,6 +5,7 @@ use crate::asteroid::game::prelude::*;
 use crate::asteroid::input::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
+use bevy::ecs::world::Command;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
@@ -172,32 +173,65 @@ pub enum AsteroidPlayerSystem {
     UpdatePlayerActions,
 }
 
-pub fn spawn_first_player_system(
-    mut commands: Commands,
-    sizes: Res<Assets<SizeAsset>>,
-    assets: Res<AsteroidPlayerAssets>,
-) {
-    commands.spawn(
-        AsteroidPlayerBundle::preset_ship_fast()
-            .with_id(1)
-            .with_size(asset!(sizes, &assets.player_size).collider_size)
-            .with_texture(assets.player_one_texture.clone())
-            .with_input_map(InputMap::default().with_keyboard_mappings()),
-    );
+pub fn spawn_first_player_system(mut commands: Commands) {
+    commands.add(SpawnPlayer::new(1));
 }
 
-pub fn spawn_second_player_system(
-    mut commands: Commands,
-    sizes: Res<Assets<SizeAsset>>,
-    assets: Res<AsteroidPlayerAssets>,
-) {
-    commands.spawn(
-        AsteroidPlayerBundle::preset_ship_slow()
-            .with_id(2)
-            .with_size(asset!(sizes, &assets.player_size).collider_size)
-            .with_texture(assets.player_two_texture.clone())
-            .with_input_map(InputMap::default().with_gamepad_mappings(0)),
-    );
+pub fn spawn_second_player_system(mut commands: Commands) {
+    commands.add(SpawnPlayer::new(2));
+}
+
+fn first_player_bundle(
+    sizes: &Assets<SizeAsset>,
+    assets: &AsteroidPlayerAssets,
+) -> AsteroidPlayerBundle {
+    AsteroidPlayerBundle::preset_ship_fast()
+        .with_id(1)
+        .with_size(asset!(sizes, &assets.player_size).collider_size)
+        .with_texture(assets.player_one_texture.clone())
+        .with_input_map(InputMap::default().with_keyboard_mappings())
+}
+
+fn second_player_bundle(
+    sizes: &Assets<SizeAsset>,
+    assets: &AsteroidPlayerAssets,
+) -> AsteroidPlayerBundle {
+    AsteroidPlayerBundle::preset_ship_slow()
+        .with_id(2)
+        .with_size(asset!(sizes, &assets.player_size).collider_size)
+        .with_texture(assets.player_two_texture.clone())
+        .with_input_map(InputMap::default().with_gamepad_mappings(0))
+}
+
+pub struct SpawnPlayer {
+    player_id: u64,
+}
+
+impl SpawnPlayer {
+    pub fn new(player_id: u64) -> Self {
+        Self { player_id }
+    }
+}
+
+impl Command for SpawnPlayer {
+    fn apply(self, world: &mut World) {
+        let sizes = world
+            .get_resource::<Assets<SizeAsset>>()
+            .expect("Size assets must exist to spawn player");
+        let assets = world
+            .get_resource::<AsteroidPlayerAssets>()
+            .expect("Player assets must exist to spawn player");
+
+        match self.player_id {
+            1 => {
+                world.spawn(first_player_bundle(sizes, assets));
+            }
+            2 => {
+                world.spawn(second_player_bundle(sizes, assets));
+            }
+            _ => {}
+        }
+    }
 }
 
 fn player_shoot_system(

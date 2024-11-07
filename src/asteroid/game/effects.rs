@@ -12,9 +12,15 @@ impl Plugin for AsteroidEffectsPlugin {
                 effect_start_enemy_hit.run_if(any_with_component::<AsteroidEnemy>),
                 effect_play_hit.run_if(any_with_component::<HitEffect>),
             )
-                .run_if(in_state(AsteroidGameState::Game)),
+                .run_if(in_state(AsteroidGameState::Game))
+                .in_set(AsteroidEffectsSystem::UpdateEffects),
         );
     }
+}
+
+#[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
+pub enum AsteroidEffectsSystem {
+    UpdateEffects,
 }
 
 #[derive(Component)]
@@ -26,7 +32,7 @@ pub struct HitEffect {
 
 fn effect_start_enemy_hit(mut commands: Commands, query: Query<(Entity, Ref<Health>)>) {
     for (entity, health) in &query {
-        if health.is_changed() && !health.is_added() {
+        if health.is_changed() && !health.is_added() && !health.is_dead() {
             commands.entity(entity).insert(HitEffect {
                 timer: Timer::from_seconds(0.1, TimerMode::Once),
                 playing: false,

@@ -1,3 +1,4 @@
+use super::effects::AsteroidEffectsSystem;
 use super::prelude::*;
 use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;
@@ -17,7 +18,6 @@ impl Plugin for AsteroidEnemyPlugin {
         app.add_systems(
             Update,
             (explode_enemy_system, kill_exploded_enemy_system)
-                .chain() // to avoid exploding again if kill run before explose
                 .after(AsteroidGameplaySystem::UpdateDamageSystem)
                 .run_if(in_state(AsteroidGameState::Game)),
         )
