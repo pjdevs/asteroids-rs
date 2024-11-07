@@ -1,5 +1,6 @@
 use crate::asset;
 use crate::asteroid::core::prelude::*;
+use crate::asteroid::debug::player_exists;
 use crate::asteroid::game::prelude::*;
 use crate::asteroid::input::prelude::*;
 use crate::asteroid::physics::prelude::*;
@@ -16,7 +17,13 @@ pub struct AsteroidPlayerPlugin;
 impl Plugin for AsteroidPlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PlayerShoot>()
-            .add_systems(OnEnter(AsteroidGameState::Game), spawn_first_player_system)
+            .add_systems(
+                OnEnter(AsteroidGameState::Game),
+                (
+                    spawn_first_player_system,
+                    spawn_second_player_system.run_if(gamepad_connected(0)),
+                ),
+            )
             .add_systems(
                 OnExit(AsteroidGameState::Game),
                 (
@@ -33,7 +40,8 @@ impl Plugin for AsteroidPlayerPlugin {
                         .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
                     spawn_second_player_system
                         .run_if(in_state(AsteroidGameState::Game))
-                        .run_if(on_gamepad_connection(0)),
+                        .run_if(on_gamepad_connection(0))
+                        .run_if(not(player_exists(2))),
                 ),
             )
             .configure_loading_state(

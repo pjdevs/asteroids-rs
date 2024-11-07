@@ -213,6 +213,10 @@ fn input_update_maps<A: ActionLike>(
     }
 }
 
+pub fn gamepad_connected(gamepad_id: usize) -> impl FnMut(Res<Gamepads>) -> bool + Clone {
+    move |gamepads: Res<Gamepads>| gamepads.contains(Gamepad { id: gamepad_id })
+}
+
 pub fn on_gamepad_connection(
     gamepad_id: usize,
 ) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {

@@ -136,7 +136,13 @@ fn spawn_enemy_system(
 fn explode_enemy_system(
     mut commands: Commands,
     mut query: Query<
-        (Entity, &mut Movement, &mut Collider, &mut Sprite, &AsteroidScaled),
+        (
+            Entity,
+            &mut Movement,
+            &mut Collider,
+            &mut Sprite,
+            &AsteroidScaled,
+        ),
         (With<AsteroidEnemy>, Added<Dead>),
     >,
     mut shake_query: Query<&mut Shake>,
