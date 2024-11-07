@@ -1,4 +1,5 @@
 pub mod border;
+pub mod effects;
 pub mod enemy;
 pub mod gameplay;
 pub mod player;
