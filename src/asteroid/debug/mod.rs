@@ -12,8 +12,6 @@ use bevy_inspector_egui::bevy_egui::{EguiContext, EguiPlugin};
 use bevy_inspector_egui::bevy_inspector::{ui_for_assets, ui_for_resource};
 use bevy_inspector_egui::egui;
 
-// TODO Merge default quick inspector into own UI
-
 pub struct AsteroidDebugPlugin;
 
 impl Plugin for AsteroidDebugPlugin {
