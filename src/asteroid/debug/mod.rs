@@ -8,8 +8,9 @@ use bevy::input::common_conditions::input_just_pressed;
 use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
-use bevy_inspector_egui::bevy_egui::EguiContext;
-use bevy_inspector_egui::{egui, quick::*};
+use bevy_inspector_egui::bevy_egui::{EguiContext, EguiPlugin};
+use bevy_inspector_egui::bevy_inspector::{ui_for_assets, ui_for_resource};
+use bevy_inspector_egui::egui;
 
 // TODO Merge default quick inspector into own UI
 
@@ -17,20 +18,9 @@ pub struct AsteroidDebugPlugin;
 
 impl Plugin for AsteroidDebugPlugin {
     fn build(&self, app: &mut App) {
-        app
-            // Types
+        app.add_plugins(EguiPlugin)
+            .add_plugins(bevy_inspector_egui::DefaultInspectorConfigPlugin)
             .register_type::<AsteroidSpawner<AsteroidEnemySpawner>>()
-            // Inspectors
-            // .add_plugins(WorldInspectorPlugin::default().run_if(debug_is_active))
-            .add_plugins(
-                ResourceInspectorPlugin::<AsteroidSpawner<AsteroidEnemySpawner>>::default()
-                    .run_if(debug_is_active),
-            )
-            .add_plugins(
-                ResourceInspectorPlugin::<AsteroidDebugConfig>::default().run_if(debug_is_active),
-            )
-            .add_plugins(AssetInspectorPlugin::<SpawnerAsset>::default().run_if(debug_is_active))
-            // Debug
             .insert_resource(AsteroidDebugConfig::default())
             .add_systems(
                 Update,
@@ -126,7 +116,6 @@ fn kill_all_enemies_system(mut commands: Commands, query: Query<Entity, With<Ast
     }
 }
 
-// TODO Emit events and use commands to avoid use exclusive system ?
 fn debug_custom_ui(world: &mut World) {
     let Ok(egui_context) = world
         .query_filtered::<&mut EguiContext, With<PrimaryWindow>>()
@@ -136,29 +125,45 @@ fn debug_custom_ui(world: &mut World) {
     };
     let mut egui_context = egui_context.clone();
 
-    egui::Window::new("Debug Commands").show(egui_context.get_mut(), |ui| {
+    egui::Window::new("Asteroid Debug Menu").show(egui_context.get_mut(), |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| {
-            ui.heading("Players");
+            ui.heading("Config");
+            ui_for_resource::<AsteroidDebugConfig>(world, ui);
 
-            if ui.button("Spawn Player 1").clicked() {
-                let player_exists = world.run_system_once(player_exists(1));
-                if !player_exists {
-                    world.run_system_once(spawn_first_player_system);
-                }
-            }
+            ui.heading("Cheats");
+            ui_for_cheats(world, ui);
 
-            if ui.button("Spawn Player 2").clicked() {
-                let player_exists = world.run_system_once(player_exists(2));
-                if !player_exists {
-                    world.run_system_once(spawn_second_player_system);
-                }
-            }
+            ui.collapsing("Enemy Spawner", |ui| {
+                ui_for_resource::<AsteroidSpawner<AsteroidEnemySpawner>>(world, ui);
+            });
 
-            ui.heading("Enemies");
-
-            if ui.button("Kill All Enemies").clicked() {
-                world.run_system_once(kill_all_enemies_system);
-            }
+            ui.collapsing("Spawner Assets", |ui| {
+                ui_for_assets::<SpawnerAsset>(world, ui);
+            });
         });
     });
+}
+
+fn ui_for_cheats(world: &mut World, ui: &mut egui::Ui) {
+    ui.heading("Players");
+
+    if ui.button("Spawn Player 1").clicked() {
+        let player_exists = world.run_system_once(player_exists(1));
+        if !player_exists {
+            world.run_system_once(spawn_first_player_system);
+        }
+    }
+
+    if ui.button("Spawn Player 2").clicked() {
+        let player_exists = world.run_system_once(player_exists(2));
+        if !player_exists {
+            world.run_system_once(spawn_second_player_system);
+        }
+    }
+
+    ui.heading("Enemies");
+
+    if ui.button("Kill All Enemies").clicked() {
+        world.run_system_once(kill_all_enemies_system);
+    }
 }

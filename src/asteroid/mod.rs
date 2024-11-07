@@ -59,7 +59,7 @@ impl AsteroidPlugins {
             .add(AsteroidGameplayPlugin)
             .add(AsteroidMenuUiPlugin)
             .add(AsteroidGameUiPlugin)
-            .add(AsteroidAudioPlugin)
+        // .add(AsteroidAudioPlugin)
     }
 
     #[cfg(feature = "dev")]
