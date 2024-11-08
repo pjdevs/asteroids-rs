@@ -1,4 +1,3 @@
-use super::effects::AsteroidEffectsSystem;
 use super::prelude::*;
 use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;

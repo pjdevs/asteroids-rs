@@ -318,11 +318,7 @@ fn gameplay_loose_lives(
 ) {
     for player in &query {
         if let Some(lives) = player_lives.lives.get_mut(&player.player_id) {
-            println!("Old lives: {}", *lives);
-
             *lives -= 1;
-
-            println!("New lives: {}", *lives);
 
             if *lives > 0 {
                 commands.spawn(PlayerRespawnTimer {

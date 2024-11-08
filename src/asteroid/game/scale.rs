@@ -1,4 +1,3 @@
-use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use bevy::prelude::*;
 
@@ -8,7 +7,7 @@ pub struct AsteroidScalePlugin;
 
 impl Plugin for AsteroidScalePlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
-        app.add_systems(OnEnter(AsteroidGameState::Game), setup_scale_hooks);
+        app.add_systems(Startup, setup_scale_hooks);
     }
 }
 
