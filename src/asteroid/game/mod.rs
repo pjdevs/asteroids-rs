@@ -1,4 +1,5 @@
 pub mod border;
+pub mod damage;
 pub mod effects;
 pub mod enemy;
 pub mod gameplay;
@@ -11,11 +12,11 @@ pub mod spawner;
 pub mod prelude {
     pub use super::{
         border::{KillBorder, TunnelBorder},
-        enemy::{AsteroidEnemy, AsteroidEnemySpawner},
-        gameplay::{
-            AsteroidGameplaySystem, CollisionDamager, Dead, DespawnIfDead, Health, KillCollision,
-            PlayerLives, PlayerLivesChanged, Score, ScoreChanged,
+        damage::{
+            AsteroidDamageSystem, CollisionDamager, Dead, DespawnIfDead, Health, KillCollision,
         },
+        enemy::{AsteroidEnemy, AsteroidEnemySpawner},
+        gameplay::{PlayerLives, PlayerLivesChanged, Score, ScoreChanged},
         player::{
             AsteroidPlayer, AsteroidPlayerAssets, AsteroidPlayerSystem, PlayerShoot, SpawnPlayer,
         },

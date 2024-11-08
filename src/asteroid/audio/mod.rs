@@ -63,14 +63,17 @@ impl Plugin for AsteroidAudioPlugin {
                 audio_play_shoot_system
                     .run_if(on_event::<PlayerShoot>())
                     .after(AsteroidPlayerSystem::UpdatePlayerActions),
-                (
-                    audio_play_death_system.run_if(any_with_component::<Dead>),
-                    audio_play_hit_system,
-                )
-                    .after(AsteroidGameplaySystem::UpdateDamageSystem),
+                audio_play_hit_system.after(AsteroidDamageSystem::UpdateDamageSystem),
             )
                 .run_if(in_state(AsteroidGameState::Game))
                 .in_set(AsteroidAudioSystem::UpdateGameSfx),
+        )
+        .add_systems(
+            PostUpdate,
+            audio_play_death_system
+                .run_if(any_with_component::<Dead>)
+                .run_if(in_state(AsteroidGameState::Game))
+                .in_set(AsteroidAudioSystem::PostUpdateGameSfx),
         );
     }
 }
@@ -83,4 +86,5 @@ pub enum AsteroidAudioSystem {
     GameMusic,
     UpdateGameSfx,
     UpdateMenuSfx,
+    PostUpdateGameSfx,
 }

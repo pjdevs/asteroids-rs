@@ -17,7 +17,7 @@ impl Plugin for AsteroidEnemyPlugin {
         app.add_systems(
             Update,
             (explode_enemy_system, kill_exploded_enemy_system)
-                .after(AsteroidGameplaySystem::UpdateDamageSystem)
+                .after(AsteroidDamageSystem::UpdateDamageSystem)
                 .run_if(in_state(AsteroidGameState::Game)),
         )
         .add_systems(

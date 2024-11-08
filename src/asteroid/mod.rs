@@ -18,6 +18,7 @@ use core::actions::AsteroidAction;
 #[cfg(feature = "dev")]
 use debug::AsteroidDebugPlugin;
 use game::border::AsteroidBorderPlugin;
+use game::damage::AsteroidDamagePlugin;
 use game::effects::AsteroidEffectsPlugin;
 use game::enemy::AsteroidEnemyPlugin;
 use game::gameplay::AsteroidGameplayPlugin;
@@ -57,6 +58,7 @@ impl AsteroidPlugins {
             .add(AsteroidProjectilePlugin)
             .add(AsteroidPlayerPlugin)
             .add(AsteroidEnemyPlugin)
+            .add(AsteroidDamagePlugin)
             .add(AsteroidGameplayPlugin)
             .add(AsteroidEffectsPlugin)
             .add(AsteroidMenuUiPlugin)
