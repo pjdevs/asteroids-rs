@@ -93,8 +93,8 @@ pub struct PlayerLives {
 
 impl PlayerLives {
     #[inline]
-    pub fn get_lives(&self, player_id: u64) -> Option<u64> {
-        self.lives.get(&player_id).copied()
+    pub fn get_lives(&self, player_id: u64) -> Option<&u64> {
+        self.lives.get(&player_id)
     }
 }
 
