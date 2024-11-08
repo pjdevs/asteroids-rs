@@ -3,26 +3,20 @@ use crate::asteroid::game::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AsteroidGameUiSystem {
-    UpdateUi,
-}
-
 pub struct AsteroidGameUiPlugin;
 
 impl Plugin for AsteroidGameUiPlugin {
     fn build(&self, app: &mut App) {
-        app.add_systems(OnEnter(AsteroidGameState::Game), (ui_in_game_setup_system,))
-            .add_systems(
-                OnExit(AsteroidGameState::Game),
-                (despawn_entities_with::<Node>,),
-            )
-            .add_systems(
-                Update,
-                ui_score_system
-                    .run_if(in_state(AsteroidGameState::Game))
-                    .in_set(AsteroidGameUiSystem::UpdateUi),
-            );
+        app.add_systems(
+            OnEnter(AsteroidGameState::Game),
+            (ui_setup_score, ui_setup_lives),
+        )
+        .add_systems(
+            OnExit(AsteroidGameState::Game),
+            (despawn_entities_with::<Node>,),
+        )
+        .observe(ui_score_system)
+        .observe(ui_lives_system);
     }
 }
 
@@ -35,7 +29,10 @@ impl ScoreText {
     }
 }
 
-pub fn ui_in_game_setup_system(mut commands: Commands) {
+#[derive(Component)]
+struct LivesContaier;
+
+pub fn ui_setup_score(mut commands: Commands) {
     let score_text = ScoreText;
     let text = TextBundle::from_section(
         score_text.get_score_text(0),
@@ -56,8 +53,67 @@ pub fn ui_in_game_setup_system(mut commands: Commands) {
     commands.spawn((text, score_text));
 }
 
-fn ui_score_system(score: Res<Score>, mut query: Query<(&mut Text, &ScoreText)>) {
+pub fn ui_setup_lives(mut commands: Commands) {
+    let lives_container = NodeBundle {
+        style: Style {
+            top: Val::Px(5.0),
+            left: Val::Px(150.0),
+            width: Val::Px(150.0),
+            height: Val::Px(32.0),
+            border: UiRect::all(Val::Px(2.0)),
+            flex_direction: FlexDirection::Row,
+            justify_content: JustifyContent::FlexStart,
+            align_items: AlignItems::FlexStart,
+            align_content: AlignContent::FlexStart,
+            ..Default::default()
+        },
+        border_color: BorderColor(Color::WHITE),
+        border_radius: BorderRadius::all(Val::Px(2.0)),
+        ..Default::default()
+    };
+
+    commands.spawn((lives_container, LivesContaier));
+}
+
+fn ui_score_system(
+    _trigger: Trigger<ScoreChanged>,
+    score: Res<Score>,
+    mut query: Query<(&mut Text, &ScoreText)>,
+) {
     for (mut text, score_text) in &mut query {
         text.sections[0].value = score_text.get_score_text(score.get_score());
+    }
+}
+
+fn ui_lives_system(
+    _trigger: Trigger<PlayerLivesChanged>,
+    mut commands: Commands,
+    lives: Res<PlayerLives>,
+    player_assets: Res<AsteroidPlayerAssets>,
+    container_query: Query<Entity, With<LivesContaier>>,
+) {
+    let container = container_query.single();
+    commands.entity(container).despawn_descendants();
+
+    for (player_id, player_lives) in lives.get_lives().iter() {
+        for _ in 0..*player_lives {
+            let life_icon = commands
+                .spawn(ImageBundle {
+                    style: Style {
+                        width: Val::Px(30.0),
+                        height: Val::Px(30.0),
+                        ..Default::default()
+                    },
+                    image: UiImage::new(
+                        player_assets
+                            .get_texture_by_player_id(player_id)
+                            .expect("Players texture should be loaded"),
+                    ),
+                    ..Default::default()
+                })
+                .id();
+
+            commands.entity(container).add_child(life_icon);
+        }
     }
 }

@@ -72,6 +72,16 @@ pub struct AsteroidPlayerAssets {
     pub player_projectile_size: Handle<SizeAsset>,
 }
 
+impl AsteroidPlayerAssets {
+    pub fn get_texture_by_player_id(&self, player_id: &u64) -> Option<Handle<Image>> {
+        match player_id {
+            1 => Some(self.player_one_texture.clone_weak()),
+            2 => Some(self.player_two_texture.clone_weak()),
+            _ => None,
+        }
+    }
+}
+
 // Events
 
 #[derive(Event)]

@@ -93,8 +93,8 @@ pub struct PlayerLives {
 
 impl PlayerLives {
     #[inline]
-    pub fn get_lives(&self, player_id: u64) -> Option<&u64> {
-        self.lives.get(&player_id)
+    pub fn get_lives(&self) -> &HashMap<u64, u64> {
+        &self.lives
     }
 }
 
@@ -183,6 +183,14 @@ impl Health {
     }
 }
 
+// Events
+
+#[derive(Event)]
+pub struct PlayerLivesChanged;
+
+#[derive(Event)]
+pub struct ScoreChanged;
+
 // Assets
 
 #[derive(Resource, AssetCollection)]
@@ -209,11 +217,14 @@ fn gameplay_add_lives_system(mut commands: Commands) {
 }
 
 fn gameplay_score_system(
+    mut commands: Commands,
     mut score: ResMut<Score>,
     query: Query<&AsteroidScaled, (With<AsteroidEnemy>, Added<Dead>)>,
 ) {
     for scaled in &query {
         score.score += (10.0 * scaled.scale) as u64;
+
+        commands.trigger(ScoreChanged);
     }
 }
 
@@ -314,11 +325,13 @@ fn gameplay_loose_lives(
     mut commands: Commands,
     mut player_lives: ResMut<PlayerLives>,
     query: Query<&AsteroidPlayer, Added<Dead>>,
-    mut next_state: ResMut<NextState<AsteroidGameState>>
+    mut next_state: ResMut<NextState<AsteroidGameState>>,
 ) {
     for player in &query {
         if let Some(lives) = player_lives.lives.get_mut(&player.player_id) {
             *lives -= 1;
+
+            commands.trigger(PlayerLivesChanged);
 
             if *lives > 0 {
                 commands.spawn(PlayerRespawnTimer {
@@ -354,6 +367,7 @@ fn gameplay_respawn_player(
 }
 
 fn ganeplay_setup_player_respawn(
+    mut commands: Commands,
     mut player_lives: ResMut<PlayerLives>,
     query: Query<&AsteroidPlayer, Added<AsteroidPlayer>>,
 ) {
@@ -362,4 +376,6 @@ fn ganeplay_setup_player_respawn(
             player_lives.lives.insert(player.player_id, 3);
         }
     }
+
+    commands.trigger(PlayerLivesChanged);
 }

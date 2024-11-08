@@ -14,9 +14,11 @@ pub mod prelude {
         enemy::{AsteroidEnemy, AsteroidEnemySpawner},
         gameplay::{
             AsteroidGameplaySystem, CollisionDamager, Dead, DespawnIfDead, Health, KillCollision,
-            Score,
+            PlayerLives, PlayerLivesChanged, Score, ScoreChanged,
         },
-        player::{AsteroidPlayer, AsteroidPlayerSystem, PlayerShoot, SpawnPlayer},
+        player::{
+            AsteroidPlayer, AsteroidPlayerAssets, AsteroidPlayerSystem, PlayerShoot, SpawnPlayer,
+        },
         projectile::AsteroidProjectileBundle,
         scale::AsteroidScaled,
         spawner::{AsteroidSpawner, SpawnerAppExt},
