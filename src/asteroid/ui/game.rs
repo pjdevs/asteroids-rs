@@ -57,19 +57,17 @@ pub fn ui_setup_score(mut commands: Commands) {
 pub fn ui_setup_lives(mut commands: Commands) {
     let lives_container = NodeBundle {
         style: Style {
-            top: Val::Px(5.0),
+            top: Val::Px(2.5),
             left: Val::Px(150.0),
             width: Val::Px(150.0),
             height: Val::Px(32.0),
-            border: UiRect::all(Val::Px(2.0)),
+            border: UiRect::ZERO,
             flex_direction: FlexDirection::Row,
             justify_content: JustifyContent::FlexStart,
             align_items: AlignItems::FlexStart,
             align_content: AlignContent::FlexStart,
             ..Default::default()
         },
-        border_color: BorderColor(Color::WHITE),
-        border_radius: BorderRadius::all(Val::Px(2.0)),
         ..Default::default()
     };
 
@@ -116,5 +114,18 @@ fn ui_lives_system(
 
             commands.entity(container).add_child(life_icon);
         }
+
+        let spacer = commands
+            .spawn(NodeBundle {
+                style: Style {
+                    min_width: Val::Px(30.0),
+                    min_height: Val::Px(30.0),
+                    // border: UiRect::all(Val::Px(10.0)),
+                    ..Default::default()
+                },
+                ..Default::default()
+            })
+            .id();
+        commands.entity(container).add_child(spacer);
     }
 }
