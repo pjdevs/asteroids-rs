@@ -1,9 +1,8 @@
 use crate::asteroid::game::prelude::*;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use rand::seq::SliceRandom;
 
-use super::utils::{spawn_music, spawn_sfx};
+use super::utils::{spawn_music, spawn_random_sfx, spawn_sfx};
 
 // Assets
 
@@ -12,8 +11,8 @@ pub struct AsteroidGameAudioAssets {
     #[asset(key = "gameplay.death.audio")]
     pub gameplay_death_audio: Handle<AudioSource>,
 
-    #[asset(key = "gameplay.hit.audio")]
-    pub gameplay_hit_audio: Handle<AudioSource>,
+    #[asset(key = "gameplay.hit.audios", collection(typed))]
+    pub gameplay_hit_audios: Vec<Handle<AudioSource>>,
 
     #[asset(key = "player.shoot.audios", collection(typed))]
     pub player_shoot_audios: Vec<Handle<AudioSource>>,
@@ -33,14 +32,8 @@ pub fn audio_play_shoot_system(
     mut events: EventReader<PlayerShoot>,
     assets: Res<AsteroidGameAudioAssets>,
 ) {
-    let mut rng = rand::thread_rng();
-    let sfx = assets
-        .player_shoot_audios
-        .choose(&mut rng)
-        .expect("Cannot find random sfx");
-
     for _ in events.read() {
-        spawn_sfx(&mut commands, sfx.clone_weak());
+        spawn_random_sfx(&mut commands, &assets.player_shoot_audios);
     }
 }
 
@@ -61,7 +54,7 @@ pub fn audio_play_hit_system(
 ) {
     for health in &query {
         if health.is_changed() && !health.is_added() {
-            spawn_sfx(&mut commands, assets.gameplay_hit_audio.clone_weak());
+            spawn_random_sfx(&mut commands, &assets.gameplay_hit_audios);
         }
     }
 }

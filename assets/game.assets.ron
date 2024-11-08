@@ -9,7 +9,7 @@
         path: "sprites/laser.png",
     ),
     "player.shoot.audios": Files(
-        paths: ["audio/laser.ogg", "audio/laser_m2.ogg", "audio/laser_p2.ogg"],
+        paths: ["audio/laser.ogg", "audio/laser_m2.ogg", "audio/laser_p2.ogg", "audio/laser_m4.ogg", "audio/laser_p4.ogg"],
     ),
 
     "enemy.texture": Image(
@@ -35,7 +35,7 @@
     "gameplay.death.audio": File(
         path: "audio/explode.ogg",
     ),
-    "gameplay.hit.audio": File(
-        path: "audio/hit.ogg",
+    "gameplay.hit.audios": Files(
+        paths: ["audio/hit.ogg", "audio/hit_m4.ogg", "audio/hit_p4.ogg"],
     ),
 })
