@@ -15,6 +15,7 @@ impl Plugin for AsteroidGameUiPlugin {
             OnExit(AsteroidGameState::Game),
             (despawn_entities_with::<Node>,),
         )
+        // TODO Check if we can observe only in Game State
         .observe(ui_score_system)
         .observe(ui_lives_system);
     }
