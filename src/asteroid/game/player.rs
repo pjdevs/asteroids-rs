@@ -87,6 +87,9 @@ impl AsteroidPlayerAssets {
 #[derive(Event)]
 pub struct PlayerShoot;
 
+#[derive(Event)]
+pub struct PlayerSpawned;
+
 // Components
 
 #[derive(Component, Default)]
@@ -232,15 +235,13 @@ impl Command for SpawnPlayer {
             .get_resource::<AsteroidPlayerAssets>()
             .expect("Player assets must exist to spawn player");
 
-        match self.player_id {
-            1 => {
-                world.spawn(first_player_bundle(sizes, assets));
-            }
-            2 => {
-                world.spawn(second_player_bundle(sizes, assets));
-            }
-            _ => {}
-        }
+        let player_entity = match self.player_id {
+            1 => world.spawn(first_player_bundle(sizes, assets)).id(),
+            2 => world.spawn(second_player_bundle(sizes, assets)).id(),
+            _ => return,
+        };
+
+        world.trigger_targets(PlayerSpawned, player_entity);
     }
 }
 
@@ -261,7 +262,7 @@ fn player_shoot_system(
                 sprite: SpriteBundle {
                     texture: assets.projectile_texture.clone(),
                     sprite: Sprite {
-                        custom_size: None, //Some(size_asset.sprite_size),
+                        custom_size: Some(size_asset.sprite_size),
                         color: Color::srgb(5.0, 5.0, 7.0),
                         ..Default::default()
                     },

@@ -9,17 +9,20 @@ impl Plugin for AsteroidGameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             OnEnter(AsteroidGameState::Game),
-            (ui_setup_score, ui_setup_lives),
+            (ui_setup_score, ui_setup_lives, ui_setup_observers),
         )
         .add_systems(
             OnExit(AsteroidGameState::Game),
-            (despawn_entities_with::<Node>,),
-        )
-        // TODO Check if we can observe only in Game State
-        .observe(ui_score_system)
-        .observe(ui_lives_system);
+            (
+                despawn_entities_with::<Node>,
+                despawn_entities_with::<GameUiObserver>,
+            ),
+        );
     }
 }
+
+#[derive(Component)]
+struct GameUiObserver;
 
 #[derive(Component)]
 struct ScoreText;
@@ -54,7 +57,12 @@ pub fn ui_setup_score(mut commands: Commands) {
     commands.spawn((text, score_text));
 }
 
-pub fn ui_setup_lives(mut commands: Commands) {
+fn ui_setup_observers(mut commands: Commands) {
+    commands.observe(ui_score_system).insert(GameUiObserver);
+    commands.observe(ui_lives_system).insert(GameUiObserver);
+}
+
+fn ui_setup_lives(mut commands: Commands) {
     let lives_container = NodeBundle {
         style: Style {
             top: Val::Px(2.5),

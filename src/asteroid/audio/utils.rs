@@ -20,10 +20,8 @@ pub fn spawn_sfx(commands: &mut Commands, sfx: Handle<AudioSource>) {
 
 pub fn spawn_random_sfx(commands: &mut Commands, sfxs: &Vec<Handle<AudioSource>>) {
     let mut rng = rand::thread_rng();
-    let sfx = sfxs
-        .choose(&mut rng)
-        .expect("Cannot find random sfx");
-    
+    let sfx = sfxs.choose(&mut rng).expect("Cannot find random sfx");
+
     spawn_sfx(commands, sfx.clone_weak());
 }
 

@@ -2,6 +2,7 @@ use super::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::Collider;
 use crate::asteroid::utils::prelude::*;
+use crate::get_mut;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use std::collections::HashMap;
@@ -18,6 +19,7 @@ impl Plugin for AsteroidGameplayPlugin {
                     gameplay_add_score_system,
                     gameplay_add_lives_system,
                     gameplay_spawn_background_system,
+                    gameplay_setup_observers,
                 ),
             )
             .add_systems(
@@ -27,12 +29,12 @@ impl Plugin for AsteroidGameplayPlugin {
                     remove_resource::<PlayerLives>,
                     despawn_entities_with::<PlayerRespawnTimer>,
                     despawn_entities_with::<Background>,
+                    despawn_entities_with::<GameplayObserver>,
                 ),
             )
             .add_systems(
                 Update,
                 (
-                    gameplay_setup_player_respawn.run_if(any_with_component::<AsteroidPlayer>),
                     gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
                     gameplay_invincibility.run_if(any_with_component::<InvincibilityTimer>),
                 )
@@ -45,6 +47,7 @@ impl Plugin for AsteroidGameplayPlugin {
                     .run_if(any_with_component::<Dead>)
                     .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
             )
+            .observe(gameplay_setup_player_respawn)
             .configure_loading_state(
                 LoadingStateConfig::new(AsteroidGameState::GameLoading)
                     .load_collection::<AsteroidGameplayAssets>(),
@@ -78,21 +81,15 @@ pub struct InvincibilityTimer {
     times_flash: u64,
     duration_visible: f32,
     duration_invisible: f32,
-    
+
     current_flashes: u64,
     is_visible: bool,
-    is_started: bool,
     timer: Timer,
 }
 
 impl InvincibilityTimer {
-    pub fn new(
-        times_flash: u64,
-        duration_visible: f32,
-        duration_invisible: f32
-    ) -> Self {
+    pub fn new(times_flash: u64, duration_visible: f32, duration_invisible: f32) -> Self {
         Self {
-            is_started: false,
             is_visible: true,
             times_flash,
             duration_visible,
@@ -119,6 +116,9 @@ impl PlayerLives {
 
 #[derive(Component)]
 struct Background;
+
+#[derive(Component)]
+struct GameplayObserver;
 
 // Events
 
@@ -228,20 +228,31 @@ fn gameplay_respawn_player(
     }
 }
 
+fn gameplay_setup_observers(mut commands: Commands) {
+    commands
+        .observe(gameplay_setup_player_respawn)
+        .insert(GameplayObserver);
+}
+
 fn gameplay_setup_player_respawn(
+    trigger: Trigger<PlayerSpawned>,
     mut commands: Commands,
     mut player_lives: ResMut<PlayerLives>,
-    query: Query<(Entity, &AsteroidPlayer), Added<AsteroidPlayer>>,
+    mut query: Query<(&AsteroidPlayer, &mut Collider)>,
 ) {
-    for (entity, player) in &query {
-        if !player_lives.lives.contains_key(&player.player_id) {
-            player_lives.lives.insert(player.player_id, 3);
-            commands.trigger(PlayerLivesChanged);
-        }
-        
-        // TODO Check how to do all this in one frame
-        commands.entity(entity).insert(InvincibilityTimer::new(5, 0.5, 0.35));
+    let player_entity = trigger.entity();
+    get_mut!(components, query, player_entity, return);
+    let (player, mut collider) = components;
+
+    if !player_lives.lives.contains_key(&player.player_id) {
+        player_lives.lives.insert(player.player_id, 3);
+        commands.trigger(PlayerLivesChanged);
     }
+
+    collider.enabled = false;
+    commands
+        .entity(player_entity)
+        .insert(InvincibilityTimer::new(3, 0.5, 0.35));
 }
 
 fn gameplay_invincibility(
@@ -250,24 +261,23 @@ fn gameplay_invincibility(
     mut query: Query<(Entity, &mut InvincibilityTimer, &mut Sprite, &mut Collider)>,
 ) {
     for (entity, mut invincibility, mut sprite, mut collider) in &mut query {
-        if !invincibility.is_started {
-            collider.enabled = false;
-            invincibility.is_started = true;
-        }
-
         invincibility.timer.tick(time.delta());
 
         if invincibility.timer.just_finished() {
-            invincibility.current_flashes += 1;
             invincibility.is_visible = !invincibility.is_visible;
 
             if invincibility.is_visible {
+                invincibility.current_flashes += 1;
                 let duration = invincibility.duration_visible;
-                invincibility.timer.set_duration(Duration::from_secs_f32(duration));
+                invincibility
+                    .timer
+                    .set_duration(Duration::from_secs_f32(duration));
                 sprite.color = Color::srgba(1.0, 1.0, 1.0, 1.0);
             } else {
                 let duration = invincibility.duration_invisible;
-                invincibility.timer.set_duration(Duration::from_secs_f32(duration));
+                invincibility
+                    .timer
+                    .set_duration(Duration::from_secs_f32(duration));
                 sprite.color = Color::srgba(1.0, 1.0, 1.0, 0.1);
             }
 
