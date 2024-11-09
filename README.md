@@ -1,6 +1,6 @@
 # Asteroid-rs
 
-This project aims to be a basic game to get famialiar with the possibilities of Bevy (and Rust at the same time).
+This project aims to be a basic but kind of complete example game to get familiar with the possibilities of Bevy (and Rust at the same time).
 
 ## Features
 
@@ -11,7 +11,8 @@ This project aims to be a basic game to get famialiar with the possibilities of 
 - [x] Dynamic asset loading with `bevy_asset_loader`
 - [x] Basic custom physcis and collisions
 - [x] Basic spritesheet animations
-- [x] Basic gameplay mechanics (endless mode shooter, score, spawners, ...)
+- [x] Basic gameplay mechanics (endless mode shooter, respawn, lives, score, spawners, ...)
+- [x] Basic effects (shake with `bevy_trauma_shake`, bloom, spritesheet based vfx, ...)
 - [ ] More gameplay mechanics (events, ...)
 - [ ] Collectible bonuses 
 - [ ] Pause menu
@@ -44,12 +45,28 @@ cargo build --profile distribution -F tracing/release_max_level_off -F log/relea
 
 Licensed under MIT license ([LICENSE](LICENSE.md) or [https://opensource.org/license/MIT](https://opensource.org/license/MIT))
 
-Assets in the `asteroid-rs/assets` are all public domain.
+Assets in the `asteroid-rs/assets` are all public domain. Some may have been modified, converted and pitched.
+
+## Credits
+
+- Audio :
+    - https://pixabay.com/sound-effects/8bit-sample-69080/
+    - https://pixabay.com/sound-effects/8bit-mix-56351/
+    - https://pixabay.com/sound-effects/retro-hurt-1-236672/
+    - https://pixabay.com/sound-effects/retro-explode-1-236678/
+    - https://pixabay.com/sound-effects/game-start-6104/
+    - https://pixabay.com/sound-effects/videogame-death-sound-43894/
+    - https://pixabay.com/sound-effects/retro-select-236670/
+    - https://pixabay.com/sound-effects/laser-104024/
+
+- Sprites :
+    - itch is down lol
+
 
 ## Contribution
 
-Anyone is free to contribute to add "intersting" feature to show off more Bevy/Rust features.
+Anyone is free to contribute to add "intersting" content to show off more Bevy/Rust features but the game should remain simple to serve as an example.
 
-Constributors :
+Contributors :
 
 - pjdevs
