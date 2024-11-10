@@ -25,7 +25,6 @@ impl Plugin for AsteroidDebugPlugin {
                 (
                     toggle_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
                     (
-                        debug_invincible_system.run_if(any_with_component::<AsteroidPlayer>),
                         degug_gizmos_system,
                         debug_custom_ui,
                     )
@@ -42,7 +41,6 @@ impl Plugin for AsteroidDebugPlugin {
 struct AsteroidDebugConfig {
     is_debug_mode: bool,
     show_gizmos: bool,
-    is_invincible: bool,
 }
 
 // Conditions
@@ -61,14 +59,11 @@ fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
 }
 
-fn debug_invincible_system(
+fn debug_toggle_invincible_system(
     mut query: Query<&mut Collider, With<AsteroidPlayer>>,
-    config: Res<AsteroidDebugConfig>,
 ) {
-    if config.is_changed() {
-        for mut collider in &mut query {
-            collider.enabled = !config.is_invincible;
-        }
+    for mut collider in &mut query {
+        collider.enabled = !collider.enabled;
     }
 }
 
@@ -147,6 +142,10 @@ fn ui_for_cheats(world: &mut World, ui: &mut egui::Ui) {
         if !player_exists {
             world.run_system_once(spawn_second_player_system);
         }
+    }
+
+    if ui.button("Toggle Invincibility").clicked() {
+        world.run_system_once(debug_toggle_invincible_system);
     }
 
     ui.heading("Enemies");

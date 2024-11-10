@@ -248,7 +248,6 @@ fn gameplay_setup_player_respawn(
         commands.trigger(PlayerLivesChanged);
     }
 
-    println!("SET INVINCIBLE");
     collider.enabled = false;
     commands
         .entity(player_entity)
