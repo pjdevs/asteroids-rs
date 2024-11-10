@@ -188,6 +188,6 @@ fn gameplay_despawn_dead_system(
     dead_query: Query<Entity, (With<Dead>, With<DespawnIfDead>)>,
 ) {
     for entity in &dead_query {
-        commands.entity(entity).despawn();
+        commands.entity(entity).despawn_recursive();
     }
 }

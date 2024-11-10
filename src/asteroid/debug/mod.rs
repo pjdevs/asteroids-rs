@@ -24,11 +24,7 @@ impl Plugin for AsteroidDebugPlugin {
                 Update,
                 (
                     toggle_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
-                    (
-                        degug_gizmos_system,
-                        debug_custom_ui,
-                    )
-                        .run_if(debug_is_active),
+                    (degug_gizmos_system, debug_custom_ui).run_if(debug_is_active),
                 )
                     .run_if(in_state(AsteroidGameState::Game)),
             );
@@ -59,9 +55,7 @@ fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
 }
 
-fn debug_toggle_invincible_system(
-    mut query: Query<&mut Collider, With<AsteroidPlayer>>,
-) {
+fn debug_toggle_invincible_system(mut query: Query<&mut Collider, With<AsteroidPlayer>>) {
     for mut collider in &mut query {
         collider.enabled = !collider.enabled;
     }

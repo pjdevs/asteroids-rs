@@ -5,6 +5,19 @@
     "player.two.texture": Image(
         path: "sprites/ship_red.png",
     ),
+    "player.invincible.texture": Image(
+        path: "sprites/effect_nautolan_invincible.png",
+    ),
+    "player.invincible.layout": TextureAtlasLayout(
+        tile_size_x: 34,
+        tile_size_y: 30,
+        columns: 13,
+        rows: 1,
+        padding_x: 30,
+        padding_y: 0,
+        offset_x: 0,
+        offset_y: 0,
+    ),
     "player.projectile.texture": Image(
         path: "sprites/laser.png",
     ),

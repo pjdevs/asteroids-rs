@@ -1,4 +1,5 @@
 use crate::asset;
+use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::debug::player_exists;
 use crate::asteroid::game::prelude::*;
@@ -62,6 +63,12 @@ pub struct AsteroidPlayerAssets {
 
     #[asset(key = "player.two.texture")]
     pub player_two_texture: Handle<Image>,
+
+    #[asset(key = "player.invincible.texture")]
+    pub player_invincible_texture: Handle<Image>,
+
+    #[asset(key = "player.invincible.layout")]
+    pub player_invincible_layout: Handle<TextureAtlasLayout>,
 
     #[asset(key = "player.projectile.texture")]
     pub projectile_texture: Handle<Image>,
@@ -235,19 +242,47 @@ impl SpawnPlayer {
 
 impl Command for SpawnPlayer {
     fn apply(self, world: &mut World) {
-        let sizes = world
-            .get_resource::<Assets<SizeAsset>>()
-            .expect("Size assets must exist to spawn player");
-        let assets = world
-            .get_resource::<AsteroidPlayerAssets>()
-            .expect("Player assets must exist to spawn player");
+        let player_entity = {
+            let sizes = world
+                .get_resource::<Assets<SizeAsset>>()
+                .expect("Size assets must exist to spawn player");
+            let assets = world
+                .get_resource::<AsteroidPlayerAssets>()
+                .expect("Player assets must exist to spawn player");
 
-        let player_entity = match self.player_id {
-            1 => world.spawn(first_player_bundle(sizes, assets)).id(),
-            2 => world.spawn(second_player_bundle(sizes, assets)).id(),
-            _ => return,
+            match self.player_id {
+                1 => world.spawn(first_player_bundle(sizes, assets)).id(),
+                2 => world.spawn(second_player_bundle(sizes, assets)).id(),
+                _ => return,
+            }
         };
 
+        let shield_entity = {
+            let assets = world
+                .get_resource::<AsteroidPlayerAssets>()
+                .expect("Player assets must exist to spawn player");
+
+            world
+                .spawn((
+                    SpriteBundle {
+                        texture: assets.player_invincible_texture.clone_weak(),
+                        sprite: Sprite {
+                            custom_size: Some(Vec2::splat(64.0)),
+                            ..Default::default()
+                        },
+                        transform: Transform::from_xyz(0.0, 0.0, 1.0),
+                        ..Default::default()
+                    },
+                    TextureAtlas {
+                        layout: assets.player_invincible_layout.clone_weak(),
+                        index: 0,
+                    },
+                    Animation::new(AnimationPlayMode::Loop, 0, 12, 1.0),
+                ))
+                .id()
+        };
+
+        world.entity_mut(player_entity).add_child(shield_entity);
         world.trigger_targets(PlayerSpawned, player_entity);
     }
 }
