@@ -107,8 +107,8 @@ fn ui_lives_system(
             let life_icon = commands
                 .spawn(ImageBundle {
                     style: Style {
-                        width: Val::Px(30.0),
-                        height: Val::Px(30.0),
+                        width: Val::Px(48.0),
+                        height: Val::Px(48.0),
                         ..Default::default()
                     },
                     image: UiImage::new(
@@ -126,9 +126,8 @@ fn ui_lives_system(
         let spacer = commands
             .spawn(NodeBundle {
                 style: Style {
-                    min_width: Val::Px(30.0),
-                    min_height: Val::Px(30.0),
-                    // border: UiRect::all(Val::Px(10.0)),
+                    min_width: Val::Px(48.0),
+                    min_height: Val::Px(48.0),
                     ..Default::default()
                 },
                 ..Default::default()

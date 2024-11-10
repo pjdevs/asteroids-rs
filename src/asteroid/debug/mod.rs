@@ -25,8 +25,7 @@ impl Plugin for AsteroidDebugPlugin {
                 (
                     toggle_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
                     (
-                        (debug_invincible_system, debug_invincible_on_spawn_system)
-                            .run_if(any_with_component::<AsteroidPlayer>),
+                        debug_invincible_system.run_if(any_with_component::<AsteroidPlayer>),
                         degug_gizmos_system,
                         debug_custom_ui,
                     )
@@ -70,15 +69,6 @@ fn debug_invincible_system(
         for mut collider in &mut query {
             collider.enabled = !config.is_invincible;
         }
-    }
-}
-
-fn debug_invincible_on_spawn_system(
-    mut query: Query<&mut Collider, (Added<Collider>, With<AsteroidPlayer>)>,
-    config: Res<AsteroidDebugConfig>,
-) {
-    for mut collider in &mut query {
-        collider.enabled = !config.is_invincible;
     }
 }
 

@@ -19,7 +19,7 @@ impl Plugin for AsteroidGameplayPlugin {
                     gameplay_add_score_system,
                     gameplay_add_lives_system,
                     gameplay_spawn_background_system,
-                    gameplay_setup_observers,
+                    gameplay_setup_observers.before(AsteroidPlayerSystem::OnEnterGameSpawn),
                 ),
             )
             .add_systems(
@@ -47,7 +47,6 @@ impl Plugin for AsteroidGameplayPlugin {
                     .run_if(any_with_component::<Dead>)
                     .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
             )
-            .observe(gameplay_setup_player_respawn)
             .configure_loading_state(
                 LoadingStateConfig::new(AsteroidGameState::GameLoading)
                     .load_collection::<AsteroidGameplayAssets>(),
@@ -249,6 +248,7 @@ fn gameplay_setup_player_respawn(
         commands.trigger(PlayerLivesChanged);
     }
 
+    println!("SET INVINCIBLE");
     collider.enabled = false;
     commands
         .entity(player_entity)
