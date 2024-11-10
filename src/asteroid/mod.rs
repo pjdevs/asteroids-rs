@@ -12,6 +12,7 @@ mod utils;
 use animation::AsteroidAnimationPlugin;
 use audio::AsteroidAudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
+use bevy::prelude::ImagePlugin;
 use bevy::DefaultPlugins;
 use bevy_trauma_shake::TraumaPlugin;
 use core::actions::AsteroidAction;
@@ -47,7 +48,11 @@ impl PluginGroup for AsteroidPlugins {
 impl AsteroidPlugins {
     fn default_plugins() -> PluginGroupBuilder {
         PluginGroupBuilder::start::<Self>()
-            .add_group(DefaultPlugins.set(asteroid_window_plugin()))
+            .add_group(
+                DefaultPlugins
+                    .set(asteroid_window_plugin())
+                    .set(ImagePlugin::default_nearest()),
+            )
             .add(TraumaPlugin)
             .add(AsteroidSetupPlugin)
             .add(AsteroidInputPlugin::<AsteroidAction>::default())

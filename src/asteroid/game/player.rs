@@ -56,10 +56,10 @@ impl Plugin for AsteroidPlayerPlugin {
 
 #[derive(Resource, AssetCollection)]
 pub struct AsteroidPlayerAssets {
-    #[asset(key = "player.one_texture")]
+    #[asset(key = "player.one.texture")]
     pub player_one_texture: Handle<Image>,
 
-    #[asset(key = "player.two_texture")]
+    #[asset(key = "player.two.texture")]
     pub player_two_texture: Handle<Image>,
 
     #[asset(key = "player.projectile.texture")]
@@ -134,8 +134,13 @@ impl AsteroidPlayerBundle {
         self
     }
 
-    pub fn with_size(mut self, size: Vec2) -> Self {
-        self.collider = Collider::from_shape(Shape::Obb(Obb2d::new(Vec2::ZERO, size / 2.0, 0.0)));
+    pub fn with_size(mut self, size: &SizeAsset) -> Self {
+        self.sprite.sprite.custom_size = Some(size.sprite_size);
+        self.collider = Collider::from_shape(Shape::Obb(Obb2d::new(
+            Vec2::ZERO,
+            size.collider_size / 2.0,
+            0.0,
+        )));
         self
     }
 
@@ -200,7 +205,7 @@ fn first_player_bundle(
 ) -> AsteroidPlayerBundle {
     AsteroidPlayerBundle::preset_ship_fast()
         .with_id(1)
-        .with_size(asset!(sizes, &assets.player_size).collider_size)
+        .with_size(asset!(sizes, &assets.player_size))
         .with_texture(assets.player_one_texture.clone())
         .with_input_map(InputMap::default().with_keyboard_mappings())
 }
@@ -211,7 +216,7 @@ fn second_player_bundle(
 ) -> AsteroidPlayerBundle {
     AsteroidPlayerBundle::preset_ship_slow()
         .with_id(2)
-        .with_size(asset!(sizes, &assets.player_size).collider_size)
+        .with_size(asset!(sizes, &assets.player_size))
         .with_texture(assets.player_two_texture.clone())
         .with_input_map(InputMap::default().with_gamepad_mappings(0))
 }

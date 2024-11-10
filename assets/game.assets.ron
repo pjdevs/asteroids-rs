@@ -1,8 +1,8 @@
 ({
-    "player.one_texture": Image(
+    "player.one.texture": Image(
         path: "sprites/ship_blue.png",
     ),
-    "player.two_texture": Image(
+    "player.two.texture": Image(
         path: "sprites/ship_red.png",
     ),
     "player.projectile.texture": Image(
@@ -13,7 +13,7 @@
     ),
 
     "enemy.texture": Image(
-        path: "sprites/asteroid01_atlas.png",
+        path: "sprites/asteroid.png",
     ),
     "enemy.layout": TextureAtlasLayout(
         tile_size_x: 96,

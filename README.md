@@ -60,7 +60,9 @@ Assets in the `asteroid-rs/assets` are all public domain. Some may have been mod
     - https://pixabay.com/sound-effects/laser-104024/
 
 - Sprites :
-    - itch is down lol
+    - https://foozlecc.itch.io/
+    - https://screamingbrainstudios.itch.io/seamless-space-backgrounds
+    - https://opengameart.org/content/lasers-and-beams
 
 
 ## Contribution
