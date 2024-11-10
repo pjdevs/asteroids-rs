@@ -6,9 +6,7 @@ use crate::asteroid::input::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use bevy::ecs::world::Command;
-use bevy::math::bounding::BoundingCircle;
 use bevy::prelude::*;
-use bevy::sprite::Anchor;
 use bevy_asset_loader::prelude::*;
 
 // TODO Refactor all behaviors in components (Ship, Shoot, ..) ????
@@ -138,8 +136,6 @@ impl AsteroidPlayerBundle {
     }
 
     pub fn with_size(mut self, size: &SizeAsset) -> Self {
-        // TODO Put anchor in size assets
-        self.sprite.sprite.anchor = Anchor::Custom(Vec2::new(0.0, -0.075));
         self.sprite.sprite.custom_size = Some(size.sprite_size);
         self.collider = Collider::from_shape(Shape::Obb(Obb2d::new(
             Vec2::ZERO,
