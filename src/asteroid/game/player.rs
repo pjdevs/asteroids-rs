@@ -20,14 +20,6 @@ impl Plugin for AsteroidPlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PlayerShoot>()
             .add_systems(
-                OnEnter(AsteroidGameState::Game),
-                (
-                    spawn_first_player_system,
-                    spawn_second_player_system.run_if(gamepad_connected(0)),
-                )
-                    .in_set(AsteroidPlayerSystem::OnEnterGameSpawn),
-            )
-            .add_systems(
                 OnExit(AsteroidGameState::Game),
                 (
                     remove_resource::<AsteroidPlayerAssets>,
@@ -197,7 +189,6 @@ impl AsteroidPlayerBundle {
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AsteroidPlayerSystem {
     UpdatePlayerActions,
-    OnEnterGameSpawn,
 }
 
 pub fn spawn_first_player_system(mut commands: Commands) {

@@ -18,8 +18,8 @@ pub mod prelude {
         enemy::{AsteroidEnemy, AsteroidEnemySpawner},
         gameplay::{PlayerLives, PlayerLivesChanged, Score, ScoreChanged},
         player::{
-            AsteroidPlayer, AsteroidPlayerAssets, AsteroidPlayerSystem, PlayerShoot, PlayerSpawned,
-            SpawnPlayer,
+            spawn_first_player_system, spawn_second_player_system, AsteroidPlayer,
+            AsteroidPlayerAssets, AsteroidPlayerSystem, PlayerShoot, PlayerSpawned, SpawnPlayer,
         },
         projectile::AsteroidProjectileBundle,
         scale::AsteroidScaled,

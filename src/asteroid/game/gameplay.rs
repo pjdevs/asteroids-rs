@@ -1,5 +1,6 @@
 use super::prelude::*;
 use crate::asteroid::core::prelude::*;
+use crate::asteroid::input::prelude::*;
 use crate::asteroid::physics::prelude::Collider;
 use crate::asteroid::utils::prelude::*;
 use crate::get;
@@ -19,7 +20,11 @@ impl Plugin for AsteroidGameplayPlugin {
                     gameplay_add_score_system,
                     gameplay_add_lives_system,
                     gameplay_spawn_background_system,
-                    gameplay_setup_observers.before(AsteroidPlayerSystem::OnEnterGameSpawn),
+                    gameplay_setup_observers,
+                    spawn_first_player_system.after(gameplay_setup_observers),
+                    spawn_second_player_system
+                        .after(gameplay_setup_observers)
+                        .run_if(gamepad_connected(0)),
                 ),
             )
             .add_systems(
@@ -36,7 +41,9 @@ impl Plugin for AsteroidGameplayPlugin {
                 Update,
                 (
                     gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
-                    gameplay_start_invincibility.after(gameplay_respawn_player).run_if(any_with_component::<InvincibilityTimer>),
+                    gameplay_start_invincibility
+                        .after(gameplay_respawn_player)
+                        .run_if(any_with_component::<InvincibilityTimer>),
                     gameplay_update_invincibility.run_if(any_with_component::<InvincibilityTimer>),
                 )
                     .run_if(in_state(AsteroidGameState::Game))
