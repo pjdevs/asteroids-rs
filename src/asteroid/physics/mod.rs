@@ -46,4 +46,5 @@ pub mod prelude {
     pub use super::collision::{Collider, CollisionEvent, CollisionLayers, Shape};
     pub use super::movement::Movement;
     pub use super::obb::Obb2d;
+    pub use super::AsteroidPhysicsSystem;
 }

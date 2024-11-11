@@ -2,7 +2,7 @@ use super::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::Collider;
 use crate::asteroid::utils::prelude::*;
-use crate::get_mut;
+use crate::get;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use std::collections::HashMap;
@@ -36,16 +36,18 @@ impl Plugin for AsteroidGameplayPlugin {
                 Update,
                 (
                     gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
-                    gameplay_invincibility.run_if(any_with_component::<InvincibilityTimer>),
+                    gameplay_start_invincibility.after(gameplay_respawn_player).run_if(any_with_component::<InvincibilityTimer>),
+                    gameplay_update_invincibility.run_if(any_with_component::<InvincibilityTimer>),
                 )
                     .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
             )
             .add_systems(
-                PostUpdate,
+                FixedPostUpdate,
                 (gameplay_score_system, gameplay_loose_lives)
+                    .before(AsteroidDamageSystem::FixedPostUpdateDeathSystem)
                     .run_if(any_with_component::<Dead>)
-                    .in_set(AsteroidGameplaySystem::PostUpdateGameplay),
+                    .in_set(AsteroidGameplaySystem::FixedPostUpdateGameplay),
             )
             .configure_loading_state(
                 LoadingStateConfig::new(AsteroidGameState::GameLoading)
@@ -140,7 +142,7 @@ pub struct AsteroidGameplayAssets {
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AsteroidGameplaySystem {
     UpdateGameplay,
-    PostUpdateGameplay,
+    FixedPostUpdateGameplay,
 }
 
 fn gameplay_add_score_system(mut commands: Commands) {
@@ -237,24 +239,28 @@ fn gameplay_setup_player_respawn(
     trigger: Trigger<PlayerSpawned>,
     mut commands: Commands,
     mut player_lives: ResMut<PlayerLives>,
-    mut query: Query<(&AsteroidPlayer, &mut Collider)>,
+    query: Query<&AsteroidPlayer>,
 ) {
     let player_entity = trigger.entity();
-    get_mut!(components, query, player_entity, return);
-    let (player, mut collider) = components;
+    get!(player, query, player_entity, return);
 
     if !player_lives.lives.contains_key(&player.player_id) {
         player_lives.lives.insert(player.player_id, 3);
         commands.trigger(PlayerLivesChanged);
     }
 
-    collider.enabled = false;
     commands
         .entity(player_entity)
         .insert(InvincibilityTimer::new(3, 0.5, 0.35));
 }
 
-fn gameplay_invincibility(
+fn gameplay_start_invincibility(mut query: Query<&mut Collider, Added<InvincibilityTimer>>) {
+    for mut collider in &mut query {
+        collider.enabled = false;
+    }
+}
+
+fn gameplay_update_invincibility(
     mut commands: Commands,
     time: Res<Time>,
     mut query: Query<(Entity, &mut InvincibilityTimer, &mut Sprite, &mut Collider)>,

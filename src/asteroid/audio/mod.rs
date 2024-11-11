@@ -63,7 +63,7 @@ impl Plugin for AsteroidAudioPlugin {
                 audio_play_shoot_system
                     .run_if(on_event::<PlayerShoot>())
                     .after(AsteroidPlayerSystem::UpdatePlayerActions),
-                audio_play_hit_system.after(AsteroidDamageSystem::UpdateDamageSystem),
+                audio_play_hit_system.after(AsteroidDamageSystem::FixedUpdateDamageSystem),
             )
                 .run_if(in_state(AsteroidGameState::Game))
                 .in_set(AsteroidAudioSystem::UpdateGameSfx),

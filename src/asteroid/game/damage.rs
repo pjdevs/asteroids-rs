@@ -8,22 +8,23 @@ pub struct AsteroidDamagePlugin;
 impl Plugin for AsteroidDamagePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
-            ((
+            FixedUpdate,
+            (
                 gameplay_collision_damage_system.run_if(on_event::<CollisionEvent>()),
                 gameplay_death_system.after(gameplay_collision_damage_system),
                 gameplay_collision_despawn_system
                     .run_if(on_event::<CollisionEvent>())
                     .run_if(any_with_component::<KillCollision>),
             )
-                .in_set(AsteroidDamageSystem::UpdateDamageSystem),)
+                .after(AsteroidPhysicsSystem::FixedUpdateCollisionDetection)
+                .in_set(AsteroidDamageSystem::FixedUpdateDamageSystem)
                 .run_if(in_state(AsteroidGameState::Game)),
         )
         .add_systems(
-            PostUpdate,
-            (gameplay_despawn_dead_system,)
+            FixedPostUpdate,
+            gameplay_despawn_dead_system
                 .run_if(any_with_component::<Dead>)
-                .in_set(AsteroidDamageSystem::PostUpdateDeathSystem),
+                .in_set(AsteroidDamageSystem::FixedPostUpdateDeathSystem),
         );
     }
 }
@@ -114,8 +115,8 @@ impl Health {
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum AsteroidDamageSystem {
-    UpdateDamageSystem,
-    PostUpdateDeathSystem,
+    FixedUpdateDamageSystem,
+    FixedPostUpdateDeathSystem,
 }
 
 fn gameplay_collision_despawn_system(
@@ -166,7 +167,7 @@ fn handle_damage(
     health_query: &mut Query<&mut Health>,
 ) {
     get!(damager, damager_query, first, return);
-    get_mut!(health, health_query, second, return);
+    get_mut!(mut health, health_query, second, return);
 
     let damage = damager.get_damage(&health);
     health.damage(damage);

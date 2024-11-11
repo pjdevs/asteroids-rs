@@ -15,9 +15,9 @@ pub struct AsteroidEnemyPlugin;
 impl Plugin for AsteroidEnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            FixedUpdate,
             (explode_enemy_system, kill_exploded_enemy_system)
-                .after(AsteroidDamageSystem::UpdateDamageSystem)
+                .after(AsteroidDamageSystem::FixedUpdateDamageSystem)
                 .run_if(in_state(AsteroidGameState::Game)),
         )
         .add_systems(

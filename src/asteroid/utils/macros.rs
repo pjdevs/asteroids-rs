@@ -1,6 +1,6 @@
 #[macro_export]
 macro_rules! get {
-    ($var:ident, $query:expr, $entity:expr, $not_found:expr) => {
+    ($var:pat, $query:expr, $entity:expr, $not_found:expr) => {
         let Ok($var) = $query.get($entity) else {
             $not_found;
         };
@@ -9,8 +9,8 @@ macro_rules! get {
 
 #[macro_export]
 macro_rules! get_mut {
-    ($var:ident, $query:expr, $entity:expr, $not_found:expr) => {
-        let Ok(mut $var) = $query.get_mut($entity) else {
+    ($var:pat, $query:expr, $entity:expr, $not_found:expr) => {
+        let Ok($var) = $query.get_mut($entity) else {
             $not_found;
         };
     };

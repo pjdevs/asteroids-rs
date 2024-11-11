@@ -3,6 +3,8 @@ use bevy::prelude::*;
 
 use super::prelude::Health;
 
+// TODO Use change detection instead ?
+
 pub struct AsteroidScalePlugin;
 
 impl Plugin for AsteroidScalePlugin {
