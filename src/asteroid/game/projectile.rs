@@ -14,10 +14,9 @@ pub struct AsteroidProjectileBundle {
     pub movement: Movement,
     pub collider: Collider,
     pub layers: CollisionLayers,
-    pub border: KillBorder,
-    pub kill_collision: KillCollision,
+    pub border: DespawnBorder,
+    pub kill_collision: DespawnCollision,
     pub damager: CollisionDamager,
-    pub despawn: DespawnIfDead,
 }
 
 pub struct AsteroidProjectilePlugin;

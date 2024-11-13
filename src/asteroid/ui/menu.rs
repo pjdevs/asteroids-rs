@@ -12,19 +12,16 @@ pub struct AsteroidMenuUiPlugin;
 impl Plugin for AsteroidMenuUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ButtonEvent>()
-            .add_systems(
-                OnEnter(AsteroidGameState::MainMenu),
-                (ui_menu_setup_system,),
-            )
+            .add_systems(OnEnter(AsteroidGameState::MainMenu), ui_menu_setup_system)
             .add_systems(
                 OnExit(AsteroidGameState::MainMenu),
-                (despawn_entities_with::<Node>,),
+                despawn_entities_with::<Node>,
             )
             .add_systems(
                 Update,
                 (
                     ui_button_released_system,
-                    ui_play_system,
+                    ui_button_action_system,
                     ui_button_style_system,
                 )
                     .run_if(in_state(AsteroidGameState::MainMenu))
@@ -75,21 +72,35 @@ pub fn ui_menu_setup_system(mut commands: Commands) {
         },
     );
 
-    let container = commands.spawn(container_node).id();
+    let container = commands
+        .spawn((
+            container_node,
+            #[cfg(feature = "dev")]
+            Name::new("Play Button Container"),
+        ))
+        .id();
     let button = commands
         .spawn((
             button_node,
             LastInteraction::default(),
             MenuButtonAction::Play,
+            #[cfg(feature = "dev")]
+            Name::new("Play Button"),
         ))
         .id();
-    let button_text = commands.spawn(button_text_node).id();
+    let button_text = commands
+        .spawn((
+            button_text_node,
+            #[cfg(feature = "dev")]
+            Name::new("Play Button Text"),
+        ))
+        .id();
 
     commands.entity(button).push_children(&[button_text]);
     commands.entity(container).push_children(&[button]);
 }
 
-fn ui_play_system(
+fn ui_button_action_system(
     mut events: EventReader<ButtonEvent>,
     mut next_state: ResMut<NextState<AsteroidGameState>>,
     query: Query<&MenuButtonAction>,

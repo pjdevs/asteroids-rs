@@ -6,6 +6,6 @@ pub fn remove_resource<R: Resource>(mut commands: Commands) {
 
 pub fn despawn_entities_with<C: Component>(mut commands: Commands, query: Query<Entity, With<C>>) {
     query.iter().for_each(|e| {
-        commands.entity(e).despawn_recursive();
+        commands.entity(e).despawn();
     });
 }

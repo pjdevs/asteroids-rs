@@ -54,12 +54,25 @@ pub fn ui_setup_score(mut commands: Commands) {
         ..Default::default()
     });
 
-    commands.spawn((text, score_text));
+    commands.spawn((
+        text,
+        score_text,
+        #[cfg(feature = "dev")]
+        Name::new("Score Text"),
+    ));
 }
 
 fn ui_setup_observers(mut commands: Commands) {
-    commands.observe(ui_score_system).insert(GameUiObserver);
-    commands.observe(ui_lives_system).insert(GameUiObserver);
+    commands.observe(ui_score_system).insert((
+        GameUiObserver,
+        #[cfg(feature = "dev")]
+        Name::new("Score Observer"),
+    ));
+    commands.observe(ui_lives_system).insert((
+        GameUiObserver,
+        #[cfg(feature = "dev")]
+        Name::new("Lives Observer"),
+    ));
 }
 
 fn ui_setup_lives(mut commands: Commands) {
@@ -79,7 +92,12 @@ fn ui_setup_lives(mut commands: Commands) {
         ..Default::default()
     };
 
-    commands.spawn((lives_container, LivesContaier));
+    commands.spawn((
+        lives_container,
+        LivesContaier,
+        #[cfg(feature = "dev")]
+        Name::new("Lives Container"),
+    ));
 }
 
 fn ui_score_system(
@@ -105,19 +123,23 @@ fn ui_lives_system(
     for (player_id, player_lives) in lives.get_lives().iter() {
         for _ in 0..*player_lives {
             let life_icon = commands
-                .spawn(ImageBundle {
-                    style: Style {
-                        width: Val::Px(30.0),
-                        height: Val::Px(30.0),
+                .spawn((
+                    ImageBundle {
+                        style: Style {
+                            width: Val::Px(30.0),
+                            height: Val::Px(30.0),
+                            ..Default::default()
+                        },
+                        image: UiImage::new(
+                            player_assets
+                                .get_texture_by_player_id(player_id)
+                                .expect("Players texture should be loaded"),
+                        ),
                         ..Default::default()
                     },
-                    image: UiImage::new(
-                        player_assets
-                            .get_texture_by_player_id(player_id)
-                            .expect("Players texture should be loaded"),
-                    ),
-                    ..Default::default()
-                })
+                    #[cfg(feature = "dev")]
+                    Name::new("Life Icon"),
+                ))
                 .id();
 
             commands.entity(container).add_child(life_icon);

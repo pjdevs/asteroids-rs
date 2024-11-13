@@ -12,9 +12,9 @@ pub mod timed;
 
 pub mod prelude {
     pub use super::{
-        border::{KillBorder, TunnelBorder},
+        border::{DespawnBorder, TunnelBorder},
         damage::{
-            AsteroidDamageSystem, CollisionDamager, Dead, DespawnIfDead, Health, KillCollision,
+            AsteroidDamageSystem, CollisionDamager, Dead, DespawnCollision, DespawnIfDead, Health,
         },
         enemy::{AsteroidEnemy, AsteroidEnemySpawner},
         gameplay::{PlayerLives, PlayerLivesChanged, Score, ScoreChanged},

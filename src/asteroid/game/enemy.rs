@@ -124,11 +124,13 @@ fn spawn_enemy_system(
         ..Default::default()
     };
 
-    if cfg!(feature = "dev") {
-        commands.spawn((enemy, Name::new("Enemy"))).id()
-    } else {
-        commands.spawn(enemy).id()
-    }
+    commands
+        .spawn((
+            enemy,
+            #[cfg(feature = "dev")]
+            Name::new("Enemy"),
+        ))
+        .id()
 }
 
 // TODO Think about moviing this to like VFX plugin?

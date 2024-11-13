@@ -1,5 +1,6 @@
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
+use crate::asteroid::utils::prelude::*;
 use crate::{get, get_mut};
 use bevy::prelude::*;
 
@@ -14,9 +15,8 @@ impl Plugin for AsteroidDamagePlugin {
                 gameplay_death_system.after(gameplay_collision_damage_system),
                 gameplay_collision_despawn_system
                     .run_if(on_event::<CollisionEvent>())
-                    .run_if(any_with_component::<KillCollision>),
+                    .run_if(any_with_component::<DespawnCollision>),
             )
-                .after(AsteroidPhysicsSystem::FixedUpdateCollisionDetection)
                 .in_set(AsteroidDamageSystem::FixedUpdateDamageSystem)
                 .run_if(in_state(AsteroidGameState::Game)),
         )
@@ -36,7 +36,7 @@ impl Plugin for AsteroidDamagePlugin {
 pub struct DespawnIfDead;
 
 #[derive(Component, Default)]
-pub struct KillCollision;
+pub struct DespawnCollision;
 
 pub trait Damager {
     fn get_damage(&self, health: &Health) -> i32;
@@ -122,21 +122,21 @@ pub enum AsteroidDamageSystem {
 fn gameplay_collision_despawn_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
-    query: Query<(), With<KillCollision>>,
+    query: Query<(), With<DespawnCollision>>,
 ) {
     for collision in collision_event.read() {
-        handle_instant_kill(&mut commands, collision.first, &query);
-        handle_instant_kill(&mut commands, collision.second, &query);
+        handle_collision_despawn(&mut commands, collision.first, &query);
+        handle_collision_despawn(&mut commands, collision.second, &query);
     }
 }
 
-fn handle_instant_kill(
+fn handle_collision_despawn(
     commands: &mut Commands,
     entity: Entity,
-    query: &Query<(), With<KillCollision>>,
+    query: &Query<(), With<DespawnCollision>>,
 ) {
     get!(_despawn, query, entity, return);
-    commands.entity(entity).insert(Dead);
+    commands.entity(entity).ensure_despawned();
 }
 
 fn gameplay_collision_damage_system(

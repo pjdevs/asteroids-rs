@@ -12,7 +12,7 @@ pub struct AsteroidInputPlugin<A: ActionLike> {
 impl<A: ActionLike> Plugin for AsteroidInputPlugin<A> {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            Update,
+            PreUpdate,
             input_update_maps::<A>.in_set(AsteroidInputSystem::UpdateInput),
         );
     }

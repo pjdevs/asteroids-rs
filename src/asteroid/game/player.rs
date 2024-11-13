@@ -30,7 +30,6 @@ impl Plugin for AsteroidPlayerPlugin {
                 (
                     (player_move_system, player_shoot_system)
                         .run_if(in_state(AsteroidGameState::Game))
-                        .after(AsteroidInputSystem::UpdateInput)
                         .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
                     spawn_second_player_system
                         .run_if(in_state(AsteroidGameState::Game))
@@ -247,7 +246,10 @@ impl Command for SpawnPlayer {
             }
         };
 
-        world.entity_mut(player_entity);
+        #[cfg(feature = "dev")]
+        world
+            .entity_mut(player_entity)
+            .insert(Name::new(format!("Player {}", self.player_id)));
         world.trigger_targets(PlayerSpawned, player_entity);
     }
 }

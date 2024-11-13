@@ -39,6 +39,7 @@ impl Plugin for AsteroidGameplayPlugin {
                     despawn_entities_with::<PlayerRespawnTimer>,
                     despawn_entities_with::<Background>,
                     despawn_entities_with::<GameplayObserver>,
+                    despawn_entities_with::<InvincibilityAnimation>,
                 ),
             )
             .add_systems(
@@ -49,7 +50,8 @@ impl Plugin for AsteroidGameplayPlugin {
                         .after(gameplay_respawn_player)
                         .run_if(any_with_component::<Invincibility>),
                     gameplay_stop_invincibility,
-                    gameplay_update_invincibility_flash.run_if(any_with_component::<InvincibilityFlash>),
+                    gameplay_update_invincibility_flash
+                        .run_if(any_with_component::<InvincibilityFlash>),
                 )
                     .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
@@ -131,6 +133,9 @@ impl PlayerLives {
 struct Background;
 
 #[derive(Component)]
+struct InvincibilityAnimation;
+
+#[derive(Component)]
 struct GameplayObserver;
 
 // Events
@@ -193,6 +198,8 @@ fn gameplay_spawn_background_system(
             ..Default::default()
         },
         Background,
+        #[cfg(feature = "dev")]
+        Name::new("Background"),
     ));
 }
 
@@ -209,10 +216,14 @@ fn gameplay_loose_lives(
             commands.trigger(PlayerLivesChanged);
 
             if *lives > 0 {
-                commands.spawn(PlayerRespawnTimer {
-                    player_id: player.player_id,
-                    timer: Timer::from_seconds(1.0, TimerMode::Once),
-                });
+                commands.spawn((
+                    PlayerRespawnTimer {
+                        player_id: player.player_id,
+                        timer: Timer::from_seconds(1.0, TimerMode::Once),
+                    },
+                    #[cfg(feature = "dev")]
+                    Name::new("Player Invincibility Timer"),
+                ));
             }
         }
     }
@@ -242,9 +253,11 @@ fn gameplay_respawn_player(
 }
 
 fn gameplay_setup_observers(mut commands: Commands) {
-    commands
-        .observe(gameplay_setup_player_respawn)
-        .insert(GameplayObserver);
+    commands.observe(gameplay_setup_player_respawn).insert((
+        GameplayObserver,
+        #[cfg(feature = "dev")]
+        Name::new("Respawn Player Observer"),
+    ));
 }
 
 fn gameplay_setup_player_respawn(
@@ -266,11 +279,16 @@ fn gameplay_setup_player_respawn(
         .insert_timed(Invincibility, 3.0);
 }
 
-fn gameplay_start_invincibility(mut commands: Commands, assets: Res<AsteroidPlayerAssets>, mut query: Query<(Entity, &mut Collider), Added<Invincibility>>) {
+fn gameplay_start_invincibility(
+    mut commands: Commands,
+    assets: Res<AsteroidPlayerAssets>,
+    mut query: Query<(Entity, &mut Collider), Added<Invincibility>>,
+) {
     for (entity, mut collider) in &mut query {
         collider.enabled = false;
 
-        commands.entity(entity)
+        commands
+            .entity(entity)
             .insert(InvincibilityFlash::new(0.5, 0.35))
             .with_children(|parent| {
                 parent.spawn((
@@ -288,15 +306,25 @@ fn gameplay_start_invincibility(mut commands: Commands, assets: Res<AsteroidPlay
                         index: 0,
                     },
                     Animation::new(AnimationPlayMode::Loop, 0, 12, 1.0),
+                    InvincibilityAnimation,
+                    #[cfg(feature = "dev")]
+                    Name::new("Player Invincibility Animation"),
                 ));
             });
     }
 }
 
-fn gameplay_stop_invincibility(mut commands: Commands, mut removed: RemovedComponents<Invincibility>, mut query: Query<(&mut Sprite, &mut Collider)>) {
+fn gameplay_stop_invincibility(
+    mut commands: Commands,
+    mut removed: RemovedComponents<Invincibility>,
+    mut query: Query<(&mut Sprite, &mut Collider)>,
+) {
     for entity in removed.read() {
         // TODO Make all of this less hacky
-        commands.entity(entity).despawn_descendants().remove::<InvincibilityFlash>();
+        commands
+            .entity(entity)
+            .despawn_descendants()
+            .remove::<InvincibilityFlash>();
 
         get_mut!((mut sprite, mut collider), query, entity, continue);
         collider.enabled = true;

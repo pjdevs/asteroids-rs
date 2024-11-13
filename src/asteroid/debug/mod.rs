@@ -8,7 +8,9 @@ use bevy::math::bounding::BoundingVolume;
 use bevy::prelude::*;
 use bevy::window::PrimaryWindow;
 use bevy_inspector_egui::bevy_egui::{EguiContext, EguiPlugin};
-use bevy_inspector_egui::bevy_inspector::{ui_for_assets, ui_for_resource};
+use bevy_inspector_egui::bevy_inspector::{
+    ui_for_assets, ui_for_resource, ui_for_world_entities_filtered,
+};
 use bevy_inspector_egui::egui;
 
 pub struct AsteroidDebugPlugin;
@@ -24,8 +26,7 @@ impl Plugin for AsteroidDebugPlugin {
                 (
                     toggle_debug_system.run_if(input_just_pressed(KeyCode::KeyD)),
                     (degug_gizmos_system, debug_custom_ui).run_if(debug_is_active),
-                )
-                    .run_if(in_state(AsteroidGameState::Game)),
+                ),
             );
     }
 }
@@ -100,21 +101,32 @@ fn debug_custom_ui(world: &mut World) {
         return;
     };
     let mut egui_context = egui_context.clone();
+    let current_state = world
+        .get_resource::<State<AsteroidGameState>>()
+        .expect("There must be a state a any time")
+        .get()
+        .clone();
 
     egui::Window::new("Asteroid Debug Menu").show(egui_context.get_mut(), |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.heading("Config");
             ui_for_resource::<AsteroidDebugConfig>(world, ui);
 
-            ui.heading("Cheats");
-            ui_for_cheats(world, ui);
+            if current_state == AsteroidGameState::Game {
+                ui.heading("Game Cheats");
+                ui_for_cheats(world, ui);
 
-            ui.collapsing("Enemy Spawner", |ui| {
-                ui_for_resource::<AsteroidSpawner<AsteroidEnemySpawner>>(world, ui);
-            });
+                ui.collapsing("Enemy Spawner", |ui| {
+                    ui_for_resource::<AsteroidSpawner<AsteroidEnemySpawner>>(world, ui);
+                });
 
-            ui.collapsing("Spawner Assets", |ui| {
-                ui_for_assets::<SpawnerAsset>(world, ui);
+                ui.collapsing("Spawner Assets", |ui| {
+                    ui_for_assets::<SpawnerAsset>(world, ui);
+                });
+            }
+
+            ui.collapsing("World Entities", |ui| {
+                ui_for_world_entities_filtered::<()>(world, ui, true);
             });
         });
     });

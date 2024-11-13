@@ -15,12 +15,12 @@ impl Plugin for AsteroidPhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CollisionEvent>()
             .add_systems(
-                FixedUpdate,
+                FixedPostUpdate,
                 (
                     physics_fixed_movement_system
-                        .in_set(AsteroidPhysicsSystem::FixedUpdateMovement),
+                        .in_set(AsteroidPhysicsSystem::FixedPostUpdateMovement),
                     physics_collision_system
-                        .in_set(AsteroidPhysicsSystem::FixedUpdateCollisionDetection)
+                        .in_set(AsteroidPhysicsSystem::FixedPostUpdateCollisionDetection)
                         .after(physics_fixed_movement_system),
                 )
                     .run_if(in_state(AsteroidGameState::Game)),
@@ -37,14 +37,13 @@ impl Plugin for AsteroidPhysicsPlugin {
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
 pub enum AsteroidPhysicsSystem {
-    FixedUpdateMovement,
+    FixedPostUpdateMovement,
     PostUpdateExtrapolateTransform,
-    FixedUpdateCollisionDetection,
+    FixedPostUpdateCollisionDetection,
 }
 
 pub mod prelude {
     pub use super::collision::{Collider, CollisionEvent, CollisionLayers, Shape};
     pub use super::movement::Movement;
     pub use super::obb::Obb2d;
-    pub use super::AsteroidPhysicsSystem;
 }

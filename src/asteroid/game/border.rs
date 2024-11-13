@@ -1,6 +1,6 @@
-use super::prelude::Dead;
 use crate::asteroid::core::prelude::*;
-use crate::asteroid::physics::{prelude::*, AsteroidPhysicsSystem};
+use crate::asteroid::physics::prelude::*;
+use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
 pub struct AsteroidBorderPlugin;
@@ -11,9 +11,8 @@ impl Plugin for AsteroidBorderPlugin {
             FixedUpdate,
             (
                 border_tunnel_system.run_if(any_with_component::<TunnelBorder>),
-                border_despawn_system.run_if(any_with_component::<KillBorder>),
+                border_despawn_system.run_if(any_with_component::<DespawnBorder>),
             )
-                .after(AsteroidPhysicsSystem::FixedUpdateMovement)
                 .run_if(in_state(AsteroidGameState::Game)),
         );
     }
@@ -23,7 +22,7 @@ impl Plugin for AsteroidBorderPlugin {
 pub struct TunnelBorder;
 
 #[derive(Component, Default)]
-pub struct KillBorder;
+pub struct DespawnBorder;
 
 fn border_tunnel_system(
     mut query: Query<&mut Movement, With<TunnelBorder>>,
@@ -46,7 +45,7 @@ fn border_tunnel_system(
 
 fn border_despawn_system(
     parallel_commands: ParallelCommands,
-    query: Query<(Entity, &Movement), (With<KillBorder>, Without<Dead>)>,
+    query: Query<(Entity, &Movement), With<DespawnBorder>>,
     camera_query: Query<&Camera>,
 ) {
     let half_screen_size = get_screen_half_size(camera_query.single());
@@ -56,7 +55,7 @@ fn border_despawn_system(
             || movement.position.y.abs() > half_screen_size.y
         {
             parallel_commands.command_scope(|mut commands| {
-                commands.entity(entity).insert(Dead);
+                commands.entity(entity).ensure_despawned();
             })
         }
     });
