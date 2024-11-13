@@ -120,7 +120,7 @@ fn spawn_enemy_system(
             size.collider_size.x / 2.0,
         ))),
         layers: CollisionLayers::new(layers::ENEMY_MASK, layers::PLAYER_MASK),
-        damager: CollisionDamager::new(100),
+        damager: Damager::Constant(100).into(),
         ..Default::default()
     };
 
@@ -172,6 +172,6 @@ fn kill_exploded_enemy_system(
 ) {
     for event in events.read() {
         get!(_enemy, query, event.animated_entity, continue);
-        commands.entity(event.animated_entity).insert(DespawnIfDead);
+        commands.entity(event.animated_entity).insert(DespawnOnDead);
     }
 }

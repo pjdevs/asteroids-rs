@@ -14,7 +14,8 @@ pub mod prelude {
     pub use super::{
         border::{DespawnBorder, TunnelBorder},
         damage::{
-            AsteroidDamageSystem, CollisionDamager, Dead, DespawnCollision, DespawnIfDead, Health,
+            AsteroidDamageSystem, CollisionDamager, DamageModifier, Damager, Dead,
+            DespawnOnCollision, DespawnOnDead, Health, Invincibility,
         },
         enemy::{AsteroidEnemy, AsteroidEnemySpawner},
         gameplay::{PlayerLives, PlayerLivesChanged, Score, ScoreChanged},

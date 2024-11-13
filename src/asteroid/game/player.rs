@@ -107,7 +107,7 @@ pub struct AsteroidPlayerBundle {
     border: TunnelBorder,
     controller: InputController<AsteroidAction>,
     health: Health,
-    despawn: DespawnIfDead,
+    despawn: DespawnOnDead,
 }
 
 impl Default for AsteroidPlayerBundle {
@@ -289,7 +289,7 @@ fn player_shoot_system(
                     0.0,
                 ))),
                 layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
-                damager: CollisionDamager::new(50),
+                damager: Damager::Constant(50).into(),
                 ..Default::default()
             });
 

@@ -4,7 +4,6 @@ use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::game::timed::*;
 use crate::asteroid::input::prelude::*;
-use crate::asteroid::physics::prelude::Collider;
 use crate::asteroid::utils::prelude::*;
 use crate::{get, get_mut};
 use bevy::prelude::*;
@@ -46,10 +45,10 @@ impl Plugin for AsteroidGameplayPlugin {
                 Update,
                 (
                     gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
-                    gameplay_start_invincibility
+                    gameplay_start_invincibility_flash
                         .after(gameplay_respawn_player)
                         .run_if(any_with_component::<Invincibility>),
-                    gameplay_stop_invincibility,
+                    gameplay_stop_invincibility_flash,
                     gameplay_update_invincibility_flash
                         .run_if(any_with_component::<InvincibilityFlash>),
                 )
@@ -99,10 +98,6 @@ pub struct InvincibilityFlash {
     is_visible: bool,
     timer: Timer,
 }
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct Invincibility;
 
 impl InvincibilityFlash {
     pub fn new(duration_visible: f32, duration_invisible: f32) -> Self {
@@ -279,14 +274,14 @@ fn gameplay_setup_player_respawn(
         .insert_timed(Invincibility, 3.0);
 }
 
-fn gameplay_start_invincibility(
+// TODO Move this in effects
+
+fn gameplay_start_invincibility_flash(
     mut commands: Commands,
     assets: Res<AsteroidPlayerAssets>,
-    mut query: Query<(Entity, &mut Collider), Added<Invincibility>>,
+    mut query: Query<Entity, Added<Invincibility>>,
 ) {
-    for (entity, mut collider) in &mut query {
-        collider.enabled = false;
-
+    for entity in &mut query {
         commands
             .entity(entity)
             .insert(InvincibilityFlash::new(0.5, 0.35))
@@ -315,10 +310,10 @@ fn gameplay_start_invincibility(
     }
 }
 
-fn gameplay_stop_invincibility(
+fn gameplay_stop_invincibility_flash(
     mut commands: Commands,
     mut removed: RemovedComponents<Invincibility>,
-    mut query: Query<(&mut Sprite, &mut Collider)>,
+    mut query: Query<&mut Sprite>,
 ) {
     for entity in removed.read() {
         // TODO Make all of this less hacky
@@ -327,8 +322,7 @@ fn gameplay_stop_invincibility(
             .despawn_descendants()
             .remove::<InvincibilityFlash>();
 
-        get_mut!((mut sprite, mut collider), query, entity, continue);
-        collider.enabled = true;
+        get_mut!(mut sprite, query, entity, continue);
         sprite.color = Color::WHITE;
     }
 }

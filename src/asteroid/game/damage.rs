@@ -11,14 +11,12 @@ impl Plugin for AsteroidDamagePlugin {
         app.add_systems(
             FixedUpdate,
             (
-                gameplay_collision_damage_system.run_if(on_event::<CollisionEvent>()),
-                gameplay_death_system.after(gameplay_collision_damage_system),
-                gameplay_collision_despawn_system
-                    .run_if(on_event::<CollisionEvent>())
-                    .run_if(any_with_component::<DespawnCollision>),
+                gameplay_collision_damage_system,
+                gameplay_collision_despawn_system.run_if(any_with_component::<DespawnOnCollision>),
             )
-                .in_set(AsteroidDamageSystem::FixedUpdateDamageSystem)
-                .run_if(in_state(AsteroidGameState::Game)),
+                .run_if(on_event::<CollisionEvent>())
+                .run_if(in_state(AsteroidGameState::Game))
+                .in_set(AsteroidDamageSystem::FixedUpdateDamageSystem),
         )
         .add_systems(
             FixedPostUpdate,
@@ -33,35 +31,75 @@ impl Plugin for AsteroidDamagePlugin {
 
 #[derive(Component, Default)]
 #[component(storage = "SparseSet")]
-pub struct DespawnIfDead;
+pub struct DespawnOnDead;
 
 #[derive(Component, Default)]
-pub struct DespawnCollision;
+pub struct DespawnOnCollision;
 
-pub trait Damager {
-    fn get_damage(&self, health: &Health) -> i32;
+pub enum Damager {
+    Constant(i32),
+    Kill,
 }
 
-#[derive(Component)]
-pub struct CollisionDamager {
-    damage_amount: i32,
-}
-
-impl Default for CollisionDamager {
+impl Default for Damager {
     fn default() -> Self {
-        Self { damage_amount: 10 }
+        Self::Constant(10)
     }
 }
 
-impl CollisionDamager {
-    pub fn new(damage_amount: i32) -> Self {
-        Self { damage_amount }
+impl Damager {
+    fn get_damage(&self, health: &Health) -> i32 {
+        match self {
+            Damager::Constant(damage) => *damage,
+            Damager::Kill => health.max_health,
+        }
     }
 }
 
-impl Damager for CollisionDamager {
-    fn get_damage(&self, _: &Health) -> i32 {
-        self.damage_amount
+// We could use dynamic dispatch and heap allocation with a Box<dyn> to be fully flexible
+// but there will not be much cases so prefer more idiomatic ECS ways
+
+#[derive(Component, Default)]
+pub struct CollisionDamager {
+    damager: Damager,
+}
+
+impl From<Damager> for CollisionDamager {
+    fn from(damager: Damager) -> Self {
+        Self { damager }
+    }
+}
+
+// TODO Think about this :
+// - Make a DamagedModifier and implement Invincibility, Shield etc with it ?
+// - Or keep Invincibilty as a component to be able to directly tell if invincible
+//   and react to start/end of Invincibility
+// Advantage of individual components for game changing statuses is that
+// that we can react to add/remove easily for sound, vfx, etc
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub struct Invincibility;
+
+// Try an enum with this one for better perfs with static typing/type safety
+// while allowing extensibility and flexibilty
+#[derive(Component)]
+#[component(storage = "SparseSet")]
+pub enum DamageModifier {
+    Multiply(f32),
+    Add(f32),
+    ReduceToZero,
+}
+
+impl DamageModifier {
+    pub fn apply(&self, damage: i32) -> i32 {
+        let damage = damage as f32;
+        let modified_damage = match self {
+            DamageModifier::Multiply(factor) => damage * factor,
+            DamageModifier::Add(amount) => damage + amount,
+            DamageModifier::ReduceToZero => 0.0,
+        };
+
+        modified_damage as i32
     }
 }
 
@@ -122,7 +160,7 @@ pub enum AsteroidDamageSystem {
 fn gameplay_collision_despawn_system(
     mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
-    query: Query<(), With<DespawnCollision>>,
+    query: Query<(), With<DespawnOnCollision>>,
 ) {
     for collision in collision_event.read() {
         handle_collision_despawn(&mut commands, collision.first, &query);
@@ -133,25 +171,28 @@ fn gameplay_collision_despawn_system(
 fn handle_collision_despawn(
     commands: &mut Commands,
     entity: Entity,
-    query: &Query<(), With<DespawnCollision>>,
+    query: &Query<(), With<DespawnOnCollision>>,
 ) {
     get!(_despawn, query, entity, return);
     commands.entity(entity).ensure_despawned();
 }
 
 fn gameplay_collision_damage_system(
+    mut commands: Commands,
     mut collision_event: EventReader<CollisionEvent>,
-    damager_query: Query<&CollisionDamager>,
-    mut health_query: Query<&mut Health>,
+    damager_query: Query<(&CollisionDamager, Option<&DamageModifier>)>,
+    mut health_query: Query<(&mut Health, Option<&Invincibility>)>,
 ) {
     for collision in collision_event.read() {
-        handle_damage(
+        handle_collision_damage(
+            &mut commands,
             collision.first,
             collision.second,
             &damager_query,
             &mut health_query,
         );
-        handle_damage(
+        handle_collision_damage(
+            &mut commands,
             collision.second,
             collision.first,
             &damager_query,
@@ -160,33 +201,63 @@ fn gameplay_collision_damage_system(
     }
 }
 
-fn handle_damage(
-    first: Entity,
-    second: Entity,
-    damager_query: &Query<&CollisionDamager>,
-    health_query: &mut Query<&mut Health>,
+fn handle_collision_damage(
+    commands: &mut Commands,
+    damager: Entity,
+    damaged: Entity,
+    damager_query: &Query<(&CollisionDamager, Option<&DamageModifier>)>,
+    damaged_query: &mut Query<(&mut Health, Option<&Invincibility>)>,
 ) {
-    get!(damager, damager_query, first, return);
-    get_mut!(mut health, health_query, second, return);
+    get!(
+        (collision_damager, damage_modifier),
+        damager_query,
+        damager,
+        return
+    );
+    get_mut!((mut health, invincibility), damaged_query, damaged, return);
 
-    let damage = damager.get_damage(&health);
-    health.damage(damage);
+    do_damage(
+        commands,
+        &collision_damager.damager,
+        &damage_modifier,
+        damaged,
+        &mut health,
+        &invincibility,
+    );
 }
 
-fn gameplay_death_system(
-    mut commands: Commands,
-    health_query: Query<(Entity, &Health), Without<Dead>>,
-) {
-    for (entity, health) in &health_query {
-        if health.is_dead() {
-            commands.entity(entity).insert(Dead);
-        }
+/// Aplly damages to health and return the final damage amount applied.
+fn do_damage(
+    commands: &mut Commands,
+    damager: &Damager,
+    damage_modifier: &Option<&DamageModifier>,
+    damaged_entity: Entity,
+    damaged_health: &mut Health,
+    invincibility: &Option<&Invincibility>,
+) -> i32 {
+    if invincibility.is_some() {
+        return 0;
     }
+
+    let base_damage = damager.get_damage(&damaged_health);
+    let modified_damage = if let Some(modifier) = damage_modifier {
+        modifier.apply(base_damage) as i32
+    } else {
+        base_damage
+    };
+
+    damaged_health.damage(modified_damage);
+
+    if damaged_health.is_dead() {
+        commands.entity(damaged_entity).insert(Dead);
+    }
+
+    modified_damage
 }
 
 fn gameplay_despawn_dead_system(
     mut commands: Commands,
-    dead_query: Query<Entity, (With<Dead>, With<DespawnIfDead>)>,
+    dead_query: Query<Entity, (With<Dead>, With<DespawnOnDead>)>,
 ) {
     for entity in &dead_query {
         commands.entity(entity).despawn_recursive();
