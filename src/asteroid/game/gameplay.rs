@@ -296,6 +296,7 @@ fn gameplay_start_invincibility(
                         texture: assets.player_invincible_texture.clone_weak(),
                         sprite: Sprite {
                             custom_size: Some(Vec2::splat(64.0)),
+                            color: Color::srgb(1.0, 2.0, 2.0),
                             ..Default::default()
                         },
                         transform: Transform::from_xyz(0.0, 0.0, 1.0),
