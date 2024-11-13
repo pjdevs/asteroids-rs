@@ -8,6 +8,7 @@ pub mod projectile;
 pub mod scale;
 pub mod setup;
 pub mod spawner;
+pub mod timed;
 
 pub mod prelude {
     pub use super::{

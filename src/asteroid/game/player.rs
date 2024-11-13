@@ -1,5 +1,4 @@
 use crate::asset;
-use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::debug::player_exists;
 use crate::asteroid::game::prelude::*;
@@ -248,32 +247,7 @@ impl Command for SpawnPlayer {
             }
         };
 
-        let shield_entity = {
-            let assets = world
-                .get_resource::<AsteroidPlayerAssets>()
-                .expect("Player assets must exist to spawn player");
-
-            world
-                .spawn((
-                    SpriteBundle {
-                        texture: assets.player_invincible_texture.clone_weak(),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::splat(64.0)),
-                            ..Default::default()
-                        },
-                        transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                        ..Default::default()
-                    },
-                    TextureAtlas {
-                        layout: assets.player_invincible_layout.clone_weak(),
-                        index: 0,
-                    },
-                    Animation::new(AnimationPlayMode::Loop, 0, 12, 1.0),
-                ))
-                .id()
-        };
-
-        world.entity_mut(player_entity).add_child(shield_entity);
+        world.entity_mut(player_entity);
         world.trigger_targets(PlayerSpawned, player_entity);
     }
 }
