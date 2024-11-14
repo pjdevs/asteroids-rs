@@ -1,14 +1,24 @@
 use super::prelude::*;
 use crate::asset;
-use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 use bevy::state::state::FreelyMutableState;
 use bevy_asset_loader::prelude::*;
 use rand::Rng;
+use serde::Deserialize;
 use std::marker::PhantomData;
 use std::time::Duration;
+
+#[derive(Deserialize, Asset, Reflect)]
+pub struct SpawnerAsset {
+    pub spawn_delay_ms: u64,
+    pub max_entity_count: usize,
+    pub min_max_speed: Vec2,
+    pub min_max_angular_speed: Vec2,
+    pub min_max_angle: Vec2,
+    pub min_max_scale: Vec2,
+}
 
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]

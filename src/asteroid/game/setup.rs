@@ -1,3 +1,5 @@
+use super::spawner::SpawnerAsset;
+use crate::asteroid::animation::AnimationAsset;
 use crate::asteroid::core::prelude::*;
 use bevy::core_pipeline::bloom::BloomSettings;
 use bevy::input::common_conditions::input_just_released;
@@ -12,6 +14,7 @@ impl Plugin for AsteroidSetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RonAssetPlugin::<SizeAsset>::new(&["size.ron"]))
             .add_plugins(RonAssetPlugin::<SpawnerAsset>::new(&["spawner.ron"]))
+            .add_plugins(RonAssetPlugin::<AnimationAsset>::new(&["anim.ron"]))
             // Game Startup
             .add_systems(Startup, game_startup_system)
             // States

@@ -1,5 +1,26 @@
-use bevy::prelude::*;
+use std::time::Duration;
 
+use bevy::prelude::*;
+use serde::Deserialize;
+
+use crate::asset;
+
+#[derive(Deserialize, Asset, TypePath)]
+pub struct AnimationAsset {
+    pub play_mode: AnimationPlayMode,
+    pub start: usize,
+    pub end: usize,
+    pub duration: f32,
+}
+
+impl AnimationAsset {
+    #[inline(always)]
+    fn frame_time(&self) -> f32 {
+        self.duration / (self.end - self.start + 1) as f32
+    }
+}
+
+#[derive(Deserialize)]
 pub enum AnimationPlayMode {
     Loop,
     OneShot,
@@ -16,24 +37,19 @@ impl Plugin for AsteroidAnimationPlugin {
 
 #[derive(Component)]
 pub struct Animation {
-    play_mode: AnimationPlayMode,
-    start: usize,
-    end: usize,
+    animation: Handle<AnimationAsset>,
     timer: Timer,
+    started: bool,
     completed: bool,
 }
 
 impl Animation {
-    pub fn new(play_mode: AnimationPlayMode, start: usize, end: usize, duration_secs: f32) -> Self {
+    pub fn new(animation: Handle<AnimationAsset>) -> Self {
         Self {
-            play_mode,
-            start,
-            end,
-            timer: Timer::from_seconds(
-                duration_secs / (end - start + 1) as f32,
-                TimerMode::Repeating,
-            ),
+            animation,
+            started: false,
             completed: false,
+            timer: Timer::new(Duration::ZERO, TimerMode::Repeating),
         }
     }
 }
@@ -45,18 +61,28 @@ pub struct AnimationCompleted {
 
 fn animate(
     mut events: EventWriter<AnimationCompleted>,
+    assets: Res<Assets<AnimationAsset>>,
     time: Res<Time>,
     mut query: Query<(Entity, &mut TextureAtlas, &mut Animation)>,
 ) {
-    query.iter_mut().filter(|(_, _, a)| !a.completed).for_each(
-        |(entity, mut atlas, mut animation)| {
+    query
+        .iter_mut()
+        .filter(|(_, _, animation)| !animation.completed)
+        .for_each(|(entity, mut atlas, mut animation)| {
+            let animation_asset = asset!(assets, &animation.animation);
+
+            if !animation.started {
+                animation.timer.set_duration(Duration::from_secs_f32(animation_asset.frame_time()));
+                animation.started = true;
+            }
+
             animation.timer.tick(time.delta());
 
             if animation.timer.just_finished() {
-                if atlas.index == animation.end {
-                    match animation.play_mode {
+                if atlas.index == animation_asset.end {
+                    match animation_asset.play_mode {
                         AnimationPlayMode::Loop => {
-                            atlas.index = animation.start;
+                            atlas.index = animation_asset.start;
                         }
                         AnimationPlayMode::OneShot => {
                             animation.completed = true;
@@ -70,8 +96,7 @@ fn animate(
                     atlas.index = atlas.index + 1;
                 };
             }
-        },
-    );
+        });
 }
 
 pub mod prelude {

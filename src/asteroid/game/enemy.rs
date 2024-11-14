@@ -55,6 +55,9 @@ pub struct AsteroidEnemyAssets {
 
     #[asset(path = "enemy.spawner.ron")]
     pub enemy_spawner: Handle<SpawnerAsset>,
+
+    #[asset(path = "enemy_explosion.anim.ron")]
+    pub enemy_explosion_animation: Handle<AnimationAsset>,
 }
 
 // Spawner
@@ -136,6 +139,7 @@ fn spawn_enemy_system(
 // TODO Think about moviing this to like VFX plugin?
 fn explode_enemy_system(
     mut commands: Commands,
+    assets: Res<AsteroidEnemyAssets>,
     mut query: Query<
         (
             Entity,
@@ -158,7 +162,7 @@ fn explode_enemy_system(
 
         commands
             .entity(entity)
-            .insert(Animation::new(AnimationPlayMode::OneShot, 1, 7, 0.3));
+            .insert(Animation::new(assets.enemy_explosion_animation.clone_weak()));
 
         shake.add_trauma(0.2 * scaled.scale);
     }
