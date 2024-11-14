@@ -1,15 +1,13 @@
 use super::prelude::*;
 use super::timed::TimedAppExt;
-use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::game::timed::*;
 use crate::asteroid::input::prelude::*;
 use crate::asteroid::utils::prelude::*;
-use crate::{get, get_mut};
+use crate::get;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use std::collections::HashMap;
-use std::time::Duration;
 
 pub struct AsteroidGameplayPlugin;
 
@@ -38,20 +36,11 @@ impl Plugin for AsteroidGameplayPlugin {
                     despawn_entities_with::<PlayerRespawnTimer>,
                     despawn_entities_with::<Background>,
                     despawn_entities_with::<GameplayObserver>,
-                    despawn_entities_with::<InvincibilityAnimation>,
                 ),
             )
             .add_systems(
                 Update,
-                (
-                    gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
-                    gameplay_start_invincibility_flash
-                        .after(gameplay_respawn_player)
-                        .run_if(any_with_component::<Invincibility>),
-                    gameplay_stop_invincibility_flash,
-                    gameplay_update_invincibility_flash
-                        .run_if(any_with_component::<InvincibilityFlash>),
-                )
+                    gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>)
                     .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
             )
@@ -83,33 +72,6 @@ impl Score {
     }
 }
 
-#[derive(Component)]
-pub struct PlayerRespawnTimer {
-    player_id: u64,
-    timer: Timer,
-}
-
-#[derive(Component)]
-#[component(storage = "SparseSet")]
-pub struct InvincibilityFlash {
-    duration_visible: f32,
-    duration_invisible: f32,
-
-    is_visible: bool,
-    timer: Timer,
-}
-
-impl InvincibilityFlash {
-    pub fn new(duration_visible: f32, duration_invisible: f32) -> Self {
-        Self {
-            is_visible: true,
-            duration_visible,
-            duration_invisible,
-            timer: Timer::from_seconds(duration_visible, TimerMode::Once),
-        }
-    }
-}
-
 #[derive(Resource, Default)]
 pub struct PlayerLives {
     lives: HashMap<u64, u64>,
@@ -125,10 +87,13 @@ impl PlayerLives {
 // Components
 
 #[derive(Component)]
-struct Background;
+pub struct PlayerRespawnTimer {
+    player_id: u64,
+    timer: Timer,
+}
 
 #[derive(Component)]
-struct InvincibilityAnimation;
+struct Background;
 
 #[derive(Component)]
 struct GameplayObserver;
@@ -272,86 +237,4 @@ fn gameplay_setup_player_respawn(
     commands
         .entity(player_entity)
         .insert_timed(Invincibility, 3.0);
-}
-
-// TODO Move this in effects
-
-fn gameplay_start_invincibility_flash(
-    mut commands: Commands,
-    assets: Res<AsteroidPlayerAssets>,
-    mut query: Query<Entity, Added<Invincibility>>,
-) {
-    for entity in &mut query {
-        commands
-            .entity(entity)
-            .insert(InvincibilityFlash::new(0.5, 0.35))
-            .with_children(|parent| {
-                parent.spawn((
-                    SpriteBundle {
-                        texture: assets.player_invincible_texture.clone_weak(),
-                        sprite: Sprite {
-                            custom_size: Some(Vec2::splat(64.0)),
-                            color: Color::srgb(1.0, 2.0, 2.0),
-                            ..Default::default()
-                        },
-                        transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                        ..Default::default()
-                    },
-                    TextureAtlas {
-                        layout: assets.player_invincible_layout.clone_weak(),
-                        index: 0,
-                    },
-                    Animation::new(AnimationPlayMode::Loop, 0, 12, 1.0),
-                    InvincibilityAnimation,
-                    #[cfg(feature = "dev")]
-                    Name::new("Player Invincibility Animation"),
-                ));
-            });
-    }
-}
-
-fn gameplay_stop_invincibility_flash(
-    mut commands: Commands,
-    mut removed: RemovedComponents<Invincibility>,
-    mut query: Query<&mut Sprite>,
-) {
-    for entity in removed.read() {
-        // TODO Make all of this less hacky
-        commands
-            .entity(entity)
-            .despawn_descendants()
-            .remove::<InvincibilityFlash>();
-
-        get_mut!(mut sprite, query, entity, continue);
-        sprite.color = Color::WHITE;
-    }
-}
-
-fn gameplay_update_invincibility_flash(
-    time: Res<Time>,
-    mut query: Query<(&mut InvincibilityFlash, &mut Sprite)>,
-) {
-    for (mut invincibility, mut sprite) in &mut query {
-        invincibility.timer.tick(time.delta());
-
-        if invincibility.timer.just_finished() {
-            invincibility.is_visible = !invincibility.is_visible;
-
-            if invincibility.is_visible {
-                let duration = invincibility.duration_visible;
-                invincibility
-                    .timer
-                    .set_duration(Duration::from_secs_f32(duration));
-                sprite.color = Color::WHITE;
-            } else {
-                let duration = invincibility.duration_invisible;
-                invincibility
-                    .timer
-                    .set_duration(Duration::from_secs_f32(duration));
-                sprite.color = Color::srgba(1.0, 1.0, 1.0, 0.1);
-            }
-
-            invincibility.timer.reset();
-        }
-    }
 }

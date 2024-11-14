@@ -267,31 +267,35 @@ fn player_shoot_system(
 
     for (controller, player_movement) in &player_query {
         if controller.input_action(AsteroidAction::Shoot) {
-            commands.spawn(AsteroidProjectileBundle {
-                sprite: SpriteBundle {
-                    texture: assets.projectile_texture.clone(),
-                    sprite: Sprite {
-                        custom_size: Some(size_asset.sprite_size),
-                        color: Color::srgb(5.0, 5.0, 7.0),
+            commands.spawn((
+                AsteroidProjectileBundle {
+                    sprite: SpriteBundle {
+                        texture: assets.projectile_texture.clone(),
+                        sprite: Sprite {
+                            custom_size: Some(size_asset.sprite_size),
+                            color: Color::srgb(5.0, 5.0, 7.0),
+                            ..Default::default()
+                        },
                         ..Default::default()
                     },
+                    movement: Movement {
+                        position: player_movement.position,
+                        velocity: player_movement.get_direction() * PROJECTILE_SPEED,
+                        rotation: player_movement.rotation,
+                        ..Default::default()
+                    },
+                    collider: Collider::from_shape(Shape::Obb(Obb2d::new(
+                        Vec2::ZERO,
+                        size_asset.collider_size / 2.0,
+                        0.0,
+                    ))),
+                    layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
+                    damager: Damager::Constant(50).into(),
                     ..Default::default()
                 },
-                movement: Movement {
-                    position: player_movement.position,
-                    velocity: player_movement.get_direction() * PROJECTILE_SPEED,
-                    rotation: player_movement.rotation,
-                    ..Default::default()
-                },
-                collider: Collider::from_shape(Shape::Obb(Obb2d::new(
-                    Vec2::ZERO,
-                    size_asset.collider_size / 2.0,
-                    0.0,
-                ))),
-                layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
-                damager: Damager::Constant(50).into(),
-                ..Default::default()
-            });
+                #[cfg(feature = "dev")]
+                Name::new("Player Projectile"),
+            ));
 
             shoot_events.send(PlayerShoot);
         }
