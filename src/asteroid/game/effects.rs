@@ -13,29 +13,27 @@ pub struct AsteroidEffectsPlugin;
 impl Plugin for AsteroidEffectsPlugin {
     fn build(&self, app: &mut App) {
         app.register_timed_component::<HitEffect>()
-        .add_systems(
-            OnExit(AsteroidGameState::Game),
-            despawn_entities_with::<InvincibilityAnimation>,
-        )
-        .add_systems(
-            Update,
-            (
-                // Hit Effect
-                effect_start_hit,
-                effect_play_hit.run_if(any_with_component::<HitEffect>),
-                effect_stop_hit,
-
-                // Invincibility Flash
-                gameplay_start_invincibility_flash
-                    .run_if(any_with_component::<Invincibility>),
-                gameplay_stop_invincibility_flash,
-                gameplay_update_invincibility_flash
-                    .run_if(any_with_component::<InvincibilityFlash>),
+            .add_systems(
+                OnExit(AsteroidGameState::Game),
+                despawn_entities_with::<InvincibilityAnimation>,
             )
-                .chain()
-                .run_if(in_state(AsteroidGameState::Game))
-                .in_set(AsteroidEffectsSystem::UpdateEffects),
-        );
+            .add_systems(
+                Update,
+                (
+                    // Hit Effect
+                    effect_start_hit,
+                    effect_play_hit.run_if(any_with_component::<HitEffect>),
+                    effect_stop_hit,
+                    // Invincibility Flash
+                    gameplay_start_invincibility_flash.run_if(any_with_component::<Invincibility>),
+                    gameplay_stop_invincibility_flash,
+                    gameplay_update_invincibility_flash
+                        .run_if(any_with_component::<InvincibilityFlash>),
+                )
+                    .chain()
+                    .run_if(in_state(AsteroidGameState::Game))
+                    .in_set(AsteroidEffectsSystem::UpdateEffects),
+            );
     }
 }
 

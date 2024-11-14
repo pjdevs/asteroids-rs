@@ -8,14 +8,20 @@ pub fn spawn_music(commands: &mut Commands, music: Handle<AudioSource>) {
             settings: PlaybackSettings::LOOP,
         },
         Music,
+        #[cfg(feature = "dev")]
+        Name::new("Music"),
     ));
 }
 
 pub fn spawn_sfx(commands: &mut Commands, sfx: Handle<AudioSource>) {
-    commands.spawn(AudioBundle {
-        source: sfx,
-        settings: PlaybackSettings::DESPAWN,
-    });
+    commands.spawn((
+        AudioBundle {
+            source: sfx,
+            settings: PlaybackSettings::DESPAWN,
+        },
+        #[cfg(feature = "dev")]
+        Name::new("SFX"),
+    ));
 }
 
 pub fn spawn_random_sfx(commands: &mut Commands, sfxs: &Vec<Handle<AudioSource>>) {

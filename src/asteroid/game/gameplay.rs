@@ -40,7 +40,8 @@ impl Plugin for AsteroidGameplayPlugin {
             )
             .add_systems(
                 Update,
-                    gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>)
+                gameplay_respawn_player
+                    .run_if(any_with_component::<PlayerRespawnTimer>)
                     .run_if(in_state(AsteroidGameState::Game))
                     .in_set(AsteroidGameplaySystem::UpdateGameplay),
             )
