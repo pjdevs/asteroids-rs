@@ -54,12 +54,6 @@ pub struct AsteroidPlayerAssets {
     #[asset(key = "player.two.texture")]
     pub player_two_texture: Handle<Image>,
 
-    #[asset(key = "player.invincible.texture")]
-    pub player_invincible_texture: Handle<Image>,
-
-    #[asset(key = "player.invincible.layout")]
-    pub player_invincible_layout: Handle<TextureAtlasLayout>,
-
     #[asset(key = "player.projectile.texture")]
     pub projectile_texture: Handle<Image>,
 

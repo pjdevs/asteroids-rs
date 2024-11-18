@@ -1,26 +1,18 @@
 use super::prelude::*;
-use crate::asteroid::animation::prelude::*;
+use crate::asset;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
-use crate::{asset, get};
 use bevy::ecs::system::SystemState;
 use bevy::math::bounding::BoundingCircle;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use bevy_trauma_shake::Shake;
 
 pub struct AsteroidEnemyPlugin;
 
 impl Plugin for AsteroidEnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            FixedUpdate,
-            (explode_enemy_system, kill_exploded_enemy_system)
-                .after(AsteroidDamageSystem::FixedUpdateDamageSystem)
-                .run_if(in_state(AsteroidGameState::Game)),
-        )
-        .add_systems(
             OnExit(AsteroidGameState::Game),
             (
                 remove_resource::<AsteroidEnemyAssets>,
@@ -55,9 +47,6 @@ pub struct AsteroidEnemyAssets {
 
     #[asset(path = "enemy.spawner.ron")]
     pub enemy_spawner: Handle<SpawnerAsset>,
-
-    #[asset(path = "enemy_explosion.anim.ron")]
-    pub enemy_explosion_animation: Handle<AnimationAsset>,
 }
 
 // Spawner
@@ -89,6 +78,7 @@ pub struct AsteroidEnemyBundle {
     border: TunnelBorder,
     health: Health,
     damager: CollisionDamager,
+    despawn_on_dead: DespawnOnDead,
 }
 
 // Systems
@@ -134,48 +124,4 @@ fn spawn_enemy_system(
             Name::new("Enemy"),
         ))
         .id()
-}
-
-// TODO Think about moviing this to like VFX plugin?
-fn explode_enemy_system(
-    mut commands: Commands,
-    assets: Res<AsteroidEnemyAssets>,
-    mut query: Query<
-        (
-            Entity,
-            &mut Movement,
-            &mut Collider,
-            &mut Sprite,
-            &AsteroidScaled,
-        ),
-        (With<AsteroidEnemy>, Added<Dead>),
-    >,
-    mut shake_query: Query<&mut Shake>,
-) {
-    let mut shake = shake_query.single_mut();
-
-    for (entity, mut movement, mut collider, mut sprite, scaled) in &mut query {
-        collider.enabled = false;
-        movement.angular_velocity = 0.0;
-
-        sprite.color = Color::srgb(5.0, 3.0, 0.0);
-
-        commands
-            .entity(entity)
-            .insert(Animation::new(assets.enemy_explosion_animation.clone_weak()));
-
-        shake.add_trauma(0.2 * scaled.scale);
-    }
-}
-
-// TODO Handle specific animation
-fn kill_exploded_enemy_system(
-    mut commands: Commands,
-    mut events: EventReader<AnimationCompleted>,
-    query: Query<(), With<AsteroidEnemy>>,
-) {
-    for event in events.read() {
-        get!(_enemy, query, event.animated_entity, continue);
-        commands.entity(event.animated_entity).insert(DespawnOnDead);
-    }
 }

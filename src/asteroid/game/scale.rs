@@ -13,7 +13,7 @@ impl Plugin for AsteroidScalePlugin {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Copy, Clone)]
 pub struct AsteroidScaled {
     pub scale: f32,
 }

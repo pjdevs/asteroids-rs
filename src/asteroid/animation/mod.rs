@@ -6,14 +6,14 @@ use serde::Deserialize;
 use crate::asset;
 
 #[derive(Deserialize, Asset, TypePath)]
-pub struct AnimationAsset {
+pub struct Animation {
     pub play_mode: AnimationPlayMode,
     pub start: usize,
     pub end: usize,
     pub duration: f32,
 }
 
-impl AnimationAsset {
+impl Animation {
     #[inline(always)]
     fn frame_time(&self) -> f32 {
         self.duration / (self.end - self.start + 1) as f32
@@ -35,18 +35,22 @@ impl Plugin for AsteroidAnimationPlugin {
     }
 }
 
+#[derive(Bundle, Default)]
+pub struct AnimationBundle {
+    pub animation: Handle<Animation>,
+    pub player: AnimationPlayer,
+}
+
 #[derive(Component)]
-pub struct Animation {
-    animation: Handle<AnimationAsset>,
+pub struct AnimationPlayer {
     timer: Timer,
     started: bool,
     completed: bool,
 }
 
-impl Animation {
-    pub fn new(animation: Handle<AnimationAsset>) -> Self {
+impl Default for AnimationPlayer {
+    fn default() -> Self {
         Self {
-            animation,
             started: false,
             completed: false,
             timer: Timer::new(Duration::ZERO, TimerMode::Repeating),
@@ -61,31 +65,38 @@ pub struct AnimationCompleted {
 
 fn animate(
     mut events: EventWriter<AnimationCompleted>,
-    assets: Res<Assets<AnimationAsset>>,
+    assets: Res<Assets<Animation>>,
     time: Res<Time>,
-    mut query: Query<(Entity, &mut TextureAtlas, &mut Animation)>,
+    mut query: Query<(
+        Entity,
+        &Handle<Animation>,
+        &mut TextureAtlas,
+        &mut AnimationPlayer,
+    )>,
 ) {
     query
         .iter_mut()
-        .filter(|(_, _, animation)| !animation.completed)
-        .for_each(|(entity, mut atlas, mut animation)| {
-            let animation_asset = asset!(assets, &animation.animation);
+        .filter(|(_, _, _, animation)| !animation.completed)
+        .for_each(|(entity, animation_asset, mut atlas, mut player)| {
+            let animation = asset!(assets, animation_asset);
 
-            if !animation.started {
-                animation.timer.set_duration(Duration::from_secs_f32(animation_asset.frame_time()));
-                animation.started = true;
+            if !player.started {
+                player
+                    .timer
+                    .set_duration(Duration::from_secs_f32(animation.frame_time()));
+                player.started = true;
             }
 
-            animation.timer.tick(time.delta());
+            player.timer.tick(time.delta());
 
-            if animation.timer.just_finished() {
-                if atlas.index == animation_asset.end {
-                    match animation_asset.play_mode {
+            if player.timer.just_finished() {
+                if atlas.index == animation.end {
+                    match animation.play_mode {
                         AnimationPlayMode::Loop => {
-                            atlas.index = animation_asset.start;
+                            atlas.index = animation.start;
                         }
                         AnimationPlayMode::OneShot => {
-                            animation.completed = true;
+                            player.completed = true;
 
                             events.send(AnimationCompleted {
                                 animated_entity: entity,

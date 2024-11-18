@@ -17,7 +17,7 @@ pub mod prelude {
             AsteroidDamageSystem, CollisionDamager, Damager, Dead, DespawnOnCollision,
             DespawnOnDead, Health, Invincibility,
         },
-        enemy::{AsteroidEnemy, AsteroidEnemySpawner},
+        enemy::{AsteroidEnemy, AsteroidEnemyAssets, AsteroidEnemySpawner},
         gameplay::{PlayerLives, PlayerLivesChanged, Score, ScoreChanged},
         player::{
             spawn_first_player_system, spawn_second_player_system, AsteroidPlayer,

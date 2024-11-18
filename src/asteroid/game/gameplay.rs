@@ -194,8 +194,6 @@ fn gameplay_loose_lives(
     }
 }
 
-// TODO Explose default value in asset for both
-
 fn gameplay_respawn_player(
     mut commands: Commands,
     time: Res<Time>,
@@ -220,6 +218,8 @@ fn gameplay_setup_observers(mut commands: Commands) {
         Name::new("Respawn Player Observer"),
     ));
 }
+
+// TODO Expose values?
 
 fn gameplay_setup_player_respawn(
     trigger: Trigger<PlayerSpawned>,
