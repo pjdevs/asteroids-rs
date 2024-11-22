@@ -14,8 +14,8 @@ pub struct GameAudioAssets {
     #[asset(key = "gameplay.hit.audios", collection(typed))]
     pub gameplay_hit_audios: Vec<Handle<AudioSource>>,
 
-    #[asset(key = "player.shoot.audios", collection(typed))]
-    pub player_shoot_audios: Vec<Handle<AudioSource>>,
+    #[asset(key = "gameplay.shoot.audios", collection(typed))]
+    pub gameplay_shoot_audios: Vec<Handle<AudioSource>>,
 
     #[asset(key = "gameplay.music.audio")]
     pub gameplay_music_audio: Handle<AudioSource>,
@@ -29,11 +29,11 @@ pub fn audio_play_game_music_system(mut commands: Commands, assets: Res<GameAudi
 
 pub fn audio_play_shoot_system(
     mut commands: Commands,
-    mut events: EventReader<PlayerShoot>,
+    mut events: EventReader<ShootEvent>,
     assets: Res<GameAudioAssets>,
 ) {
     for _ in events.read() {
-        spawn_random_sfx(&mut commands, &assets.player_shoot_audios);
+        spawn_random_sfx(&mut commands, &assets.gameplay_shoot_audios);
     }
 }
 

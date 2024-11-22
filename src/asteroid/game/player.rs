@@ -8,38 +8,29 @@ use bevy::ecs::world::Command;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-// TODO Refactor all behaviors in components (Ship, Shoot, ..) ????
-
 // Plugin
 
 pub struct PlayerPlugin;
 
 impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
-        app.add_event::<PlayerShoot>()
-            .add_systems(
-                OnExit(GameState::Game),
-                (
-                    remove_resource::<PlayerAssets>,
-                    despawn_entities_with::<Player>,
-                ),
-            )
-            .add_systems(
-                Update,
-                (
-                    (player_move_system, player_shoot_system)
-                        .run_if(in_state(GameState::Game))
-                        .in_set(PlayerSystem::UpdatePlayerActions),
-                    spawn_second_player_system
-                        .run_if(in_state(GameState::Game))
-                        .run_if(on_gamepad_connection(0))
-                        .run_if(not(player_exists(2))),
-                ),
-            )
-            .configure_loading_state(
-                LoadingStateConfig::new(GameState::GameLoading)
-                    .load_collection::<PlayerAssets>(),
-            );
+        app.add_systems(
+            OnExit(GameState::Game),
+            (
+                remove_resource::<PlayerAssets>,
+                despawn_entities_with::<Player>,
+            ),
+        )
+        .add_systems(
+            Update,
+            (player_move_system, player_shoot_system)
+                .run_if(in_state(GameState::Game))
+                .before(ShipSystem::UpdateShips)
+                .in_set(PlayerSystem::UpdatePlayerActions),
+        )
+        .configure_loading_state(
+            LoadingStateConfig::new(GameState::GameLoading).load_collection::<PlayerAssets>(),
+        );
     }
 }
 
@@ -54,7 +45,7 @@ pub struct PlayerAssets {
     pub player_two_texture: Handle<Image>,
 
     #[asset(key = "player.projectile.texture")]
-    pub projectile_texture: Handle<Image>,
+    pub player_projectile_texture: Handle<Image>,
 
     #[asset(path = "player.size.ron")]
     pub player_size: Handle<SizeAsset>,
@@ -76,28 +67,13 @@ impl PlayerAssets {
 // Events
 
 #[derive(Event)]
-pub struct PlayerShoot;
-
-#[derive(Event)]
 pub struct PlayerSpawned;
 
 // Components
 
 #[derive(Component, Default)]
-pub struct ShipMovement {
-    pub input_direction: Vec2,
-}
-
-#[derive(Component, Default)]
-pub struct ShipShoot {
-    pub input_direction: Vec2,
-}
-
-#[derive(Component, Default)]
 pub struct Player {
     pub player_id: u64,
-    pub movement_speed: f32,
-    pub rotation_speed: f32,
 }
 
 #[derive(Bundle)]
@@ -108,6 +84,8 @@ pub struct PlayerBundle {
     collider: Collider,
     layers: CollisionLayers,
     border: TunnelBorder,
+    ship: ShipMovement,
+    shoot: ShipShoot,
     controller: InputController<ShipAction>,
     health: Health,
     despawn: DespawnOnDead,
@@ -122,6 +100,8 @@ impl Default for PlayerBundle {
             collider: Default::default(),
             layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
             border: Default::default(),
+            ship: Default::default(),
+            shoot: Default::default(),
             controller: Default::default(),
             health: Default::default(),
             despawn: Default::default(),
@@ -151,12 +131,22 @@ impl PlayerBundle {
     }
 
     pub fn with_movement_speed(mut self, movement_speed: f32) -> Self {
-        self.player.movement_speed = movement_speed;
+        self.ship.movement_speed = movement_speed;
         self
     }
 
     pub fn with_rotation_speed(mut self, rotation_speed: f32) -> Self {
-        self.player.rotation_speed = rotation_speed;
+        self.ship.rotation_speed = rotation_speed;
+        self
+    }
+
+    pub fn with_projectile_texture(mut self, projectile_texture: Handle<Image>) -> Self {
+        self.shoot.projectile_texture = projectile_texture;
+        self
+    }
+
+    pub fn with_projectile_size(mut self, projectile_size: Handle<SizeAsset>) -> Self {
+        self.shoot.projectile_size = projectile_size;
         self
     }
 
@@ -206,25 +196,23 @@ pub fn spawn_second_player_system(mut commands: Commands) {
     commands.add(SpawnPlayer::new(2));
 }
 
-fn first_player_bundle(
-    sizes: &Assets<SizeAsset>,
-    assets: &PlayerAssets,
-) -> PlayerBundle {
+fn first_player_bundle(sizes: &Assets<SizeAsset>, assets: &PlayerAssets) -> PlayerBundle {
     PlayerBundle::preset_ship_fast()
         .with_id(1)
-        .with_size(asset!(sizes, &assets.player_size))
         .with_texture(assets.player_one_texture.clone())
+        .with_size(asset!(sizes, &assets.player_size))
+        .with_projectile_texture(assets.player_projectile_texture.clone_weak())
+        .with_projectile_size(assets.player_projectile_size.clone_weak())
         .with_input_map(InputMap::default().with_keyboard_mappings())
 }
 
-fn second_player_bundle(
-    sizes: &Assets<SizeAsset>,
-    assets: &PlayerAssets,
-) -> PlayerBundle {
+fn second_player_bundle(sizes: &Assets<SizeAsset>, assets: &PlayerAssets) -> PlayerBundle {
     PlayerBundle::preset_ship_slow()
         .with_id(2)
-        .with_size(asset!(sizes, &assets.player_size))
         .with_texture(assets.player_two_texture.clone())
+        .with_size(asset!(sizes, &assets.player_size))
+        .with_projectile_texture(assets.player_projectile_texture.clone_weak())
+        .with_projectile_size(assets.player_projectile_size.clone_weak())
         .with_input_map(InputMap::default().with_gamepad_mappings(0))
 }
 
@@ -264,85 +252,32 @@ impl Command for SpawnPlayer {
 }
 
 fn player_shoot_system(
-    mut commands: Commands,
-    mut shoot_events: EventWriter<PlayerShoot>,
-    assets: Res<PlayerAssets>,
-    sizes: Res<Assets<SizeAsset>>,
-    player_query: Query<(&InputController<ShipAction>, &Movement), With<Player>>,
+    mut player_query: Query<(&InputController<ShipAction>, &mut ShipShoot), With<Player>>,
 ) {
-    const PROJECTILE_SPEED: f32 = 600.0;
-
-    let size_asset = asset!(sizes, &assets.player_projectile_size);
-
-    for (controller, player_movement) in &player_query {
-        if controller.input_action(ShipAction::Shoot) {
-            commands.spawn((
-                ProjectileBundle {
-                    sprite: SpriteBundle {
-                        texture: assets.projectile_texture.clone(),
-                        sprite: Sprite {
-                            custom_size: Some(size_asset.sprite_size),
-                            color: Color::srgb(5.0, 5.0, 7.0),
-                            ..Default::default()
-                        },
-                        ..Default::default()
-                    },
-                    movement: Movement {
-                        position: player_movement.position,
-                        velocity: player_movement.get_direction() * PROJECTILE_SPEED,
-                        rotation: player_movement.rotation,
-                        ..Default::default()
-                    },
-                    collider: Collider::from_shape(Shape::Obb(Obb2d::new(
-                        Vec2::ZERO,
-                        size_asset.collider_size / 2.0,
-                        0.0,
-                    ))),
-                    layers: CollisionLayers::new(layers::PLAYER_MASK, layers::ENEMY_MASK),
-                    damager: Damager::Constant(50).into(),
-                    ..Default::default()
-                },
-                #[cfg(feature = "dev")]
-                Name::new("Player Projectile"),
-            ));
-
-            shoot_events.send(PlayerShoot);
-        }
+    for (controller, mut shoot) in &mut player_query {
+        shoot.shoot = controller.input_action(ShipAction::Shoot);
     }
 }
 
-fn player_move_system(
-    mut query: Query<(
-        &mut Movement,
-        &Player,
-        &InputController<ShipAction>,
-    )>,
-) {
-    for (mut movement, player, controller) in &mut query {
-        let mut input_direction = Vec2::ZERO;
+fn player_move_system(mut query: Query<(&InputController<ShipAction>, &mut ShipMovement)>) {
+    for (controller, mut ship) in &mut query {
+        ship.direction = Vec2::ZERO;
 
         if controller.input_action(ShipAction::Forward) {
-            input_direction.y += 1.0;
+            ship.direction.y += 1.0;
         }
 
         if controller.input_action(ShipAction::Backward) {
-            input_direction.y -= 1.0;
+            ship.direction.y -= 1.0;
         }
 
         if controller.input_action(ShipAction::TurnLeft) {
-            input_direction.x -= 1.0;
+            ship.direction.x -= 1.0;
         }
 
         if controller.input_action(ShipAction::TurnRight) {
-            input_direction.x += 1.0;
+            ship.direction.x += 1.0;
         }
-
-        // Rotation
-        movement.angular_velocity = -input_direction.x * player.rotation_speed;
-
-        // Translation
-        movement.acceleration =
-            movement.get_direction() * player.movement_speed * input_direction.y;
     }
 }
 

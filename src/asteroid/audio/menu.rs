@@ -20,10 +20,7 @@ pub struct MainMenuAudioAssets {
 
 // Systems
 
-pub fn audio_play_menu_music_system(
-    mut commands: Commands,
-    assets: Res<MainMenuAudioAssets>,
-) {
+pub fn audio_play_menu_music_system(mut commands: Commands, assets: Res<MainMenuAudioAssets>) {
     spawn_music(&mut commands, assets.menu_music_audio.clone_weak());
 }
 

@@ -50,8 +50,7 @@ impl Plugin for EffectsPlugin {
                     .in_set(EffectsSystem::UpdateEffects),
             )
             .configure_loading_state(
-                LoadingStateConfig::new(GameState::GameLoading)
-                    .load_collection::<EffectsAssets>(),
+                LoadingStateConfig::new(GameState::GameLoading).load_collection::<EffectsAssets>(),
             );
     }
 }

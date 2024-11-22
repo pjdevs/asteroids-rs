@@ -35,8 +35,7 @@ impl Plugin for SetupPlugin {
             .add_systems(
                 Update,
                 game_exit_system.run_if(
-                    in_state(GameState::Game)
-                        .and_then(input_just_released(KeyCode::Escape)),
+                    in_state(GameState::Game).and_then(input_just_released(KeyCode::Escape)),
                 ),
             );
     }

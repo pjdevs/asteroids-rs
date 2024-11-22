@@ -24,8 +24,7 @@ impl Plugin for AudioPlugin {
         )
         // Game Loading
         .configure_loading_state(
-            LoadingStateConfig::new(GameState::GameLoading)
-                .load_collection::<GameAudioAssets>(),
+            LoadingStateConfig::new(GameState::GameLoading).load_collection::<GameAudioAssets>(),
         )
         // Menu
         .add_systems(
@@ -61,7 +60,7 @@ impl Plugin for AudioPlugin {
             Update,
             (
                 audio_play_shoot_system
-                    .run_if(on_event::<PlayerShoot>())
+                    .run_if(on_event::<ShootEvent>())
                     .after(PlayerSystem::UpdatePlayerActions),
                 audio_play_hit_system.after(DamageSystem::FixedUpdateDamageSystem),
             )

@@ -27,6 +27,7 @@ use game::player::PlayerPlugin;
 use game::projectile::ProjectilePlugin;
 use game::scale::ScalePlugin;
 use game::setup::SetupPlugin;
+use game::ship::ShipPlugin;
 use input::InputPlugin;
 use physics::PhysicsPlugin;
 use ui::game::GameUiPlugin;
@@ -61,6 +62,7 @@ impl AsteroidPlugins {
             .add(AnimationPlugin)
             .add(BorderPlugin)
             .add(ProjectilePlugin)
+            .add(ShipPlugin)
             .add(PlayerPlugin)
             .add(EnemyPlugin)
             .add(DamagePlugin)

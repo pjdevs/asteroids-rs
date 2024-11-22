@@ -8,10 +8,7 @@ impl Plugin for MenuUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ButtonEvent>()
             .add_systems(OnEnter(GameState::MainMenu), ui_menu_setup_system)
-            .add_systems(
-                OnExit(GameState::MainMenu),
-                despawn_entities_with::<Node>,
-            )
+            .add_systems(OnExit(GameState::MainMenu), despawn_entities_with::<Node>)
             .add_systems(
                 Update,
                 (
@@ -40,7 +37,6 @@ enum MenuButtonAction {
 pub enum MenuUiSystem {
     UpdateUi,
 }
-
 
 pub fn ui_menu_setup_system(mut commands: Commands) {
     let container_node = NodeBundle {

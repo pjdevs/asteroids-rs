@@ -1,7 +1,5 @@
 use super::prelude::*;
-use super::timed::TimedAppExt;
 use crate::asteroid::core::prelude::*;
-use crate::asteroid::game::timed::*;
 use crate::asteroid::input::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use crate::get;
@@ -40,21 +38,24 @@ impl Plugin for GameplayPlugin {
             )
             .add_systems(
                 Update,
-                gameplay_respawn_player
-                    .run_if(any_with_component::<PlayerRespawnTimer>)
-                    .run_if(in_state(GameState::Game))
-                    .in_set(GameplaySystem::UpdateGameplay),
+                (
+                    gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
+                    spawn_second_player_system
+                        .run_if(on_gamepad_connection(0))
+                        .run_if(not(player_exists(2))),
+                )
+                    .in_set(GameplaySystem::UpdateGameplay)
+                    .run_if(in_state(GameState::Game)),
             )
             .add_systems(
                 FixedPostUpdate,
                 (gameplay_score_system, gameplay_loose_lives)
-                    .before(DamageSystem::FixedPostUpdateDeathSystem)
                     .run_if(any_with_component::<Dead>)
+                    .before(DamageSystem::FixedPostUpdateDeathSystem)
                     .in_set(GameplaySystem::FixedPostUpdateGameplay),
             )
             .configure_loading_state(
-                LoadingStateConfig::new(GameState::GameLoading)
-                    .load_collection::<GameplayAssets>(),
+                LoadingStateConfig::new(GameState::GameLoading).load_collection::<GameplayAssets>(),
             );
     }
 }

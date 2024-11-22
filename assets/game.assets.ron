@@ -21,9 +21,6 @@
     "player.projectile.texture": Image(
         path: "sprites/laser.png",
     ),
-    "player.shoot.audios": Files(
-        paths: ["audio/laser.ogg", "audio/laser_m2.ogg", "audio/laser_p2.ogg", "audio/laser_m4.ogg", "audio/laser_p4.ogg"],
-    ),
 
     "enemy.texture": Image(
         path: "sprites/asteroid.png",
@@ -50,5 +47,8 @@
     ),
     "gameplay.hit.audios": Files(
         paths: ["audio/hit.ogg", "audio/hit_m4.ogg", "audio/hit_p4.ogg"],
+    ),
+    "gameplay.shoot.audios": Files(
+        paths: ["audio/laser.ogg", "audio/laser_m2.ogg", "audio/laser_p2.ogg", "audio/laser_m4.ogg", "audio/laser_p4.ogg"],
     ),
 })

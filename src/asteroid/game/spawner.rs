@@ -81,10 +81,7 @@ impl SpawnerAppExt for App {
                 .chain()
                 .in_set(set),
         )
-        .add_systems(
-            OnExit(spawning_state),
-            remove_resource::<Spawner<M>>,
-        )
+        .add_systems(OnExit(spawning_state), remove_resource::<Spawner<M>>)
     }
 }
 
@@ -157,9 +154,7 @@ fn on_spawn_timer<M: Component>(
 ) -> impl FnMut(Res<Time>, Res<Spawner<M>>, Res<Assets<SpawnerAsset>>) -> bool + Clone {
     let mut timer = Timer::new(Duration::ZERO, TimerMode::Repeating);
 
-    move |time: Res<Time>,
-          spawner: Res<Spawner<M>>,
-          spawner_assets: Res<Assets<SpawnerAsset>>| {
+    move |time: Res<Time>, spawner: Res<Spawner<M>>, spawner_assets: Res<Assets<SpawnerAsset>>| {
         if spawner.is_changed() {
             let spawner_asset = asset!(spawner_assets, &spawner.spawner_asset);
             timer.set_duration(Duration::from_millis(spawner_asset.spawn_delay_ms));

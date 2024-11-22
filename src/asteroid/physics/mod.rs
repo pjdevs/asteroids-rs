@@ -17,8 +17,7 @@ impl Plugin for PhysicsPlugin {
             .add_systems(
                 FixedPostUpdate,
                 (
-                    physics_fixed_movement_system
-                        .in_set(PhysicsSystem::FixedPostUpdateMovement),
+                    physics_fixed_movement_system.in_set(PhysicsSystem::FixedPostUpdateMovement),
                     physics_collision_system
                         .in_set(PhysicsSystem::FixedPostUpdateCollisionDetection)
                         .after(physics_fixed_movement_system),
@@ -43,7 +42,7 @@ pub enum PhysicsSystem {
 }
 
 pub mod prelude {
-    pub use super::collision::{Collider, CollisionEvent, CollisionLayers, Shape};
+    pub use super::collision::{Collider, CollisionEvent, CollisionLayers, LayerMask, Shape};
     pub use super::movement::Movement;
     pub use super::obb::Obb2d;
 }

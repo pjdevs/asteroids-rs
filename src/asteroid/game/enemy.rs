@@ -20,8 +20,7 @@ impl Plugin for EnemyPlugin {
             ),
         )
         .configure_loading_state(
-            LoadingStateConfig::new(GameState::GameLoading)
-                .load_collection::<EnemyAssets>(),
+            LoadingStateConfig::new(GameState::GameLoading).load_collection::<EnemyAssets>(),
         )
         .add_spawner::<EnemySpawner>(
             GameState::GameLoading,
