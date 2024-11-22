@@ -1,6 +1,5 @@
 use crate::asset;
 use crate::asteroid::core::prelude::*;
-use crate::asteroid::debug::player_exists;
 use crate::asteroid::game::prelude::*;
 use crate::asteroid::input::prelude::*;
 use crate::asteroid::physics::prelude::*;
@@ -174,6 +173,12 @@ impl AsteroidPlayerBundle {
             .with_movement_speed(500.0)
             .with_rotation_speed(4.0)
     }
+}
+
+// Conditions
+
+pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
+    move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
 }
 
 // Systems

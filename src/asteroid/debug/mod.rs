@@ -1,6 +1,8 @@
 use super::core::prelude::*;
 use super::game::prelude::*;
 use super::physics::prelude::*;
+use super::game::player::player_exists;
+use super::game::enemy::AsteroidEnemySpawner;
 use bevy::color::palettes::css::{GREEN, WHITE};
 use bevy::ecs::system::RunSystemOnce;
 use bevy::input::common_conditions::input_just_pressed;
@@ -40,10 +42,6 @@ struct AsteroidDebugConfig {
 }
 
 // Conditions
-
-pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
-    move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
-}
 
 fn debug_is_active(config: Res<AsteroidDebugConfig>) -> bool {
     config.is_debug_mode
