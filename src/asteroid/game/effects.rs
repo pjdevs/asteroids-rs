@@ -4,7 +4,7 @@ use crate::asteroid::animation::prelude::*;
 use crate::asteroid::core::prelude::*;
 use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
-use crate::{get, get_mut};
+use crate::{asset, get, get_mut};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use bevy_trauma_shake::prelude::*;
@@ -262,6 +262,7 @@ fn effect_explode_enemy(
     mut commands: Commands,
     enemy_assets: Res<AsteroidEnemyAssets>,
     effects_assets: Res<AsteroidEffectsAssets>,
+    size_assets: Res<Assets<SizeAsset>>,
     mut query: Query<(&Movement, &AsteroidScaled), (With<AsteroidEnemy>, Added<Dead>)>,
     mut shake_query: Query<&mut Shake>,
 ) {
@@ -270,12 +271,14 @@ fn effect_explode_enemy(
     for (movement, scaled) in &mut query {
         shake.add_trauma(0.2 * scaled.scale);
 
+        let enemy_size = asset!(size_assets, &enemy_assets.enemy_size);
+
         commands.spawn((
             AsteroidEffectBundle::default()
                 .with_texture(enemy_assets.enemy_texture.clone_weak())
                 .with_layout(enemy_assets.enemy_layout.clone_weak())
                 .with_animation(effects_assets.enemy_explosion_animation.clone_weak())
-                .with_size(Vec2::splat(64.0))
+                .with_size(enemy_size.sprite_size)
                 .with_color(Color::srgb(5.0, 3.0, 0.0)),
             Movement {
                 position: movement.position,
