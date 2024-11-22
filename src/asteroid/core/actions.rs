@@ -1,7 +1,7 @@
 use crate::asteroid::input::ActionLike;
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy, Default)]
-pub enum AsteroidAction {
+pub enum ShipAction {
     #[default]
     TurnLeft,
     TurnRight,
@@ -10,4 +10,4 @@ pub enum AsteroidAction {
     Shoot,
 }
 
-impl ActionLike for AsteroidAction {}
+impl ActionLike for ShipAction {}

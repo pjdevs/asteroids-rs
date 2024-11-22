@@ -13,24 +13,24 @@ use std::time::Duration;
 // TODO Split this in another module
 // TODO Expose effects values?
 
-pub struct AsteroidEffectsPlugin;
+pub struct EffectsPlugin;
 
-impl Plugin for AsteroidEffectsPlugin {
+impl Plugin for EffectsPlugin {
     fn build(&self, app: &mut App) {
         app.register_timed_component::<HitEffect>()
             .add_systems(
-                OnExit(AsteroidGameState::Game),
+                OnExit(GameState::Game),
                 (
                     despawn_entities_with::<InvincibilityAnimation>,
-                    despawn_entities_with::<AsteroidEnemyExplosion>,
+                    despawn_entities_with::<EnemyExplosion>,
                 ),
             )
             .add_systems(
                 FixedUpdate,
                 (effect_explode_enemy, effect_despawn_exploded_enemy)
-                    .after(AsteroidDamageSystem::FixedUpdateDamageSystem)
-                    .run_if(in_state(AsteroidGameState::Game))
-                    .in_set(AsteroidEffectsSystem::FixedUpdateEffects),
+                    .after(DamageSystem::FixedUpdateDamageSystem)
+                    .run_if(in_state(GameState::Game))
+                    .in_set(EffectsSystem::FixedUpdateEffects),
             )
             .add_systems(
                 Update,
@@ -46,18 +46,18 @@ impl Plugin for AsteroidEffectsPlugin {
                         .run_if(any_with_component::<InvincibilityFlash>),
                 )
                     .chain()
-                    .run_if(in_state(AsteroidGameState::Game))
-                    .in_set(AsteroidEffectsSystem::UpdateEffects),
+                    .run_if(in_state(GameState::Game))
+                    .in_set(EffectsSystem::UpdateEffects),
             )
             .configure_loading_state(
-                LoadingStateConfig::new(AsteroidGameState::GameLoading)
-                    .load_collection::<AsteroidEffectsAssets>(),
+                LoadingStateConfig::new(GameState::GameLoading)
+                    .load_collection::<EffectsAssets>(),
             );
     }
 }
 
 #[derive(Resource, AssetCollection)]
-pub struct AsteroidEffectsAssets {
+pub struct EffectsAssets {
     #[asset(key = "player.invincible.texture")]
     pub player_invincible_texture: Handle<Image>,
 
@@ -72,13 +72,13 @@ pub struct AsteroidEffectsAssets {
 }
 
 #[derive(Bundle)]
-pub struct AsteroidEffectBundle {
+pub struct EffectBundle {
     pub sprite: SpriteBundle,
     pub atlas: TextureAtlas,
     pub animation: AnimationBundle,
 }
 
-impl Default for AsteroidEffectBundle {
+impl Default for EffectBundle {
     fn default() -> Self {
         Self {
             sprite: SpriteBundle {
@@ -94,7 +94,7 @@ impl Default for AsteroidEffectBundle {
     }
 }
 
-impl AsteroidEffectBundle {
+impl EffectBundle {
     pub fn with_texture(mut self, texture: Handle<Image>) -> Self {
         self.sprite.texture = texture;
         self
@@ -122,7 +122,7 @@ impl AsteroidEffectBundle {
 }
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub enum AsteroidEffectsSystem {
+pub enum EffectsSystem {
     UpdateEffects,
     FixedUpdateEffects,
 }
@@ -185,7 +185,7 @@ impl InvincibilityFlash {
 
 fn effect_start_invincibility_flash(
     mut commands: Commands,
-    assets: Res<AsteroidEffectsAssets>,
+    assets: Res<EffectsAssets>,
     mut query: Query<Entity, Added<Invincibility>>,
 ) {
     for entity in &mut query {
@@ -194,7 +194,7 @@ fn effect_start_invincibility_flash(
             .insert(InvincibilityFlash::new(0.5, 0.35))
             .with_children(|parent| {
                 parent.spawn((
-                    AsteroidEffectBundle::default()
+                    EffectBundle::default()
                         .with_texture(assets.player_invincible_texture.clone_weak())
                         .with_layout(assets.player_invincible_layout.clone_weak())
                         .with_animation(assets.player_invincibility_animation.clone_weak())
@@ -256,14 +256,14 @@ fn effect_update_invincibility_flash(
 // Enemy explosion
 
 #[derive(Component)]
-struct AsteroidEnemyExplosion;
+struct EnemyExplosion;
 
 fn effect_explode_enemy(
     mut commands: Commands,
-    enemy_assets: Res<AsteroidEnemyAssets>,
-    effects_assets: Res<AsteroidEffectsAssets>,
+    enemy_assets: Res<EnemyAssets>,
+    effects_assets: Res<EffectsAssets>,
     size_assets: Res<Assets<SizeAsset>>,
-    mut query: Query<(&Movement, &AsteroidScaled), (With<AsteroidEnemy>, Added<Dead>)>,
+    mut query: Query<(&Movement, &Scaled), (With<Enemy>, Added<Dead>)>,
     mut shake_query: Query<&mut Shake>,
 ) {
     let mut shake = shake_query.single_mut();
@@ -274,7 +274,7 @@ fn effect_explode_enemy(
         let enemy_size = asset!(size_assets, &enemy_assets.enemy_size);
 
         commands.spawn((
-            AsteroidEffectBundle::default()
+            EffectBundle::default()
                 .with_texture(enemy_assets.enemy_texture.clone_weak())
                 .with_layout(enemy_assets.enemy_layout.clone_weak())
                 .with_animation(effects_assets.enemy_explosion_animation.clone_weak())
@@ -287,7 +287,7 @@ fn effect_explode_enemy(
                 ..Default::default()
             },
             *scaled,
-            AsteroidEnemyExplosion,
+            EnemyExplosion,
         ));
     }
 }
@@ -295,7 +295,7 @@ fn effect_explode_enemy(
 fn effect_despawn_exploded_enemy(
     mut commands: Commands,
     mut events: EventReader<AnimationCompleted>,
-    query: Query<(), With<AsteroidEnemyExplosion>>,
+    query: Query<(), With<EnemyExplosion>>,
 ) {
     for event in events.read() {
         get!(_enemy_explosion, query, event.animated_entity, continue);

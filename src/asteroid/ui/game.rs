@@ -3,16 +3,16 @@ use crate::asteroid::game::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
-pub struct AsteroidGameUiPlugin;
+pub struct GameUiPlugin;
 
-impl Plugin for AsteroidGameUiPlugin {
+impl Plugin for GameUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnEnter(AsteroidGameState::Game),
+            OnEnter(GameState::Game),
             (ui_setup_score, ui_setup_lives, ui_setup_observers),
         )
         .add_systems(
-            OnExit(AsteroidGameState::Game),
+            OnExit(GameState::Game),
             (
                 despawn_entities_with::<Node>,
                 despawn_entities_with::<GameUiObserver>,
@@ -114,7 +114,7 @@ fn ui_lives_system(
     _trigger: Trigger<PlayerLivesChanged>,
     mut commands: Commands,
     lives: Res<PlayerLives>,
-    player_assets: Res<AsteroidPlayerAssets>,
+    player_assets: Res<PlayerAssets>,
     container_query: Query<Entity, With<LivesContaier>>,
 ) {
     let container = container_query.single();

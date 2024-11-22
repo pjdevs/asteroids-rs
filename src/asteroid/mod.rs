@@ -9,28 +9,28 @@ mod physics;
 mod ui;
 mod utils;
 
-use animation::AsteroidAnimationPlugin;
-use audio::AsteroidAudioPlugin;
+use animation::AnimationPlugin;
+use audio::AudioPlugin;
 use bevy::app::{PluginGroup, PluginGroupBuilder};
 use bevy::prelude::ImagePlugin;
 use bevy::DefaultPlugins;
 use bevy_trauma_shake::TraumaPlugin;
-use core::actions::AsteroidAction;
+use core::actions::ShipAction;
 #[cfg(feature = "dev")]
-use debug::AsteroidDebugPlugin;
-use game::border::AsteroidBorderPlugin;
-use game::damage::AsteroidDamagePlugin;
-use game::effects::AsteroidEffectsPlugin;
-use game::enemy::AsteroidEnemyPlugin;
-use game::gameplay::AsteroidGameplayPlugin;
-use game::player::AsteroidPlayerPlugin;
-use game::projectile::AsteroidProjectilePlugin;
-use game::scale::AsteroidScalePlugin;
-use game::setup::AsteroidSetupPlugin;
-use input::AsteroidInputPlugin;
-use physics::AsteroidPhysicsPlugin;
-use ui::game::AsteroidGameUiPlugin;
-use ui::menu::AsteroidMenuUiPlugin;
+use debug::DebugPlugin;
+use game::border::BorderPlugin;
+use game::damage::DamagePlugin;
+use game::effects::EffectsPlugin;
+use game::enemy::EnemyPlugin;
+use game::gameplay::GameplayPlugin;
+use game::player::PlayerPlugin;
+use game::projectile::ProjectilePlugin;
+use game::scale::ScalePlugin;
+use game::setup::SetupPlugin;
+use input::InputPlugin;
+use physics::PhysicsPlugin;
+use ui::game::GameUiPlugin;
+use ui::menu::MenuUiPlugin;
 use utils::window::asteroid_window_plugin;
 
 pub struct AsteroidPlugins;
@@ -54,25 +54,25 @@ impl AsteroidPlugins {
                     .set(ImagePlugin::default_nearest()),
             )
             .add(TraumaPlugin)
-            .add(AsteroidSetupPlugin)
-            .add(AsteroidInputPlugin::<AsteroidAction>::default())
-            .add(AsteroidPhysicsPlugin)
-            .add(AsteroidScalePlugin)
-            .add(AsteroidAnimationPlugin)
-            .add(AsteroidBorderPlugin)
-            .add(AsteroidProjectilePlugin)
-            .add(AsteroidPlayerPlugin)
-            .add(AsteroidEnemyPlugin)
-            .add(AsteroidDamagePlugin)
-            .add(AsteroidGameplayPlugin)
-            .add(AsteroidEffectsPlugin)
-            .add(AsteroidMenuUiPlugin)
-            .add(AsteroidGameUiPlugin)
-            .add(AsteroidAudioPlugin)
+            .add(SetupPlugin)
+            .add(InputPlugin::<ShipAction>::default())
+            .add(PhysicsPlugin)
+            .add(ScalePlugin)
+            .add(AnimationPlugin)
+            .add(BorderPlugin)
+            .add(ProjectilePlugin)
+            .add(PlayerPlugin)
+            .add(EnemyPlugin)
+            .add(DamagePlugin)
+            .add(GameplayPlugin)
+            .add(EffectsPlugin)
+            .add(MenuUiPlugin)
+            .add(GameUiPlugin)
+            .add(AudioPlugin)
     }
 
     #[cfg(feature = "dev")]
     fn dev_plugins() -> PluginGroupBuilder {
-        Self::default_plugins().add(AsteroidDebugPlugin)
+        Self::default_plugins().add(DebugPlugin)
     }
 }

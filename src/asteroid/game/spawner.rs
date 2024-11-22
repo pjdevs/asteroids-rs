@@ -22,7 +22,7 @@ pub struct SpawnerAsset {
 
 #[derive(Resource, Reflect)]
 #[reflect(Resource)]
-pub struct AsteroidSpawner<M: Component> {
+pub struct Spawner<M: Component> {
     pub enabled: bool,
     pub entities_count: usize,
     #[reflect(ignore)]
@@ -31,7 +31,7 @@ pub struct AsteroidSpawner<M: Component> {
     pub _spawned_type: PhantomData<M>,
 }
 
-impl<M: Component> AsteroidSpawner<M> {
+impl<M: Component> Spawner<M> {
     pub fn from_asset(spawner_asset: Handle<SpawnerAsset>) -> Self {
         Self {
             enabled: true,
@@ -51,7 +51,7 @@ pub trait SpawnerAppExt {
         set: impl SystemSet,
     ) -> &mut Self
     where
-        AsteroidSpawner<M>: FromWorld;
+        Spawner<M>: FromWorld;
 }
 
 impl SpawnerAppExt for App {
@@ -63,10 +63,10 @@ impl SpawnerAppExt for App {
         set: impl SystemSet,
     ) -> &mut Self
     where
-        AsteroidSpawner<M>: FromWorld,
+        Spawner<M>: FromWorld,
     {
         self.configure_loading_state(
-            LoadingStateConfig::new(loading_state).init_resource::<AsteroidSpawner<M>>(),
+            LoadingStateConfig::new(loading_state).init_resource::<Spawner<M>>(),
         )
         .add_systems(
             Update,
@@ -83,13 +83,13 @@ impl SpawnerAppExt for App {
         )
         .add_systems(
             OnExit(spawning_state),
-            remove_resource::<AsteroidSpawner<M>>,
+            remove_resource::<Spawner<M>>,
         )
     }
 }
 
 fn spawner_enabled<M: Component>(
-    spawner: Res<AsteroidSpawner<M>>,
+    spawner: Res<Spawner<M>>,
     spawner_assets: Res<Assets<SpawnerAsset>>,
 ) -> bool {
     if spawner.enabled {
@@ -103,7 +103,7 @@ fn spawner_enabled<M: Component>(
 pub fn spawner_system<M: Component + Default>(
     In(entity): In<Entity>,
     mut commands: Commands,
-    spawner: Res<AsteroidSpawner<M>>,
+    spawner: Res<Spawner<M>>,
     spawner_assets: Res<Assets<SpawnerAsset>>,
     camera_query: Query<&Camera>,
 ) {
@@ -135,13 +135,13 @@ pub fn spawner_system<M: Component + Default>(
             }
 
             entity_commands
-                .insert(AsteroidScaled::new(random_scale))
+                .insert(Scaled::new(random_scale))
                 .insert(M::default());
         });
 }
 
 fn update_spawned_entity_count<M: Component>(
-    mut spawner: ResMut<AsteroidSpawner<M>>,
+    mut spawner: ResMut<Spawner<M>>,
     added: Query<(), Added<M>>,
     mut removed: RemovedComponents<M>,
 ) {
@@ -154,11 +154,11 @@ fn update_spawned_entity_count<M: Component>(
 }
 
 fn on_spawn_timer<M: Component>(
-) -> impl FnMut(Res<Time>, Res<AsteroidSpawner<M>>, Res<Assets<SpawnerAsset>>) -> bool + Clone {
+) -> impl FnMut(Res<Time>, Res<Spawner<M>>, Res<Assets<SpawnerAsset>>) -> bool + Clone {
     let mut timer = Timer::new(Duration::ZERO, TimerMode::Repeating);
 
     move |time: Res<Time>,
-          spawner: Res<AsteroidSpawner<M>>,
+          spawner: Res<Spawner<M>>,
           spawner_assets: Res<Assets<SpawnerAsset>>| {
         if spawner.is_changed() {
             let spawner_asset = asset!(spawner_assets, &spawner.spawner_asset);

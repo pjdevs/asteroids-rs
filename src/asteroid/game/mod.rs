@@ -14,17 +14,17 @@ pub mod prelude {
     pub use super::{
         border::{DespawnBorder, TunnelBorder},
         damage::{
-            AsteroidDamageSystem, CollisionDamager, Damager, Dead, DespawnOnCollision,
+            DamageSystem, CollisionDamager, Damager, Dead, DespawnOnCollision,
             DespawnOnDead, Health, Invincibility,
         },
-        enemy::{AsteroidEnemy, AsteroidEnemyAssets},
+        enemy::{Enemy, EnemyAssets},
         gameplay::{PlayerLives, PlayerLivesChanged, Score, ScoreChanged},
         player::{
-            spawn_first_player_system, spawn_second_player_system, AsteroidPlayer,
-            AsteroidPlayerAssets, AsteroidPlayerSystem, PlayerShoot, PlayerSpawned, SpawnPlayer,
+            spawn_first_player_system, spawn_second_player_system, Player,
+            PlayerAssets, PlayerSystem, PlayerShoot, PlayerSpawned, SpawnPlayer,
         },
-        projectile::AsteroidProjectileBundle,
-        scale::AsteroidScaled,
-        spawner::{AsteroidSpawner, SpawnerAppExt, SpawnerAsset},
+        projectile::ProjectileBundle,
+        scale::Scaled,
+        spawner::{Spawner, SpawnerAppExt, SpawnerAsset},
     };
 }

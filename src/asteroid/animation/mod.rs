@@ -26,9 +26,9 @@ pub enum AnimationPlayMode {
     OneShot,
 }
 
-pub struct AsteroidAnimationPlugin;
+pub struct AnimationPlugin;
 
-impl Plugin for AsteroidAnimationPlugin {
+impl Plugin for AnimationPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<AnimationCompleted>()
             .add_systems(Update, animate);

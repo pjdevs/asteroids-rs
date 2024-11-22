@@ -8,9 +8,9 @@ use bevy_asset_loader::prelude::*;
 use bevy_common_assets::ron::RonAssetPlugin;
 use bevy_trauma_shake::Shake;
 
-pub struct AsteroidSetupPlugin;
+pub struct SetupPlugin;
 
-impl Plugin for AsteroidSetupPlugin {
+impl Plugin for SetupPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(RonAssetPlugin::<SizeAsset>::new(&["size.ron"]))
             .add_plugins(RonAssetPlugin::<SpawnerAsset>::new(&["spawner.ron"]))
@@ -18,24 +18,24 @@ impl Plugin for AsteroidSetupPlugin {
             // Game Startup
             .add_systems(Startup, game_startup_system)
             // States
-            .init_state::<AsteroidGameState>()
+            .init_state::<GameState>()
             // Menu Loading State
             .add_loading_state(
-                LoadingState::new(AsteroidGameState::MainMenuLoading)
-                    .continue_to_state(AsteroidGameState::MainMenu)
+                LoadingState::new(GameState::MainMenuLoading)
+                    .continue_to_state(GameState::MainMenu)
                     .with_dynamic_assets_file::<StandardDynamicAssetCollection>("menu.assets.ron"),
             )
             // Game Loading State
             .add_loading_state(
-                LoadingState::new(AsteroidGameState::GameLoading)
-                    .continue_to_state(AsteroidGameState::Game)
+                LoadingState::new(GameState::GameLoading)
+                    .continue_to_state(GameState::Game)
                     .with_dynamic_assets_file::<StandardDynamicAssetCollection>("game.assets.ron"),
             )
             // Utils
             .add_systems(
                 Update,
                 game_exit_system.run_if(
-                    in_state(AsteroidGameState::Game)
+                    in_state(GameState::Game)
                         .and_then(input_just_released(KeyCode::Escape)),
                 ),
             );
@@ -61,6 +61,6 @@ fn game_startup_system(mut commands: Commands) {
     ));
 }
 
-fn game_exit_system(mut next_state: ResMut<NextState<AsteroidGameState>>) {
-    next_state.set(AsteroidGameState::MainMenuLoading);
+fn game_exit_system(mut next_state: ResMut<NextState<GameState>>) {
+    next_state.set(GameState::MainMenuLoading);
 }

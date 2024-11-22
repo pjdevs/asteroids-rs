@@ -2,7 +2,7 @@ use super::core::prelude::*;
 use super::game::prelude::*;
 use super::physics::prelude::*;
 use super::game::player::player_exists;
-use super::game::enemy::AsteroidEnemySpawner;
+use super::game::enemy::EnemySpawner;
 use bevy::color::palettes::css::{GREEN, WHITE};
 use bevy::ecs::system::RunSystemOnce;
 use bevy::input::common_conditions::input_just_pressed;
@@ -15,14 +15,14 @@ use bevy_inspector_egui::bevy_inspector::{
 };
 use bevy_inspector_egui::egui;
 
-pub struct AsteroidDebugPlugin;
+pub struct DebugPlugin;
 
-impl Plugin for AsteroidDebugPlugin {
+impl Plugin for DebugPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugins(EguiPlugin)
             .add_plugins(bevy_inspector_egui::DefaultInspectorConfigPlugin)
-            .register_type::<AsteroidSpawner<AsteroidEnemySpawner>>()
-            .insert_resource(AsteroidDebugConfig::default())
+            .register_type::<Spawner<EnemySpawner>>()
+            .insert_resource(DebugConfig::default())
             .add_systems(
                 Update,
                 (
@@ -36,24 +36,24 @@ impl Plugin for AsteroidDebugPlugin {
 // Resources
 
 #[derive(Resource, Default, Reflect)]
-struct AsteroidDebugConfig {
+struct DebugConfig {
     is_debug_mode: bool,
     show_gizmos: bool,
 }
 
 // Conditions
 
-fn debug_is_active(config: Res<AsteroidDebugConfig>) -> bool {
+fn debug_is_active(config: Res<DebugConfig>) -> bool {
     config.is_debug_mode
 }
 
 // Systems
 
-fn toggle_debug_system(mut config: ResMut<AsteroidDebugConfig>) {
+fn toggle_debug_system(mut config: ResMut<DebugConfig>) {
     config.is_debug_mode = !config.is_debug_mode;
 }
 
-fn debug_toggle_invincible_system(mut query: Query<&mut Collider, With<AsteroidPlayer>>) {
+fn debug_toggle_invincible_system(mut query: Query<&mut Collider, With<Player>>) {
     for mut collider in &mut query {
         collider.enabled = !collider.enabled;
     }
@@ -62,7 +62,7 @@ fn debug_toggle_invincible_system(mut query: Query<&mut Collider, With<AsteroidP
 fn degug_gizmos_system(
     mut gizmos: Gizmos,
     query: Query<(&Movement, &Collider)>,
-    config: Res<AsteroidDebugConfig>,
+    config: Res<DebugConfig>,
 ) {
     if !config.show_gizmos {
         return;
@@ -85,7 +85,7 @@ fn degug_gizmos_system(
     }
 }
 
-fn kill_all_enemies_system(mut commands: Commands, query: Query<Entity, With<AsteroidEnemy>>) {
+fn kill_all_enemies_system(mut commands: Commands, query: Query<Entity, With<Enemy>>) {
     for enemy in &query {
         commands.entity(enemy).insert(Dead);
     }
@@ -100,7 +100,7 @@ fn debug_custom_ui(world: &mut World) {
     };
     let mut egui_context = egui_context.clone();
     let current_state = world
-        .get_resource::<State<AsteroidGameState>>()
+        .get_resource::<State<GameState>>()
         .expect("There must be a state a any time")
         .get()
         .clone();
@@ -108,14 +108,14 @@ fn debug_custom_ui(world: &mut World) {
     egui::Window::new("Asteroid Debug Menu").show(egui_context.get_mut(), |ui| {
         egui::ScrollArea::vertical().show(ui, |ui| {
             ui.heading("Config");
-            ui_for_resource::<AsteroidDebugConfig>(world, ui);
+            ui_for_resource::<DebugConfig>(world, ui);
 
-            if current_state == AsteroidGameState::Game {
+            if current_state == GameState::Game {
                 ui.heading("Game Cheats");
                 ui_for_cheats(world, ui);
 
                 ui.collapsing("Enemy Spawner", |ui| {
-                    ui_for_resource::<AsteroidSpawner<AsteroidEnemySpawner>>(world, ui);
+                    ui_for_resource::<Spawner<EnemySpawner>>(world, ui);
                 });
 
                 ui.collapsing("Spawner Assets", |ui| {

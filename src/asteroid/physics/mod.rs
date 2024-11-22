@@ -9,34 +9,34 @@ use movement::*;
 use super::core::prelude::*;
 
 #[derive(Default)]
-pub struct AsteroidPhysicsPlugin;
+pub struct PhysicsPlugin;
 
-impl Plugin for AsteroidPhysicsPlugin {
+impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<CollisionEvent>()
             .add_systems(
                 FixedPostUpdate,
                 (
                     physics_fixed_movement_system
-                        .in_set(AsteroidPhysicsSystem::FixedPostUpdateMovement),
+                        .in_set(PhysicsSystem::FixedPostUpdateMovement),
                     physics_collision_system
-                        .in_set(AsteroidPhysicsSystem::FixedPostUpdateCollisionDetection)
+                        .in_set(PhysicsSystem::FixedPostUpdateCollisionDetection)
                         .after(physics_fixed_movement_system),
                 )
-                    .run_if(in_state(AsteroidGameState::Game)),
+                    .run_if(in_state(GameState::Game)),
             )
             .add_systems(
                 PostUpdate,
                 physics_transform_extrapolate_system
-                    .run_if(in_state(AsteroidGameState::Game))
+                    .run_if(in_state(GameState::Game))
                     .before(TransformSystem::TransformPropagate)
-                    .in_set(AsteroidPhysicsSystem::PostUpdateExtrapolateTransform),
+                    .in_set(PhysicsSystem::PostUpdateExtrapolateTransform),
             );
     }
 }
 
 #[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AsteroidPhysicsSystem {
+pub enum PhysicsSystem {
     FixedPostUpdateMovement,
     PostUpdateExtrapolateTransform,
     FixedPostUpdateCollisionDetection,

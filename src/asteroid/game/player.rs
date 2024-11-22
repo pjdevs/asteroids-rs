@@ -12,33 +12,33 @@ use bevy_asset_loader::prelude::*;
 
 // Plugin
 
-pub struct AsteroidPlayerPlugin;
+pub struct PlayerPlugin;
 
-impl Plugin for AsteroidPlayerPlugin {
+impl Plugin for PlayerPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<PlayerShoot>()
             .add_systems(
-                OnExit(AsteroidGameState::Game),
+                OnExit(GameState::Game),
                 (
-                    remove_resource::<AsteroidPlayerAssets>,
-                    despawn_entities_with::<AsteroidPlayer>,
+                    remove_resource::<PlayerAssets>,
+                    despawn_entities_with::<Player>,
                 ),
             )
             .add_systems(
                 Update,
                 (
                     (player_move_system, player_shoot_system)
-                        .run_if(in_state(AsteroidGameState::Game))
-                        .in_set(AsteroidPlayerSystem::UpdatePlayerActions),
+                        .run_if(in_state(GameState::Game))
+                        .in_set(PlayerSystem::UpdatePlayerActions),
                     spawn_second_player_system
-                        .run_if(in_state(AsteroidGameState::Game))
+                        .run_if(in_state(GameState::Game))
                         .run_if(on_gamepad_connection(0))
                         .run_if(not(player_exists(2))),
                 ),
             )
             .configure_loading_state(
-                LoadingStateConfig::new(AsteroidGameState::GameLoading)
-                    .load_collection::<AsteroidPlayerAssets>(),
+                LoadingStateConfig::new(GameState::GameLoading)
+                    .load_collection::<PlayerAssets>(),
             );
     }
 }
@@ -46,7 +46,7 @@ impl Plugin for AsteroidPlayerPlugin {
 // Assets
 
 #[derive(Resource, AssetCollection)]
-pub struct AsteroidPlayerAssets {
+pub struct PlayerAssets {
     #[asset(key = "player.one.texture")]
     pub player_one_texture: Handle<Image>,
 
@@ -63,7 +63,7 @@ pub struct AsteroidPlayerAssets {
     pub player_projectile_size: Handle<SizeAsset>,
 }
 
-impl AsteroidPlayerAssets {
+impl PlayerAssets {
     pub fn get_texture_by_player_id(&self, player_id: &u64) -> Option<Handle<Image>> {
         match player_id {
             1 => Some(self.player_one_texture.clone_weak()),
@@ -84,26 +84,36 @@ pub struct PlayerSpawned;
 // Components
 
 #[derive(Component, Default)]
-pub struct AsteroidPlayer {
+pub struct ShipMovement {
+    pub input_direction: Vec2,
+}
+
+#[derive(Component, Default)]
+pub struct ShipShoot {
+    pub input_direction: Vec2,
+}
+
+#[derive(Component, Default)]
+pub struct Player {
     pub player_id: u64,
-    movement_speed: f32,
-    rotation_speed: f32,
+    pub movement_speed: f32,
+    pub rotation_speed: f32,
 }
 
 #[derive(Bundle)]
-pub struct AsteroidPlayerBundle {
-    player: AsteroidPlayer,
+pub struct PlayerBundle {
+    player: Player,
     sprite: SpriteBundle,
     movement: Movement,
     collider: Collider,
     layers: CollisionLayers,
     border: TunnelBorder,
-    controller: InputController<AsteroidAction>,
+    controller: InputController<ShipAction>,
     health: Health,
     despawn: DespawnOnDead,
 }
 
-impl Default for AsteroidPlayerBundle {
+impl Default for PlayerBundle {
     fn default() -> Self {
         Self {
             player: Default::default(),
@@ -119,7 +129,7 @@ impl Default for AsteroidPlayerBundle {
     }
 }
 
-impl AsteroidPlayerBundle {
+impl PlayerBundle {
     pub fn with_texture(mut self, texture: Handle<Image>) -> Self {
         self.sprite.texture = texture;
         self
@@ -150,7 +160,7 @@ impl AsteroidPlayerBundle {
         self
     }
 
-    pub fn with_input_map(mut self, input_map: InputMap<AsteroidAction>) -> Self {
+    pub fn with_input_map(mut self, input_map: InputMap<ShipAction>) -> Self {
         self.controller = InputController::from_map(input_map);
         self
     }
@@ -161,14 +171,14 @@ impl AsteroidPlayerBundle {
     }
 
     pub fn preset_ship_fast() -> Self {
-        AsteroidPlayerBundle::default()
+        PlayerBundle::default()
             .with_friction(0.03)
             .with_movement_speed(750.0)
             .with_rotation_speed(5.0)
     }
 
     pub fn preset_ship_slow() -> Self {
-        AsteroidPlayerBundle::default()
+        PlayerBundle::default()
             .with_friction(0.05)
             .with_movement_speed(500.0)
             .with_rotation_speed(4.0)
@@ -177,14 +187,14 @@ impl AsteroidPlayerBundle {
 
 // Conditions
 
-pub fn player_exists(player_id: u64) -> impl Fn(Query<&AsteroidPlayer>) -> bool {
-    move |query: Query<&AsteroidPlayer>| query.iter().any(|p| p.player_id == player_id)
+pub fn player_exists(player_id: u64) -> impl Fn(Query<&Player>) -> bool {
+    move |query: Query<&Player>| query.iter().any(|p| p.player_id == player_id)
 }
 
 // Systems
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub enum AsteroidPlayerSystem {
+pub enum PlayerSystem {
     UpdatePlayerActions,
 }
 
@@ -198,9 +208,9 @@ pub fn spawn_second_player_system(mut commands: Commands) {
 
 fn first_player_bundle(
     sizes: &Assets<SizeAsset>,
-    assets: &AsteroidPlayerAssets,
-) -> AsteroidPlayerBundle {
-    AsteroidPlayerBundle::preset_ship_fast()
+    assets: &PlayerAssets,
+) -> PlayerBundle {
+    PlayerBundle::preset_ship_fast()
         .with_id(1)
         .with_size(asset!(sizes, &assets.player_size))
         .with_texture(assets.player_one_texture.clone())
@@ -209,9 +219,9 @@ fn first_player_bundle(
 
 fn second_player_bundle(
     sizes: &Assets<SizeAsset>,
-    assets: &AsteroidPlayerAssets,
-) -> AsteroidPlayerBundle {
-    AsteroidPlayerBundle::preset_ship_slow()
+    assets: &PlayerAssets,
+) -> PlayerBundle {
+    PlayerBundle::preset_ship_slow()
         .with_id(2)
         .with_size(asset!(sizes, &assets.player_size))
         .with_texture(assets.player_two_texture.clone())
@@ -235,7 +245,7 @@ impl Command for SpawnPlayer {
                 .get_resource::<Assets<SizeAsset>>()
                 .expect("Size assets must exist to spawn player");
             let assets = world
-                .get_resource::<AsteroidPlayerAssets>()
+                .get_resource::<PlayerAssets>()
                 .expect("Player assets must exist to spawn player");
 
             match self.player_id {
@@ -256,18 +266,18 @@ impl Command for SpawnPlayer {
 fn player_shoot_system(
     mut commands: Commands,
     mut shoot_events: EventWriter<PlayerShoot>,
-    assets: Res<AsteroidPlayerAssets>,
+    assets: Res<PlayerAssets>,
     sizes: Res<Assets<SizeAsset>>,
-    player_query: Query<(&InputController<AsteroidAction>, &Movement), With<AsteroidPlayer>>,
+    player_query: Query<(&InputController<ShipAction>, &Movement), With<Player>>,
 ) {
     const PROJECTILE_SPEED: f32 = 600.0;
 
     let size_asset = asset!(sizes, &assets.player_projectile_size);
 
     for (controller, player_movement) in &player_query {
-        if controller.input_action(AsteroidAction::Shoot) {
+        if controller.input_action(ShipAction::Shoot) {
             commands.spawn((
-                AsteroidProjectileBundle {
+                ProjectileBundle {
                     sprite: SpriteBundle {
                         texture: assets.projectile_texture.clone(),
                         sprite: Sprite {
@@ -304,26 +314,26 @@ fn player_shoot_system(
 fn player_move_system(
     mut query: Query<(
         &mut Movement,
-        &AsteroidPlayer,
-        &InputController<AsteroidAction>,
+        &Player,
+        &InputController<ShipAction>,
     )>,
 ) {
     for (mut movement, player, controller) in &mut query {
         let mut input_direction = Vec2::ZERO;
 
-        if controller.input_action(AsteroidAction::Forward) {
+        if controller.input_action(ShipAction::Forward) {
             input_direction.y += 1.0;
         }
 
-        if controller.input_action(AsteroidAction::Backward) {
+        if controller.input_action(ShipAction::Backward) {
             input_direction.y -= 1.0;
         }
 
-        if controller.input_action(AsteroidAction::TurnLeft) {
+        if controller.input_action(ShipAction::TurnLeft) {
             input_direction.x -= 1.0;
         }
 
-        if controller.input_action(AsteroidAction::TurnRight) {
+        if controller.input_action(ShipAction::TurnRight) {
             input_direction.x += 1.0;
         }
 
@@ -338,57 +348,57 @@ fn player_move_system(
 
 // Input maps
 
-impl InputMap<AsteroidAction> {
+impl InputMap<ShipAction> {
     fn with_keyboard_mappings(self) -> Self {
         self.with_mapping(
-            AsteroidAction::Forward,
+            ShipAction::Forward,
             InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::Forward,
+            ShipAction::Forward,
             InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::Backward,
+            ShipAction::Backward,
             InputMapping::key(KeyCode::ArrowDown, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::TurnLeft,
+            ShipAction::TurnLeft,
             InputMapping::key(KeyCode::ArrowLeft, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::TurnRight,
+            ShipAction::TurnRight,
             InputMapping::key(KeyCode::ArrowRight, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::Shoot,
+            ShipAction::Shoot,
             InputMapping::key(KeyCode::Space, ButtonMode::JustPressed),
         )
         .with_mapping(
-            AsteroidAction::Forward,
+            ShipAction::Forward,
             InputMapping::key(KeyCode::ArrowUp, ButtonMode::Pressed),
         )
     }
 
     fn with_gamepad_mappings(self, gamepad_id: usize) -> Self {
         self.with_mapping(
-            AsteroidAction::Forward,
+            ShipAction::Forward,
             InputMapping::button(GamepadButtonType::RightTrigger2, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::Backward,
+            ShipAction::Backward,
             InputMapping::button(GamepadButtonType::LeftTrigger2, ButtonMode::Pressed),
         )
         .with_mapping(
-            AsteroidAction::TurnLeft,
+            ShipAction::TurnLeft,
             InputMapping::axis(GamepadAxisType::LeftStickX, AxisSide::Negative),
         )
         .with_mapping(
-            AsteroidAction::TurnRight,
+            ShipAction::TurnRight,
             InputMapping::axis(GamepadAxisType::LeftStickX, AxisSide::Positive),
         )
         .with_mapping(
-            AsteroidAction::Shoot,
+            ShipAction::Shoot,
             InputMapping::button(GamepadButtonType::South, ButtonMode::JustPressed),
         )
         .with_gamepad(Gamepad { id: gamepad_id })

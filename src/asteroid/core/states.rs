@@ -1,7 +1,7 @@
 use bevy::prelude::*;
 
 #[derive(States, Debug, Hash, Eq, PartialEq, Clone, Default)]
-pub enum AsteroidGameState {
+pub enum GameState {
     #[default]
     MainMenuLoading,
     MainMenu,
@@ -10,7 +10,7 @@ pub enum AsteroidGameState {
 }
 
 // #[derive(States, Debug, Hash, Eq, PartialEq, Clone, Default)]
-// pub enum AsteroidPauseState {
+// pub enum PauseState {
 //     #[default]
 //     Running,
 //     Paused,

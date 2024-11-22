@@ -5,21 +5,21 @@ use std::hash::Hash;
 use std::marker::PhantomData;
 
 #[derive(Default)]
-pub struct AsteroidInputPlugin<A: ActionLike> {
+pub struct InputPlugin<A: ActionLike> {
     a: PhantomData<A>,
 }
 
-impl<A: ActionLike> Plugin for AsteroidInputPlugin<A> {
+impl<A: ActionLike> Plugin for InputPlugin<A> {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PreUpdate,
-            input_update_maps::<A>.in_set(AsteroidInputSystem::UpdateInput),
+            input_update_maps::<A>.in_set(InputSystem::UpdateInput),
         );
     }
 }
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub enum AsteroidInputSystem {
+pub enum InputSystem {
     UpdateInput,
 }
 

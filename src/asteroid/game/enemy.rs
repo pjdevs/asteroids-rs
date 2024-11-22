@@ -8,26 +8,26 @@ use bevy::math::bounding::BoundingCircle;
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 
-pub struct AsteroidEnemyPlugin;
+pub struct EnemyPlugin;
 
-impl Plugin for AsteroidEnemyPlugin {
+impl Plugin for EnemyPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnExit(AsteroidGameState::Game),
+            OnExit(GameState::Game),
             (
-                remove_resource::<AsteroidEnemyAssets>,
-                despawn_entities_with::<AsteroidEnemy>,
+                remove_resource::<EnemyAssets>,
+                despawn_entities_with::<Enemy>,
             ),
         )
         .configure_loading_state(
-            LoadingStateConfig::new(AsteroidGameState::GameLoading)
-                .load_collection::<AsteroidEnemyAssets>(),
+            LoadingStateConfig::new(GameState::GameLoading)
+                .load_collection::<EnemyAssets>(),
         )
-        .add_spawner::<AsteroidEnemySpawner>(
-            AsteroidGameState::GameLoading,
-            AsteroidGameState::Game,
+        .add_spawner::<EnemySpawner>(
+            GameState::GameLoading,
+            GameState::Game,
             IntoSystem::into_system(spawn_enemy_system),
-            AsteroidEnemySystem::UpdateSpawnEnemies,
+            EnemySystem::UpdateSpawnEnemies,
         );
     }
 }
@@ -35,7 +35,7 @@ impl Plugin for AsteroidEnemyPlugin {
 // Assets
 
 #[derive(Resource, AssetCollection)]
-pub struct AsteroidEnemyAssets {
+pub struct EnemyAssets {
     #[asset(key = "enemy.texture")]
     pub enemy_texture: Handle<Image>,
 
@@ -51,25 +51,25 @@ pub struct AsteroidEnemyAssets {
 
 // Spawner
 #[derive(Component, Default, Reflect)]
-pub struct AsteroidEnemySpawner;
+pub struct EnemySpawner;
 
-impl FromWorld for AsteroidSpawner<AsteroidEnemySpawner> {
+impl FromWorld for Spawner<EnemySpawner> {
     fn from_world(world: &mut World) -> Self {
-        let mut system_state = SystemState::<Res<AsteroidEnemyAssets>>::new(world);
+        let mut system_state = SystemState::<Res<EnemyAssets>>::new(world);
         let enemy_assets = system_state.get(world);
 
-        AsteroidSpawner::from_asset(enemy_assets.enemy_spawner.clone_weak())
+        Spawner::from_asset(enemy_assets.enemy_spawner.clone_weak())
     }
 }
 
 // Components
 
 #[derive(Component, Default)]
-pub struct AsteroidEnemy;
+pub struct Enemy;
 
 #[derive(Bundle, Default)]
-pub struct AsteroidEnemyBundle {
-    enemy: AsteroidEnemy,
+pub struct EnemyBundle {
+    enemy: Enemy,
     sprite: SpriteBundle,
     atlas: TextureAtlas,
     movement: Movement,
@@ -84,18 +84,18 @@ pub struct AsteroidEnemyBundle {
 // Systems
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub enum AsteroidEnemySystem {
+pub enum EnemySystem {
     UpdateSpawnEnemies,
 }
 
 fn spawn_enemy_system(
     mut commands: Commands,
-    enemy_assets: Res<AsteroidEnemyAssets>,
+    enemy_assets: Res<EnemyAssets>,
     size_assets: Res<Assets<SizeAsset>>,
 ) -> Entity {
     let size = asset!(size_assets, &enemy_assets.enemy_size);
 
-    let enemy = AsteroidEnemyBundle {
+    let enemy = EnemyBundle {
         sprite: SpriteBundle {
             texture: enemy_assets.enemy_texture.clone(),
             sprite: Sprite {

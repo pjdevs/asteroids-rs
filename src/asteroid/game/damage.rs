@@ -4,9 +4,9 @@ use crate::asteroid::utils::prelude::*;
 use crate::{get, get_mut};
 use bevy::prelude::*;
 
-pub struct AsteroidDamagePlugin;
+pub struct DamagePlugin;
 
-impl Plugin for AsteroidDamagePlugin {
+impl Plugin for DamagePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             FixedUpdate,
@@ -15,14 +15,14 @@ impl Plugin for AsteroidDamagePlugin {
                 gameplay_collision_despawn_system.run_if(any_with_component::<DespawnOnCollision>),
             )
                 .run_if(on_event::<CollisionEvent>())
-                .run_if(in_state(AsteroidGameState::Game))
-                .in_set(AsteroidDamageSystem::FixedUpdateDamageSystem),
+                .run_if(in_state(GameState::Game))
+                .in_set(DamageSystem::FixedUpdateDamageSystem),
         )
         .add_systems(
             FixedPostUpdate,
             gameplay_despawn_dead_system
                 .run_if(any_with_component::<Dead>)
-                .in_set(AsteroidDamageSystem::FixedPostUpdateDeathSystem),
+                .in_set(DamageSystem::FixedPostUpdateDeathSystem),
         );
     }
 }
@@ -152,7 +152,7 @@ impl Health {
 // Systems
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub enum AsteroidDamageSystem {
+pub enum DamageSystem {
     FixedUpdateDamageSystem,
     FixedPostUpdateDeathSystem,
 }

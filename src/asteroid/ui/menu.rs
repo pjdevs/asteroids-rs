@@ -2,19 +2,14 @@ use crate::asteroid::core::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
-#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
-pub enum AsteroidMenuUiSystem {
-    UpdateUi,
-}
+pub struct MenuUiPlugin;
 
-pub struct AsteroidMenuUiPlugin;
-
-impl Plugin for AsteroidMenuUiPlugin {
+impl Plugin for MenuUiPlugin {
     fn build(&self, app: &mut App) {
         app.add_event::<ButtonEvent>()
-            .add_systems(OnEnter(AsteroidGameState::MainMenu), ui_menu_setup_system)
+            .add_systems(OnEnter(GameState::MainMenu), ui_menu_setup_system)
             .add_systems(
-                OnExit(AsteroidGameState::MainMenu),
+                OnExit(GameState::MainMenu),
                 despawn_entities_with::<Node>,
             )
             .add_systems(
@@ -24,11 +19,13 @@ impl Plugin for AsteroidMenuUiPlugin {
                     ui_button_action_system,
                     ui_button_style_system,
                 )
-                    .run_if(in_state(AsteroidGameState::MainMenu))
-                    .in_set(AsteroidMenuUiSystem::UpdateUi),
+                    .run_if(in_state(GameState::MainMenu))
+                    .in_set(MenuUiSystem::UpdateUi),
             );
     }
 }
+
+// Components
 
 #[derive(Component)]
 enum MenuButtonAction {
@@ -36,6 +33,14 @@ enum MenuButtonAction {
     // Options,
     // Exit,
 }
+
+// Systems
+
+#[derive(SystemSet, Debug, Clone, PartialEq, Eq, Hash)]
+pub enum MenuUiSystem {
+    UpdateUi,
+}
+
 
 pub fn ui_menu_setup_system(mut commands: Commands) {
     let container_node = NodeBundle {
@@ -102,7 +107,7 @@ pub fn ui_menu_setup_system(mut commands: Commands) {
 
 fn ui_button_action_system(
     mut events: EventReader<ButtonEvent>,
-    mut next_state: ResMut<NextState<AsteroidGameState>>,
+    mut next_state: ResMut<NextState<GameState>>,
     query: Query<&MenuButtonAction>,
 ) {
     for event in events.read() {
@@ -110,7 +115,7 @@ fn ui_button_action_system(
             ButtonEvent::Clicked(entity) => {
                 if let Ok(action) = query.get(*entity) {
                     match action {
-                        MenuButtonAction::Play => next_state.set(AsteroidGameState::GameLoading),
+                        MenuButtonAction::Play => next_state.set(GameState::GameLoading),
                     }
                 }
             }

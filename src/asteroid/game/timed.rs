@@ -1,4 +1,4 @@
-use crate::asteroid::core::states::AsteroidGameState;
+use crate::asteroid::core::states::GameState;
 use bevy::ecs::system::{EntityCommand, EntityCommands};
 use bevy::prelude::*;
 use std::marker::PhantomData;
@@ -76,7 +76,7 @@ impl TimedAppExt for App {
             Update,
             update_timed_components::<T>
                 .run_if(any_with_component::<TimedComponent<T>>)
-                .run_if(in_state(AsteroidGameState::Game)),
+                .run_if(in_state(GameState::Game)),
         )
     }
 }

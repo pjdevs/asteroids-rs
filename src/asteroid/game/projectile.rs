@@ -5,11 +5,11 @@ use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
 #[derive(Component, Default)]
-pub struct AsteroidProjectile;
+pub struct Projectile;
 
 #[derive(Bundle, Default)]
-pub struct AsteroidProjectileBundle {
-    pub projectile: AsteroidProjectile,
+pub struct ProjectileBundle {
+    pub projectile: Projectile,
     pub sprite: SpriteBundle,
     pub movement: Movement,
     pub collider: Collider,
@@ -19,13 +19,13 @@ pub struct AsteroidProjectileBundle {
     pub damager: CollisionDamager,
 }
 
-pub struct AsteroidProjectilePlugin;
+pub struct ProjectilePlugin;
 
-impl Plugin for AsteroidProjectilePlugin {
+impl Plugin for ProjectilePlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
-            OnExit(AsteroidGameState::Game),
-            (despawn_entities_with::<AsteroidProjectile>,),
+            OnExit(GameState::Game),
+            (despawn_entities_with::<Projectile>,),
         );
     }
 }

@@ -3,9 +3,9 @@ use crate::asteroid::physics::prelude::*;
 use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
-pub struct AsteroidBorderPlugin;
+pub struct BorderPlugin;
 
-impl Plugin for AsteroidBorderPlugin {
+impl Plugin for BorderPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(
             FixedUpdate,
@@ -13,7 +13,7 @@ impl Plugin for AsteroidBorderPlugin {
                 border_tunnel_system.run_if(any_with_component::<TunnelBorder>),
                 border_despawn_system.run_if(any_with_component::<DespawnBorder>),
             )
-                .run_if(in_state(AsteroidGameState::Game)),
+                .run_if(in_state(GameState::Game)),
         );
     }
 }

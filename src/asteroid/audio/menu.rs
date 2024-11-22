@@ -7,7 +7,7 @@ use super::utils::{spawn_music, spawn_sfx};
 // Assets
 
 #[derive(Resource, AssetCollection)]
-pub struct AsteroidMainMenuAudioAssets {
+pub struct MainMenuAudioAssets {
     #[asset(key = "menu.music.audio")]
     pub menu_music_audio: Handle<AudioSource>,
 
@@ -22,14 +22,14 @@ pub struct AsteroidMainMenuAudioAssets {
 
 pub fn audio_play_menu_music_system(
     mut commands: Commands,
-    assets: Res<AsteroidMainMenuAudioAssets>,
+    assets: Res<MainMenuAudioAssets>,
 ) {
     spawn_music(&mut commands, assets.menu_music_audio.clone_weak());
 }
 
 pub fn audio_button_select_system(
     mut commands: Commands,
-    assets: Res<AsteroidMainMenuAudioAssets>,
+    assets: Res<MainMenuAudioAssets>,
     mut query: Query<&Interaction, Changed<Interaction>>,
 ) {
     for interaction in &mut query {
@@ -41,7 +41,7 @@ pub fn audio_button_select_system(
 
 pub fn audio_button_click_system(
     mut commands: Commands,
-    assets: Res<AsteroidMainMenuAudioAssets>,
+    assets: Res<MainMenuAudioAssets>,
     mut events: EventReader<ButtonEvent>,
 ) {
     // for now there is only clicked event

@@ -9,14 +9,14 @@ use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
 use std::collections::HashMap;
 
-pub struct AsteroidGameplayPlugin;
+pub struct GameplayPlugin;
 
-impl Plugin for AsteroidGameplayPlugin {
+impl Plugin for GameplayPlugin {
     fn build(&self, app: &mut App) {
         app.init_resource::<Score>()
             .register_timed_component::<Invincibility>()
             .add_systems(
-                OnEnter(AsteroidGameState::Game),
+                OnEnter(GameState::Game),
                 (
                     gameplay_add_score_system,
                     gameplay_add_lives_system,
@@ -29,7 +29,7 @@ impl Plugin for AsteroidGameplayPlugin {
                 ),
             )
             .add_systems(
-                OnExit(AsteroidGameState::Game),
+                OnExit(GameState::Game),
                 (
                     remove_resource::<Score>,
                     remove_resource::<PlayerLives>,
@@ -42,19 +42,19 @@ impl Plugin for AsteroidGameplayPlugin {
                 Update,
                 gameplay_respawn_player
                     .run_if(any_with_component::<PlayerRespawnTimer>)
-                    .run_if(in_state(AsteroidGameState::Game))
-                    .in_set(AsteroidGameplaySystem::UpdateGameplay),
+                    .run_if(in_state(GameState::Game))
+                    .in_set(GameplaySystem::UpdateGameplay),
             )
             .add_systems(
                 FixedPostUpdate,
                 (gameplay_score_system, gameplay_loose_lives)
-                    .before(AsteroidDamageSystem::FixedPostUpdateDeathSystem)
+                    .before(DamageSystem::FixedPostUpdateDeathSystem)
                     .run_if(any_with_component::<Dead>)
-                    .in_set(AsteroidGameplaySystem::FixedPostUpdateGameplay),
+                    .in_set(GameplaySystem::FixedPostUpdateGameplay),
             )
             .configure_loading_state(
-                LoadingStateConfig::new(AsteroidGameState::GameLoading)
-                    .load_collection::<AsteroidGameplayAssets>(),
+                LoadingStateConfig::new(GameState::GameLoading)
+                    .load_collection::<GameplayAssets>(),
             );
     }
 }
@@ -110,7 +110,7 @@ pub struct ScoreChanged;
 // Assets
 
 #[derive(Resource, AssetCollection)]
-pub struct AsteroidGameplayAssets {
+pub struct GameplayAssets {
     #[asset(key = "gameplay.background.texture")]
     pub background_texture: Handle<Image>,
 }
@@ -118,7 +118,7 @@ pub struct AsteroidGameplayAssets {
 // Systems
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
-pub enum AsteroidGameplaySystem {
+pub enum GameplaySystem {
     UpdateGameplay,
     FixedPostUpdateGameplay,
 }
@@ -134,7 +134,7 @@ fn gameplay_add_lives_system(mut commands: Commands) {
 fn gameplay_score_system(
     mut commands: Commands,
     mut score: ResMut<Score>,
-    query: Query<&AsteroidScaled, (With<AsteroidEnemy>, Added<Dead>)>,
+    query: Query<&Scaled, (With<Enemy>, Added<Dead>)>,
 ) {
     for scaled in &query {
         score.score += (10.0 * scaled.scale) as u64;
@@ -145,7 +145,7 @@ fn gameplay_score_system(
 
 fn gameplay_spawn_background_system(
     mut commands: Commands,
-    assets: Res<AsteroidGameplayAssets>,
+    assets: Res<GameplayAssets>,
     camera_query: Query<&Camera>,
 ) {
     commands.spawn((
@@ -167,8 +167,8 @@ fn gameplay_spawn_background_system(
 fn gameplay_loose_lives(
     mut commands: Commands,
     mut player_lives: ResMut<PlayerLives>,
-    query: Query<&AsteroidPlayer, Added<Dead>>,
-    mut next_state: ResMut<NextState<AsteroidGameState>>,
+    query: Query<&Player, Added<Dead>>,
+    mut next_state: ResMut<NextState<GameState>>,
 ) {
     for player in &query {
         if let Some(lives) = player_lives.lives.get_mut(&player.player_id) {
@@ -190,7 +190,7 @@ fn gameplay_loose_lives(
     }
 
     if player_lives.lives.values().sum::<u64>() <= 0 {
-        next_state.set(AsteroidGameState::MainMenuLoading);
+        next_state.set(GameState::MainMenuLoading);
     }
 }
 
@@ -225,7 +225,7 @@ fn gameplay_setup_player_respawn(
     trigger: Trigger<PlayerSpawned>,
     mut commands: Commands,
     mut player_lives: ResMut<PlayerLives>,
-    query: Query<&AsteroidPlayer>,
+    query: Query<&Player>,
 ) {
     let player_entity = trigger.entity();
     get!(player, query, player_entity, return);

@@ -5,26 +5,26 @@ use super::prelude::Health;
 
 // TODO Use change detection instead ?
 
-pub struct AsteroidScalePlugin;
+pub struct ScalePlugin;
 
-impl Plugin for AsteroidScalePlugin {
+impl Plugin for ScalePlugin {
     fn build(&self, app: &mut bevy::prelude::App) {
         app.add_systems(Startup, setup_scale_hooks);
     }
 }
 
 #[derive(Component, Copy, Clone)]
-pub struct AsteroidScaled {
+pub struct Scaled {
     pub scale: f32,
 }
 
-impl AsteroidScaled {
+impl Scaled {
     pub fn new(scale: f32) -> Self {
         Self { scale }
     }
 }
 
-impl Default for AsteroidScaled {
+impl Default for Scaled {
     fn default() -> Self {
         Self::new(1.0)
     }
@@ -32,9 +32,9 @@ impl Default for AsteroidScaled {
 
 fn setup_scale_hooks(world: &mut World) {
     world
-        .register_component_hooks::<AsteroidScaled>()
+        .register_component_hooks::<Scaled>()
         .on_add(|mut world, entity, _| {
-            let scale = if let Some(component) = world.get::<AsteroidScaled>(entity) {
+            let scale = if let Some(component) = world.get::<Scaled>(entity) {
                 component.scale
             } else {
                 1.0
