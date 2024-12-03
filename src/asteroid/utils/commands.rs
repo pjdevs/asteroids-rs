@@ -5,7 +5,7 @@ pub struct EnsureDespawned;
 
 impl EntityCommand for EnsureDespawned {
     fn apply(self, id: bevy::prelude::Entity, world: &mut bevy::prelude::World) {
-        if let Some(entity) = world.get_entity_mut(id) {
+        if let Ok(entity) = world.get_entity_mut(id) {
             entity.despawn_recursive();
         }
     }
@@ -17,6 +17,6 @@ pub trait EnsureDespawnedEntityCommandsExt {
 
 impl<'a> EnsureDespawnedEntityCommandsExt for EntityCommands<'a> {
     fn ensure_despawned(&mut self) -> &mut Self {
-        self.add(EnsureDespawned)
+        self.queue(EnsureDespawned)
     }
 }

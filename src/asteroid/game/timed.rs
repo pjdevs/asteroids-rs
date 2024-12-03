@@ -59,7 +59,7 @@ pub trait TimedEntityCommandsExt {
 
 impl<'a> TimedEntityCommandsExt for EntityCommands<'a> {
     fn insert_timed<T: Component>(&mut self, component: T, duration: f32) -> &mut Self {
-        self.add(InsertTimedComponent {
+        self.queue(InsertTimedComponent {
             component,
             duration,
         })

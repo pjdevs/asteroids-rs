@@ -28,13 +28,13 @@ lto = "thin"
 codegen-units = 1
 
 [dependencies]
-bevy = {version = "0.14", default-features = false, features = ["bevy_asset", "bevy_audio", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_render", "bevy_sprite", "bevy_state", "bevy_text", "bevy_ui", "bevy_winit", "default_font", "multi_threaded", "png", "sysinfo_plugin", "vorbis"] }
-bevy_common_assets = { version = "0.11", features = ["ron"] }
-bevy_asset_loader = { version = "0.21" , features = ["2d", "standard_dynamic_assets"] }
+bevy = {version = "0.15", default-features = false, features = ["bevy_asset", "bevy_audio", "bevy_color", "bevy_core_pipeline", "bevy_gilrs", "bevy_gizmos", "bevy_render", "bevy_sprite", "bevy_state", "bevy_text", "bevy_ui", "bevy_window", "bevy_winit", "default_font", "multi_threaded", "png", "sysinfo_plugin", "vorbis"] }
+bevy_common_assets = { version = "0.12", features = ["ron"] }
+bevy_asset_loader = { version = "0.22" , features = ["2d", "standard_dynamic_assets"] }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
 rand = "0.8"
 serde = { version = "1.0", features = ["derive"] }
-bevy-inspector-egui = {version = "0.27.0", optional = true }
+bevy-inspector-egui = {version = "0.28.0", optional = true }
 bevy_trauma_shake = "0.3.0"
 
 [features]

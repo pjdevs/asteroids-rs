@@ -14,7 +14,7 @@ impl Plugin for DamagePlugin {
                 gameplay_collision_damage_system,
                 gameplay_collision_despawn_system.run_if(any_with_component::<DespawnOnCollision>),
             )
-                .run_if(on_event::<CollisionEvent>())
+                .run_if(on_event::<CollisionEvent>)
                 .run_if(in_state(GameState::Game))
                 .in_set(DamageSystem::FixedUpdateDamageSystem),
         )
