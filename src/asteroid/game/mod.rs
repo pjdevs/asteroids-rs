@@ -24,7 +24,7 @@ pub mod prelude {
             player_exists, spawn_first_player_system, spawn_second_player_system, Player,
             PlayerAssets, PlayerSpawned, PlayerSystem, SpawnPlayer,
         },
-        projectile::ProjectileBundle,
+        projectile::Projectile,
         scale::Scaled,
         ship::{ShipMovement, ShipShoot, ShipSystem, ShootEvent},
         spawner::{Spawner, SpawnerAppExt, SpawnerAsset},

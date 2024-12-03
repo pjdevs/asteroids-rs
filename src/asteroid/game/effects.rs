@@ -7,7 +7,7 @@ use crate::asteroid::utils::prelude::*;
 use crate::{asset, get, get_mut};
 use bevy::prelude::*;
 use bevy_asset_loader::prelude::*;
-use bevy_trauma_shake::prelude::*;
+// use bevy_trauma_shake::prelude::*;
 use std::time::Duration;
 
 // TODO Split this in another module
@@ -19,11 +19,7 @@ impl Plugin for EffectsPlugin {
     fn build(&self, app: &mut App) {
         app.register_timed_component::<HitEffect>()
             .add_systems(
-                OnExit(GameState::Game),
-                (
-                    despawn_entities_with::<InvincibilityAnimation>,
-                    despawn_entities_with::<EnemyExplosion>,
-                ),
+                OnExit(GameState::Game), despawn_entities_with::<Effect>,
             )
             .add_systems(
                 FixedUpdate,
@@ -70,55 +66,13 @@ pub struct EffectsAssets {
     pub enemy_explosion_animation: Handle<Animation>,
 }
 
-#[derive(Bundle)]
-pub struct EffectBundle {
-    pub sprite: SpriteBundle,
-    pub atlas: TextureAtlas,
-    pub animation: AnimationBundle,
-}
-
-impl Default for EffectBundle {
-    fn default() -> Self {
-        Self {
-            sprite: SpriteBundle {
-                transform: Transform::from_xyz(0.0, 0.0, 1.0),
-                ..Default::default()
-            },
-            atlas: TextureAtlas {
-                index: 0,
-                ..Default::default()
-            },
-            animation: Default::default(),
-        }
-    }
-}
-
-impl EffectBundle {
-    pub fn with_texture(mut self, texture: Handle<Image>) -> Self {
-        self.sprite.texture = texture;
-        self
-    }
-
-    pub fn with_layout(mut self, layout: Handle<TextureAtlasLayout>) -> Self {
-        self.atlas.layout = layout;
-        self
-    }
-
-    pub fn with_animation(mut self, animation: Handle<Animation>) -> Self {
-        self.animation.animation = animation;
-        self
-    }
-
-    pub fn with_size(mut self, size: Vec2) -> Self {
-        self.sprite.sprite.custom_size = Some(size);
-        self
-    }
-
-    pub fn with_color(mut self, color: Color) -> Self {
-        self.sprite.sprite.color = color;
-        self
-    }
-}
+#[derive(Component)]
+#[require(
+    Sprite,
+    AnimationPlayer,
+    Transform(|| Transform::from_xyz(0.0, 0.0, 1.0))
+)]
+struct Effect;
 
 #[derive(SystemSet, Hash, Eq, PartialEq, Clone, Debug)]
 pub enum EffectsSystem {
@@ -159,14 +113,10 @@ fn effect_stop_hit(mut removed: RemovedComponents<HitEffect>, mut query: Query<&
 // Invincibility Flash
 
 #[derive(Component)]
-struct InvincibilityAnimation;
-
-#[derive(Component)]
 #[component(storage = "SparseSet")]
 pub struct InvincibilityFlash {
     duration_visible: f32,
     duration_invisible: f32,
-
     is_visible: bool,
     timer: Timer,
 }
@@ -184,22 +134,28 @@ impl InvincibilityFlash {
 
 fn effect_start_invincibility_flash(
     mut commands: Commands,
-    assets: Res<EffectsAssets>,
+    effect_assets: Res<EffectsAssets>,
+    size_assets: Res<Assets<SizeAsset>>,
+    player_assets: Res<PlayerAssets>,
     mut query: Query<Entity, Added<Invincibility>>,
 ) {
+    let player_size = asset!(size_assets, &player_assets.player_size);
+
     for entity in &mut query {
         commands
             .entity(entity)
             .insert(InvincibilityFlash::new(0.5, 0.35))
             .with_children(|parent| {
                 parent.spawn((
-                    EffectBundle::default()
-                        .with_texture(assets.player_invincible_texture.clone_weak())
-                        .with_layout(assets.player_invincible_layout.clone_weak())
-                        .with_animation(assets.player_invincibility_animation.clone_weak())
-                        .with_size(Vec2::splat(64.0))
-                        .with_color(Color::srgb(1.0, 2.0, 2.0)),
-                    InvincibilityAnimation,
+                    Effect,
+                    Sprite {
+                        image: effect_assets.player_invincible_texture.clone_weak(),
+                        texture_atlas: Some(effect_assets.player_invincible_layout.clone_weak().into()),
+                        color: Color::srgb(1.0, 2.0, 2.0),
+                        custom_size: Some(player_size.sprite_size),
+                        ..Default::default()
+                    },
+                    AnimationPlayer::new(effect_assets.player_invincibility_animation.clone_weak()),
                     #[cfg(feature = "dev")]
                     Name::new("Player Invincibility Animation"),
                 ));
@@ -257,28 +213,32 @@ fn effect_update_invincibility_flash(
 #[derive(Component)]
 struct EnemyExplosion;
 
+// TODO Re-enable Trauma by migrating to 0.15
 fn effect_explode_enemy(
     mut commands: Commands,
     enemy_assets: Res<EnemyAssets>,
     effects_assets: Res<EffectsAssets>,
     size_assets: Res<Assets<SizeAsset>>,
     mut query: Query<(&Movement, &Scaled), (With<Enemy>, Added<Dead>)>,
-    mut shake_query: Query<&mut Shake>,
+    // mut shake_query: Query<&mut Shake>,
 ) {
-    let mut shake = shake_query.single_mut();
+    // let mut shake = shake_query.single_mut();
 
     for (movement, scaled) in &mut query {
-        shake.add_trauma(0.2 * scaled.scale);
+        // shake.add_trauma(0.2 * scaled.scale);
 
         let enemy_size = asset!(size_assets, &enemy_assets.enemy_size);
 
         commands.spawn((
-            EffectBundle::default()
-                .with_texture(enemy_assets.enemy_texture.clone_weak())
-                .with_layout(enemy_assets.enemy_layout.clone_weak())
-                .with_animation(effects_assets.enemy_explosion_animation.clone_weak())
-                .with_size(enemy_size.sprite_size)
-                .with_color(Color::srgb(5.0, 3.0, 0.0)),
+            Effect,
+            Sprite {
+                image: enemy_assets.enemy_texture.clone_weak(),
+                texture_atlas: Some(enemy_assets.enemy_layout.clone_weak().into()),
+                color: Color::srgb(5.0, 3.0, 0.0),
+                custom_size: Some(enemy_size.sprite_size),
+                ..Default::default()
+            },
+            AnimationPlayer::new(effects_assets.enemy_explosion_animation.clone_weak()),
             Movement {
                 position: movement.position,
                 rotation: movement.rotation,

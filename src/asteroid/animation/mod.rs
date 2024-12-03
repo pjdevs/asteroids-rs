@@ -36,6 +36,7 @@ impl Plugin for AnimationPlugin {
 }
 
 #[derive(Component)]
+#[require(Sprite)]
 pub struct AnimationPlayer {
     animation: Handle<Animation>,
     timer: Timer,
