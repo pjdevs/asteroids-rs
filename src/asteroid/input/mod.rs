@@ -49,8 +49,8 @@ pub struct InputAxisMapping<T: Copy + Eq + Hash + Send + Sync + 'static> {
 
 pub enum InputMapping {
     KeyboardButton(InputButtonMapping<KeyCode>),
-    GamepadButton(InputButtonMapping<GamepadButtonType>),
-    GamepadAxis(InputAxisMapping<GamepadAxisType>),
+    GamepadButton(InputButtonMapping<GamepadButton>),
+    GamepadAxis(InputAxisMapping<GamepadAxis>),
 }
 
 impl InputMapping {
@@ -58,48 +58,36 @@ impl InputMapping {
         Self::KeyboardButton(InputButtonMapping { button: key, mode })
     }
 
-    pub fn button(button: GamepadButtonType, mode: ButtonMode) -> Self {
+    pub fn button(button: GamepadButton, mode: ButtonMode) -> Self {
         Self::GamepadButton(InputButtonMapping { button, mode })
     }
 
-    pub fn axis(axis: GamepadAxisType, side: AxisSide) -> Self {
+    pub fn axis(axis: GamepadAxis, side: AxisSide) -> Self {
         Self::GamepadAxis(InputAxisMapping { axis, side })
     }
 
     fn is_triggered(
         &self,
         keys: &ButtonInput<KeyCode>,
-        buttons: &ButtonInput<GamepadButton>,
-        axis: &Axis<GamepadAxis>,
-        connected_gamepads: &Gamepads,
-        associated_gamepad: Option<Gamepad>,
+        associated_gamepad: Option<&Gamepad>,
     ) -> bool {
-        let use_gamepad =
-            associated_gamepad.is_some_and(|gamepad| connected_gamepads.contains(gamepad));
-
         match self {
             InputMapping::KeyboardButton(keyboard_mapping) => match keyboard_mapping.mode {
                 ButtonMode::Pressed => keys.pressed(keyboard_mapping.button),
                 ButtonMode::JustPressed => keys.just_pressed(keyboard_mapping.button),
             },
-            InputMapping::GamepadButton(gamepad_mapping) if use_gamepad => {
-                let gamepad_button = GamepadButton {
-                    gamepad: associated_gamepad.unwrap(),
-                    button_type: gamepad_mapping.button,
-                };
-
+            InputMapping::GamepadButton(gamepad_mapping) if associated_gamepad.is_some() => {
                 match gamepad_mapping.mode {
-                    ButtonMode::Pressed => buttons.pressed(gamepad_button),
-                    ButtonMode::JustPressed => buttons.just_pressed(gamepad_button),
+                    ButtonMode::Pressed => {
+                        associated_gamepad.unwrap().pressed(gamepad_mapping.button)
+                    }
+                    ButtonMode::JustPressed => associated_gamepad
+                        .unwrap()
+                        .just_pressed(gamepad_mapping.button),
                 }
             }
-            InputMapping::GamepadAxis(gamepad_mapping) if use_gamepad => {
-                let gamepad_axis = GamepadAxis {
-                    gamepad: associated_gamepad.unwrap(),
-                    axis_type: gamepad_mapping.axis,
-                };
-
-                match axis.get(gamepad_axis) {
+            InputMapping::GamepadAxis(gamepad_mapping) if associated_gamepad.is_some() => {
+                match associated_gamepad.unwrap().get(gamepad_mapping.axis) {
                     Some(axis_value) => match gamepad_mapping.side {
                         AxisSide::Positive => axis_value > 0.5,
                         AxisSide::Negative => axis_value < -0.5,
@@ -114,11 +102,11 @@ impl InputMapping {
 
 pub trait ActionLike: Default + Copy + Eq + Hash + Send + Sync + 'static {}
 
-#[derive(Default)]
+#[derive(Component, Default)]
 pub struct InputMap<A: ActionLike> {
     action_map: HashMap<A, Vec<InputMapping>>,
     action_values: HashMap<A, bool>,
-    associated_gamepad: Option<Gamepad>,
+    associated_gamepad: Option<Entity>,
 }
 
 impl<A: ActionLike> InputMap<A> {
@@ -134,97 +122,51 @@ impl<A: ActionLike> InputMap<A> {
         self
     }
 
-    pub fn with_gamepad(mut self, gamepad: Gamepad) -> Self {
-        self.associated_gamepad = Some(gamepad);
+    pub fn with_gamepad(mut self, gamepad: Option<Entity>) -> Self {
+        self.associated_gamepad = gamepad;
         self
     }
 
-    fn input_action(&self, action: A) -> bool {
+    pub fn input_action(&self, action: A) -> bool {
         match self.action_values.get(&action) {
             Some(value) => *value,
             None => false,
         }
     }
-
-    fn update(
-        &mut self,
-        keys: &ButtonInput<KeyCode>,
-        buttons: &ButtonInput<GamepadButton>,
-        axis: &Axis<GamepadAxis>,
-        connected_gamepads: &Gamepads,
-    ) {
-        // Reset values
-        for action_value in self.action_values.values_mut() {
-            *action_value = false;
-        }
-
-        for (action, mappings) in &self.action_map {
-            let action_triggered = mappings.iter().fold(false, |triggered, mapping| {
-                triggered
-                    || mapping.is_triggered(
-                        keys,
-                        buttons,
-                        axis,
-                        connected_gamepads,
-                        self.associated_gamepad,
-                    )
-            });
-
-            self.action_values.insert(*action, action_triggered);
-        }
-    }
-}
-
-#[derive(Component, Default)]
-pub struct InputController<A: ActionLike> {
-    input_map: InputMap<A>,
-}
-
-impl<A: ActionLike> InputController<A> {
-    pub fn from_map(input_map: InputMap<A>) -> Self {
-        Self { input_map }
-    }
-
-    pub fn input_action(&self, action: A) -> bool {
-        self.input_map.input_action(action)
-    }
-
-    fn update(
-        &mut self,
-        keys: &ButtonInput<KeyCode>,
-        buttons: &ButtonInput<GamepadButton>,
-        axis: &Axis<GamepadAxis>,
-        connected_gamepads: &Gamepads,
-    ) {
-        self.input_map
-            .update(keys, buttons, axis, connected_gamepads);
-    }
 }
 
 fn input_update_maps<A: ActionLike>(
     keys: Res<ButtonInput<KeyCode>>,
-    buttons: Res<ButtonInput<GamepadButton>>,
-    axis: Res<Axis<GamepadAxis>>,
-    connected_gamepads: Res<Gamepads>,
-    mut query: Query<&mut InputController<A>>,
+    gamepads_query: Query<&Gamepad>,
+    mut map_query: Query<&mut InputMap<A>>,
 ) {
-    for mut controller in &mut query {
-        controller.update(&keys, &buttons, &axis, &connected_gamepads);
+    for mut map in &mut map_query {
+        // Reset values
+        for action_value in map.action_values.values_mut() {
+            *action_value = false;
+        }
+
+        // Update inputs
+        let map = &mut *map;
+        for (action, mappings) in &mut map.action_map {
+            let action_triggered = mappings.iter().fold(false, |triggered, mapping| {
+                let gamepad = map
+                    .associated_gamepad
+                    .and_then(|gamepad_entity| gamepads_query.get(gamepad_entity).ok());
+                triggered || mapping.is_triggered(&keys, gamepad)
+            });
+
+            map.action_values.insert(*action, action_triggered);
+        }
     }
 }
 
-pub fn gamepad_connected(gamepad_id: usize) -> impl FnMut(Res<Gamepads>) -> bool + Clone {
-    move |gamepads: Res<Gamepads>| gamepads.contains(Gamepad { id: gamepad_id })
+pub fn gamepad_connected() -> impl FnMut(Query<&Gamepad>) -> bool + Clone {
+    move |gamepads: Query<&Gamepad>| !gamepads.is_empty()
 }
 
-pub fn on_gamepad_connection(
-    gamepad_id: usize,
-) -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
-    move |mut reader: EventReader<GamepadConnectionEvent>| {
-        reader
-            .read()
-            .any(|e| e.gamepad.id == gamepad_id && e.connected())
-    }
+pub fn on_gamepad_connection() -> impl FnMut(EventReader<GamepadConnectionEvent>) -> bool + Clone {
+    move |mut reader: EventReader<GamepadConnectionEvent>| reader.read().any(|e| e.connected())
 }
 
 // pub fn on_gamepad_disconnection(

@@ -12,7 +12,7 @@ use bevy::prelude::*;
     CollisionLayers,
     DespawnBorder,
     DespawnOnCollision,
-    CollisionDamager,
+    CollisionDamager
 )]
 pub struct Projectile;
 

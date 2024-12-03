@@ -77,11 +77,7 @@ fn animate(
     mut events: EventWriter<AnimationCompleted>,
     assets: Res<Assets<Animation>>,
     time: Res<Time>,
-    mut query: Query<(
-        Entity,
-        &mut Sprite,
-        &mut AnimationPlayer,
-    )>,
+    mut query: Query<(Entity, &mut Sprite, &mut AnimationPlayer)>,
 ) {
     query
         .iter_mut()
@@ -91,14 +87,13 @@ fn animate(
                 return;
             };
             let animation = asset!(assets, &player.animation);
-            
+
             if !player.started {
                 player
                     .timer
                     .set_duration(Duration::from_secs_f32(animation.frame_time()));
                 player.started = true;
             }
-
 
             player.timer.tick(time.delta());
 

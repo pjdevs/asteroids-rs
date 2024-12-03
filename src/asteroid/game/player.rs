@@ -79,14 +79,14 @@ pub struct Player {
 #[derive(Bundle)]
 pub struct PlayerBundle {
     player: Player,
-    sprite: SpriteBundle,
+    sprite: Sprite,
     movement: Movement,
     collider: Collider,
     layers: CollisionLayers,
     border: TunnelBorder,
     ship: ShipMovement,
     shoot: ShipShoot,
-    controller: InputController<ShipAction>,
+    input_map: InputMap<ShipAction>,
     health: Health,
     despawn: DespawnOnDead,
 }
@@ -102,7 +102,7 @@ impl Default for PlayerBundle {
             border: Default::default(),
             ship: Default::default(),
             shoot: Default::default(),
-            controller: Default::default(),
+            input_map: Default::default(),
             health: Default::default(),
             despawn: Default::default(),
         }
@@ -111,12 +111,12 @@ impl Default for PlayerBundle {
 
 impl PlayerBundle {
     pub fn with_texture(mut self, texture: Handle<Image>) -> Self {
-        self.sprite.texture = texture;
+        self.sprite.image = texture;
         self
     }
 
     pub fn with_size(mut self, size: &SizeAsset) -> Self {
-        self.sprite.sprite.custom_size = Some(size.sprite_size);
+        self.sprite.custom_size = Some(size.sprite_size);
         self.collider = Collider::from_shape(Shape::Obb(Obb2d::new(
             Vec2::ZERO,
             size.collider_size / 2.0,
@@ -151,7 +151,7 @@ impl PlayerBundle {
     }
 
     pub fn with_input_map(mut self, input_map: InputMap<ShipAction>) -> Self {
-        self.controller = InputController::from_map(input_map);
+        self.input_map = input_map;
         self
     }
 
@@ -189,11 +189,11 @@ pub enum PlayerSystem {
 }
 
 pub fn spawn_first_player_system(mut commands: Commands) {
-    commands.add(SpawnPlayer::new(1));
+    commands.queue(SpawnPlayer::from_id(1));
 }
 
-pub fn spawn_second_player_system(mut commands: Commands) {
-    commands.add(SpawnPlayer::new(2));
+pub fn spawn_second_player_system(mut commands: Commands, query: Query<Entity, With<Gamepad>>) {
+    commands.queue(SpawnPlayer::from_id_gamepad(2, query.iter().next()));
 }
 
 fn first_player_bundle(sizes: &Assets<SizeAsset>, assets: &PlayerAssets) -> PlayerBundle {
@@ -206,23 +206,42 @@ fn first_player_bundle(sizes: &Assets<SizeAsset>, assets: &PlayerAssets) -> Play
         .with_input_map(InputMap::default().with_keyboard_mappings())
 }
 
-fn second_player_bundle(sizes: &Assets<SizeAsset>, assets: &PlayerAssets) -> PlayerBundle {
+fn second_player_bundle(
+    sizes: &Assets<SizeAsset>,
+    assets: &PlayerAssets,
+    gamepad: Option<Entity>,
+) -> PlayerBundle {
     PlayerBundle::preset_ship_slow()
         .with_id(2)
         .with_texture(assets.player_two_texture.clone())
         .with_size(asset!(sizes, &assets.player_size))
         .with_projectile_texture(assets.player_projectile_texture.clone_weak())
         .with_projectile_size(assets.player_projectile_size.clone_weak())
-        .with_input_map(InputMap::default().with_gamepad_mappings(0))
+        .with_input_map(
+            InputMap::default()
+                .with_gamepad_mappings()
+                .with_gamepad(gamepad),
+        )
 }
 
 pub struct SpawnPlayer {
     player_id: u64,
+    associated_gamepad: Option<Entity>,
 }
 
 impl SpawnPlayer {
-    pub fn new(player_id: u64) -> Self {
-        Self { player_id }
+    pub fn from_id(player_id: u64) -> Self {
+        Self {
+            player_id,
+            associated_gamepad: None,
+        }
+    }
+
+    pub fn from_id_gamepad(player_id: u64, gamepad: Option<Entity>) -> Self {
+        Self {
+            player_id,
+            associated_gamepad: gamepad,
+        }
     }
 }
 
@@ -238,7 +257,9 @@ impl Command for SpawnPlayer {
 
             match self.player_id {
                 1 => world.spawn(first_player_bundle(sizes, assets)).id(),
-                2 => world.spawn(second_player_bundle(sizes, assets)).id(),
+                2 => world
+                    .spawn(second_player_bundle(sizes, assets, self.associated_gamepad))
+                    .id(),
                 _ => return,
             }
         };
@@ -252,14 +273,14 @@ impl Command for SpawnPlayer {
 }
 
 fn player_shoot_system(
-    mut player_query: Query<(&InputController<ShipAction>, &mut ShipShoot), With<Player>>,
+    mut player_query: Query<(&InputMap<ShipAction>, &mut ShipShoot), With<Player>>,
 ) {
     for (controller, mut shoot) in &mut player_query {
         shoot.shoot = controller.input_action(ShipAction::Shoot);
     }
 }
 
-fn player_move_system(mut query: Query<(&InputController<ShipAction>, &mut ShipMovement)>) {
+fn player_move_system(mut query: Query<(&InputMap<ShipAction>, &mut ShipMovement)>) {
     for (controller, mut ship) in &mut query {
         ship.direction = Vec2::ZERO;
 
@@ -315,27 +336,26 @@ impl InputMap<ShipAction> {
         )
     }
 
-    fn with_gamepad_mappings(self, gamepad_id: usize) -> Self {
+    fn with_gamepad_mappings(self) -> Self {
         self.with_mapping(
             ShipAction::Forward,
-            InputMapping::button(GamepadButtonType::RightTrigger2, ButtonMode::Pressed),
+            InputMapping::button(GamepadButton::RightTrigger2, ButtonMode::Pressed),
         )
         .with_mapping(
             ShipAction::Backward,
-            InputMapping::button(GamepadButtonType::LeftTrigger2, ButtonMode::Pressed),
+            InputMapping::button(GamepadButton::LeftTrigger2, ButtonMode::Pressed),
         )
         .with_mapping(
             ShipAction::TurnLeft,
-            InputMapping::axis(GamepadAxisType::LeftStickX, AxisSide::Negative),
+            InputMapping::axis(GamepadAxis::LeftStickX, AxisSide::Negative),
         )
         .with_mapping(
             ShipAction::TurnRight,
-            InputMapping::axis(GamepadAxisType::LeftStickX, AxisSide::Positive),
+            InputMapping::axis(GamepadAxis::LeftStickX, AxisSide::Positive),
         )
         .with_mapping(
             ShipAction::Shoot,
-            InputMapping::button(GamepadButtonType::South, ButtonMode::JustPressed),
+            InputMapping::button(GamepadButton::South, ButtonMode::JustPressed),
         )
-        .with_gamepad(Gamepad { id: gamepad_id })
     }
 }

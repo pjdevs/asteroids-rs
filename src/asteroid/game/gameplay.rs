@@ -23,7 +23,7 @@ impl Plugin for GameplayPlugin {
                     spawn_first_player_system.after(gameplay_setup_observers),
                     spawn_second_player_system
                         .after(gameplay_setup_observers)
-                        .run_if(gamepad_connected(0)),
+                        .run_if(gamepad_connected()),
                 ),
             )
             .add_systems(
@@ -41,7 +41,7 @@ impl Plugin for GameplayPlugin {
                 (
                     gameplay_respawn_player.run_if(any_with_component::<PlayerRespawnTimer>),
                     spawn_second_player_system
-                        .run_if(on_gamepad_connection(0))
+                        .run_if(on_gamepad_connection())
                         .run_if(not(player_exists(2))),
                 )
                     .in_set(GameplaySystem::UpdateGameplay)

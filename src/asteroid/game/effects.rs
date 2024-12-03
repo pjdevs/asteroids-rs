@@ -18,9 +18,7 @@ pub struct EffectsPlugin;
 impl Plugin for EffectsPlugin {
     fn build(&self, app: &mut App) {
         app.register_timed_component::<HitEffect>()
-            .add_systems(
-                OnExit(GameState::Game), despawn_entities_with::<Effect>,
-            )
+            .add_systems(OnExit(GameState::Game), despawn_entities_with::<Effect>)
             .add_systems(
                 FixedUpdate,
                 (effect_explode_enemy, effect_despawn_exploded_enemy)
@@ -150,7 +148,9 @@ fn effect_start_invincibility_flash(
                     Effect,
                     Sprite {
                         image: effect_assets.player_invincible_texture.clone_weak(),
-                        texture_atlas: Some(effect_assets.player_invincible_layout.clone_weak().into()),
+                        texture_atlas: Some(
+                            effect_assets.player_invincible_layout.clone_weak().into(),
+                        ),
                         color: Color::srgb(1.0, 2.0, 2.0),
                         custom_size: Some(player_size.sprite_size),
                         ..Default::default()
