@@ -60,7 +60,7 @@ impl Plugin for AudioPlugin {
             Update,
             (
                 audio_play_shoot_system
-                    .run_if(on_event::<ShootEvent>())
+                    .run_if(on_event::<ShootEvent>)
                     .after(PlayerSystem::UpdatePlayerActions),
                 audio_play_hit_system.after(DamageSystem::FixedUpdateDamageSystem),
             )

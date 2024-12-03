@@ -3,10 +3,8 @@ use rand::seq::SliceRandom;
 
 pub fn spawn_music(commands: &mut Commands, music: Handle<AudioSource>) {
     commands.spawn((
-        AudioBundle {
-            source: music,
-            settings: PlaybackSettings::LOOP,
-        },
+        AudioPlayer::new(music),
+        PlaybackSettings::LOOP,
         Music,
         #[cfg(feature = "dev")]
         Name::new("Music"),
@@ -15,10 +13,8 @@ pub fn spawn_music(commands: &mut Commands, music: Handle<AudioSource>) {
 
 pub fn spawn_sfx(commands: &mut Commands, sfx: Handle<AudioSource>) {
     commands.spawn((
-        AudioBundle {
-            source: sfx,
-            settings: PlaybackSettings::DESPAWN,
-        },
+        AudioPlayer::new(sfx),
+        PlaybackSettings::DESPAWN,
         #[cfg(feature = "dev")]
         Name::new("SFX"),
     ));

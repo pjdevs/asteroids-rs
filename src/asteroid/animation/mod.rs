@@ -35,14 +35,9 @@ impl Plugin for AnimationPlugin {
     }
 }
 
-#[derive(Bundle, Default)]
-pub struct AnimationBundle {
-    pub animation: Handle<Animation>,
-    pub player: AnimationPlayer,
-}
-
 #[derive(Component)]
 pub struct AnimationPlayer {
+    animation: Handle<Animation>,
     timer: Timer,
     started: bool,
     completed: bool,
@@ -51,10 +46,24 @@ pub struct AnimationPlayer {
 impl Default for AnimationPlayer {
     fn default() -> Self {
         Self {
+            animation: Default::default(),
             started: false,
             completed: false,
             timer: Timer::new(Duration::ZERO, TimerMode::Repeating),
         }
+    }
+}
+
+impl AnimationPlayer {
+    pub fn new(animation: Handle<Animation>) -> Self {
+        Self {
+            animation,
+            ..Default::default()
+        }
+    }
+
+    pub fn set_animation(&mut self, animation: Handle<Animation>) {
+        self.animation = animation;
     }
 }
 
@@ -69,23 +78,26 @@ fn animate(
     time: Res<Time>,
     mut query: Query<(
         Entity,
-        &Handle<Animation>,
-        &mut TextureAtlas,
+        &mut Sprite,
         &mut AnimationPlayer,
     )>,
 ) {
     query
         .iter_mut()
-        .filter(|(_, _, _, animation)| !animation.completed)
-        .for_each(|(entity, animation_asset, mut atlas, mut player)| {
-            let animation = asset!(assets, animation_asset);
-
+        .filter(|(_, _, animation)| !animation.completed)
+        .for_each(|(entity, mut sprite, mut player)| {
+            let Some(atlas) = sprite.texture_atlas.as_mut() else {
+                return;
+            };
+            let animation = asset!(assets, &player.animation);
+            
             if !player.started {
                 player
                     .timer
                     .set_duration(Duration::from_secs_f32(animation.frame_time()));
                 player.started = true;
             }
+
 
             player.timer.tick(time.delta());
 

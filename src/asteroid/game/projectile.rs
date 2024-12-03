@@ -5,19 +5,16 @@ use crate::asteroid::utils::prelude::*;
 use bevy::prelude::*;
 
 #[derive(Component, Default)]
+#[require(
+    Sprite,
+    Movement,
+    Collider,
+    CollisionLayers,
+    DespawnBorder,
+    DespawnOnCollision,
+    CollisionDamager,
+)]
 pub struct Projectile;
-
-#[derive(Bundle, Default)]
-pub struct ProjectileBundle {
-    pub projectile: Projectile,
-    pub sprite: SpriteBundle,
-    pub movement: Movement,
-    pub collider: Collider,
-    pub layers: CollisionLayers,
-    pub border: DespawnBorder,
-    pub kill_collision: DespawnOnCollision,
-    pub damager: CollisionDamager,
-}
 
 pub struct ProjectilePlugin;
 
