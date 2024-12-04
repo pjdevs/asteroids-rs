@@ -192,8 +192,8 @@ pub fn spawn_first_player_system(mut commands: Commands) {
     commands.queue(SpawnPlayer::from_id(1));
 }
 
-pub fn spawn_second_player_system(mut commands: Commands, query: Query<Entity, With<Gamepad>>) {
-    commands.queue(SpawnPlayer::from_id_gamepad(2, query.iter().next()));
+pub fn spawn_second_player_system(mut commands: Commands) {
+    commands.queue(SpawnPlayer::from_id(2));
 }
 
 fn first_player_bundle(sizes: &Assets<SizeAsset>, assets: &PlayerAssets) -> PlayerBundle {
@@ -226,22 +226,11 @@ fn second_player_bundle(
 
 pub struct SpawnPlayer {
     player_id: u64,
-    associated_gamepad: Option<Entity>,
 }
 
 impl SpawnPlayer {
     pub fn from_id(player_id: u64) -> Self {
-        Self {
-            player_id,
-            associated_gamepad: None,
-        }
-    }
-
-    pub fn from_id_gamepad(player_id: u64, gamepad: Option<Entity>) -> Self {
-        Self {
-            player_id,
-            associated_gamepad: gamepad,
-        }
+        Self { player_id }
     }
 }
 
@@ -255,10 +244,18 @@ impl Command for SpawnPlayer {
                 .get_resource::<PlayerAssets>()
                 .expect("Player assets must exist to spawn player");
 
+            let first_gamepad = {
+                let gamepads = world
+                    .get_resource::<Gamepads>()
+                    .expect("Gamepads resource must exists");
+
+                gamepads.iter().next().copied()
+            };
+
             match self.player_id {
                 1 => world.spawn(first_player_bundle(sizes, assets)).id(),
                 2 => world
-                    .spawn(second_player_bundle(sizes, assets, self.associated_gamepad))
+                    .spawn(second_player_bundle(sizes, assets, first_gamepad))
                     .id(),
                 _ => return,
             }

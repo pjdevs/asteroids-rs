@@ -23,7 +23,7 @@ impl Plugin for GameplayPlugin {
                     spawn_first_player_system.after(gameplay_setup_observers),
                     spawn_second_player_system
                         .after(gameplay_setup_observers)
-                        .run_if(gamepad_connected()),
+                        .run_if(any_gamepad_connected()),
                 ),
             )
             .add_systems(
@@ -150,15 +150,12 @@ fn gameplay_spawn_background_system(
     camera_query: Query<&Camera>,
 ) {
     commands.spawn((
-        SpriteBundle {
-            texture: assets.background_texture.clone(),
-            sprite: Sprite {
-                custom_size: camera_query.single().logical_viewport_size(),
-                ..Default::default()
-            },
-            transform: Transform::from_xyz(0.0, 0.0, -1.0),
+        Sprite {
+            image: assets.background_texture.clone(),
+            custom_size: camera_query.single().logical_viewport_size(),
             ..Default::default()
         },
+        Transform::from_xyz(0.0, 0.0, -1.0),
         Background,
         #[cfg(feature = "dev")]
         Name::new("Background"),
@@ -206,18 +203,20 @@ fn gameplay_respawn_player(
         if respawner.timer.just_finished() {
             let player_id = respawner.player_id;
 
-            commands.add(SpawnPlayer::new(player_id));
+            commands.queue(SpawnPlayer::from_id(player_id));
             commands.entity(entity).despawn();
         }
     }
 }
 
 fn gameplay_setup_observers(mut commands: Commands) {
-    commands.observe(gameplay_setup_player_respawn).insert((
-        GameplayObserver,
-        #[cfg(feature = "dev")]
-        Name::new("Respawn Player Observer"),
-    ));
+    commands
+        .add_observer(gameplay_setup_player_respawn)
+        .insert((
+            GameplayObserver,
+            #[cfg(feature = "dev")]
+            Name::new("Respawn Player Observer"),
+        ));
 }
 
 // TODO Expose values?

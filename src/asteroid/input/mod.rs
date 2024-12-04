@@ -1,6 +1,6 @@
-use bevy::input::gamepad::GamepadConnectionEvent;
+use bevy::input::gamepad::{GamepadConnection, GamepadConnectionEvent};
 use bevy::prelude::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 use std::marker::PhantomData;
 
@@ -13,7 +13,10 @@ impl<A: ActionLike> Plugin for InputPlugin<A> {
     fn build(&self, app: &mut App) {
         app.add_systems(
             PreUpdate,
-            input_update_maps::<A>.in_set(InputSystem::UpdateInput),
+            (
+                input_gamepad_list,
+                input_update_maps::<A>.in_set(InputSystem::UpdateInput),
+            ),
         );
     }
 }
@@ -161,7 +164,7 @@ fn input_update_maps<A: ActionLike>(
     }
 }
 
-pub fn gamepad_connected() -> impl FnMut(Query<&Gamepad>) -> bool + Clone {
+pub fn any_gamepad_connected() -> impl FnMut(Query<&Gamepad>) -> bool + Clone {
     move |gamepads: Query<&Gamepad>| !gamepads.is_empty()
 }
 
@@ -178,6 +181,29 @@ pub fn on_gamepad_connection() -> impl FnMut(EventReader<GamepadConnectionEvent>
 //             .any(|e| e.gamepad.id == gamepad_id && e.disconnected())
 //     }
 // }
+
+#[derive(Resource, Deref, DerefMut)]
+pub struct Gamepads(HashSet<Entity>);
+
+fn input_gamepad_list(
+    mut events: EventReader<GamepadConnectionEvent>,
+    mut gamepads: ResMut<Gamepads>,
+) {
+    for event in events.read() {
+        match &event.connection {
+            GamepadConnection::Connected {
+                name: _,
+                vendor_id: _,
+                product_id: _,
+            } => {
+                gamepads.insert(event.gamepad);
+            }
+            GamepadConnection::Disconnected => {
+                gamepads.remove(&event.gamepad);
+            }
+        }
+    }
+}
 
 pub mod prelude {
     pub use super::*;

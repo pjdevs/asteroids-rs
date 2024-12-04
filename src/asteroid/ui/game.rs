@@ -63,12 +63,12 @@ pub fn ui_setup_score(mut commands: Commands) {
 }
 
 fn ui_setup_observers(mut commands: Commands) {
-    commands.observe(ui_score_system).insert((
+    commands.add_observer(ui_score_system).insert((
         GameUiObserver,
         #[cfg(feature = "dev")]
         Name::new("Score Observer"),
     ));
-    commands.observe(ui_lives_system).insert((
+    commands.add_observer(ui_lives_system).insert((
         GameUiObserver,
         #[cfg(feature = "dev")]
         Name::new("Lives Observer"),
